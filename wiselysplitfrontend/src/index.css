@@ -1,0 +1,6 @@
+/* Tailwind base (ensure Tailwind is configured) */
+@import 'tailwindcss';
+
+/* Minor tweaks */
+/* :root { color-scheme: light; } 
+body { @apply bg-gray-50; } */
