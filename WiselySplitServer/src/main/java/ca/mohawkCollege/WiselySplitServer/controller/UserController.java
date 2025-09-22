@@ -8,32 +8,59 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.NoSuchElementException;
+
 
 @RestController
-@RequestMapping("/User")
+@RequestMapping("/api/users")
 public class UserController {
+
+    private final UserService userService;
+
     @Autowired
-    private UserService userService;
-
-    @PostMapping("/add")
-    public String add(@RequestBody User user){
-        userService.saveUser(user);
-        return "new User added!";
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
-    @GetMapping("/getAll")
-    public List<User> getAllUsers(){
-        return userService.getAllUsers();
+    // Create User
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User created = userService.createUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PutMapping("/id")
-    public ResponseEntity<User> update(@RequestBody User user, @PathVariable Integer id){
-        try{
-            User existingUser = userService.get(id);
-            userService.saveUser(user);
-        }catch(NoSuchElementException e){
-            return new ResponseEntity<User>(HttpStatus.NOT_FOUND);
-        }
+    // Get User by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable int id) {
+        User user = userService.getUserById(id).get();
+        return ResponseEntity.ok(user);
+    }
+
+    // Get User by Email
+    @GetMapping("/email/{email}")
+    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+        User user = userService.getUserByEmail(email).get();
+        return ResponseEntity.ok(user);
+    }
+
+    // Update User
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable int id, @RequestBody User user) {
+        user.setUserId(id);
+        User updated = userService.updateUser(user);
+        return ResponseEntity.ok(updated);
+    }
+
+    // Delete User
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable int id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build(); // 204
+    }
+
+    // Get All Users
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 }

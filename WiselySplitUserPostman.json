@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "WiselySplit User API",
+    "_postman_id": "12345678-90ab-cdef-1234-567890abcdef",
+    "description": "Postman collection to test User API endpoints (RESTful + validation + exceptions)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "http://localhost:8080/api/users", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Alice Smith\",\n  \"userName\": \"alice123\",\n  \"email\": \"alice@example.com\",\n  \"phoneNum\": 1234567890,\n  \"password\": \"mypassword\",\n  \"profilePicture\": \"https://example.com/pic.png\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get All Users",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:8080/api/users", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users"] }
+      }
+    },
+    {
+      "name": "Get User by ID",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:8080/api/users/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users", "1"] }
+      }
+    },
+    {
+      "name": "Get User by Email",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:8080/api/users/email/alice@example.com", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users", "email", "alice@example.com"] }
+      }
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "http://localhost:8080/api/users/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users", "1"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Alice Updated\",\n  \"userName\": \"alice123\",\n  \"email\": \"alice_new@example.com\",\n  \"phoneNum\": 9876543210,\n  \"password\": \"newpassword\",\n  \"profilePicture\": \"https://example.com/new.png\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Delete User",
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "http://localhost:8080/api/users/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users", "1"] }
+      }
+    },
+    {
+      "name": "Validation Error (Bad Email)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "http://localhost:8080/api/users", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Alice\",\n  \"userName\": \"alice123\",\n  \"email\": \"bademail\",\n  \"phoneNum\": 1234567890,\n  \"password\": \"short\"\n}"
+        }
+      }
+    },
+    {
+      "name": "User Not Found",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:8080/api/users/999", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users", "999"] }
+      }
+    }
+  ]
+}
