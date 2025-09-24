@@ -40,8 +40,9 @@ public class GlobalExceptionHandler {
     // Generic fallback
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
+        ex.printStackTrace(); // log full stack trace to console
         Map<String, String> error = new HashMap<>();
-        error.put("error", "Unexpected error occurred");
+        error.put("error", "Unexpected error occurred: " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }

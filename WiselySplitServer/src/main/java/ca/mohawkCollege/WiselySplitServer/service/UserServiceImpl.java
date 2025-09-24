@@ -1,7 +1,8 @@
 package ca.mohawkCollege.WiselySplitServer.service;
 
+import ca.mohawkCollege.WiselySplitServer.Security.PasswordUtil;
 import ca.mohawkCollege.WiselySplitServer.model.User;
-import ca.mohawkCollege.WiselySplitServer.repository.UserDAO;
+import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.exceptions.UserNotFoundException;
 import ca.mohawkCollege.WiselySplitServer.exceptions.DuplicateUserException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User createUser(User user) {
         try {
+            user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
             userDAO.save(user);
             return user;
         } catch (DataIntegrityViolationException ex) {
@@ -54,6 +56,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + user.getUserId() + " not found"));
 
         try {
+            user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
             userDAO.update(user);
             return user;
         } catch (DataIntegrityViolationException ex) {

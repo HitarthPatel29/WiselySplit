@@ -1,10 +1,11 @@
-package ca.mohawkCollege.WiselySplitServer.repository;
+package ca.mohawkCollege.WiselySplitServer.dao;
 
 import ca.mohawkCollege.WiselySplitServer.RowMappers.UserRowMapper;
 import ca.mohawkCollege.WiselySplitServer.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,8 @@ import java.util.Optional;
 public class UserDAO {
 
     private final JdbcTemplate jdbcTemplate;
+
+
 
     @Autowired
     public UserDAO(JdbcTemplate jdbcTemplate) {

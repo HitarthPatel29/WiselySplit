@@ -9,7 +9,14 @@ import GoogleButton from '../components/GoogleButton'
 
 export default function Signup() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({
+    name: '',
+    userName: '',
+    email: '',
+    phoneNum: '',
+    password: '',
+    profilePicture: ''
+  })
 
   function update(e) {
     const { name, value } = e.target
@@ -23,11 +30,34 @@ export default function Signup() {
     alert('Signed up (demo).')
     navigate('/login')
   }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (form.password !== form.confirm) return alert('Passwords do not match.')
+    try {
+      const res = await fetch('http://localhost:8080/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (res.ok) {
+        alert('Signup successful! Please login.');
+      } else {
+        const error = await res.json();
+        alert(`Error: ${error.error || 'Signup failed'}`);
+      }
+    } catch (err) {
+      alert('Error connecting to server');
+    }
+    navigate('/login')
+  };
 
   return (
     <AuthLayout title='Create your account' subtitle='It only takes a minute'>
-      <form onSubmit={onSubmit} className='flex flex-col gap-4'>
+      <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <TextInput id='name' label='Full name' placeholder='Jane Doe' autoComplete='name' value={form.name} onChange={update} />
+        <TextInput id='userName' label='Username' placeholder='janedoe' autoComplete='username' value={form.userName} onChange={update} />
+        <TextInput id='phoneNum' label='Phone Number' type='tel' placeholder='+1 234 567 8901' autoComplete='tel' value={form.phoneNum} onChange={update} />
         <TextInput id='email' label='Email' type='email' placeholder='you@example.com' autoComplete='email' value={form.email} onChange={update} />
         <PasswordInput id='password' label='Password' value={form.password} onChange={update} />
         <PasswordInput id='confirm' label='Confirm password' value={form.confirm} onChange={update} />
