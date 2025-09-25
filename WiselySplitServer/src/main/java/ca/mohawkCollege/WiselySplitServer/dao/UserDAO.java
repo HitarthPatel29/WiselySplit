@@ -66,4 +66,9 @@ public class UserDAO {
         String sql = "SELECT * FROM User";
         return jdbcTemplate.query(sql, new UserRowMapper());
     }
+
+    public int updatePassword(int userId, String hashedPassword) {
+        String sql = "UPDATE User SET Password = ? WHERE UserID = ?";
+        return jdbcTemplate.update(sql, hashedPassword, userId);
+    }
 }

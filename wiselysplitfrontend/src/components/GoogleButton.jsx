@@ -48,4 +48,4 @@ function GoogleButton() {
   return <div id='googleSignInDiv'></div>
 }
 
-export default GoogleButton
+export default GoogleButton;

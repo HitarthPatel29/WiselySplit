@@ -24,11 +24,9 @@ export default function Login() {
     e.preventDefault();
     try {
       const res = await api.post('/auth/login', form);
-      login(res.data.token);
-      //localStorage.setItem('token', res.data.token);
-      alert('Login successful! :' + form);
+      login(res.data.token, res.form.remember);
+      alert('Login successful! :' + form.email);
       navigate('/dashboard')
-      //if (onLogin) onLogin(res.data.token);
     } catch (err) {
       alert(err.response?.data?.error || 'Login failed');
     }
@@ -39,7 +37,7 @@ export default function Login() {
     <AuthLayout title='Welcome!' subtitle='Sign in to continue'>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <TextInput id='email' label='Email' type='email' placeholder='you@example.com' autoComplete='email' value={form.email} onChange={update} />
-        <PasswordInput id='password' label='Password' value={form.password} onChange={update} />
+        <PasswordInput id='password' label='Password' value={form.password} onChange={update} autoComplete='current-password'/>
         <div className='flex items-center justify-between'>
           <label className='inline-flex items-center gap-2 text-sm text-gray-700'>
             <input id='remember' name='remember' type='checkbox' className='h-4 w-4 rounded border-gray-300' checked={form.remember} onChange={update} />

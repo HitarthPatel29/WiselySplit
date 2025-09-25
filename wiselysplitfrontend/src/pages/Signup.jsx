@@ -24,7 +24,6 @@ export default function Signup() {
     setForm(f => ({ ...f, [name]: value }))
   }
 
-  // password checks
   const passwordValid = {
     upper: /[A-Z]/.test(form.password),
     lower: /[a-z]/.test(form.password),
@@ -34,10 +33,9 @@ export default function Signup() {
   };
 
   const passedRules = Object.values(passwordValid).filter(Boolean).length;
-  const strength = passedRules; // 0–5
+  const strength = passedRules; 
   const confirmMatch = form.password && form.confirm && form.password === form.confirm;
 
-  // allow only if strength >= 4 and confirm matches
   const canSubmit = strength >= 4 && confirmMatch;
 
   const handleSubmit = async (e) => {
@@ -57,17 +55,26 @@ export default function Signup() {
   };
 
   return (
+    
     <AuthLayout title='Create your account' subtitle='It only takes a minute'>
+      {/* Back Button */}
+      <button
+        type='button'
+        onClick={() => navigate(-1)}
+        className='absolute top-4 left-4 rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300'
+      >
+        ← Back
+      </button>
+
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <TextInput id='name' label='Full name' placeholder='Jane Doe' autoComplete='name' value={form.name} onChange={update} />
-        <TextInput id='userName' label='Username' placeholder='janedoe' autoComplete='userName' value={form.userName} onChange={update} />
+        <TextInput id='userName' label='Username' placeholder='janedoe' autoComplete='username' value={form.userName} onChange={update} />
         <TextInput id='phoneNum' label='Phone Number' type='tel' placeholder='+1 234 567 8901' autoComplete='tel' value={form.phoneNum} onChange={update} />
         <TextInput id='email' label='Email' type='email' placeholder='you@example.com' autoComplete='email' value={form.email} onChange={update} />
         
-        <PasswordInput id='password' label='Password' value={form.password} onChange={update} showStrength={true} />
-        <PasswordInput id='confirm' label='Confirm password' value={form.confirm} onChange={update} />    
+        <PasswordInput id='password' label='Password' value={form.password} onChange={update} showStrength={true} autoComplete='new-password' />
+        <PasswordInput id='confirm' label='Confirm password' value={form.confirm} onChange={update} autoComplete='new-password' />    
 
-        {/* Inline confirm message */}
         {form.confirm && (
           <p className={`text-sm ${confirmMatch ? 'text-green-600' : 'text-red-600'}`}>
             {confirmMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
@@ -89,6 +96,7 @@ export default function Signup() {
         <Divider text='or' />
         <GoogleButton label='Sign up with Google' />
       </form>
+
       <p className='mt-6 text-center text-sm text-gray-600'>
         Already have an account? <Link to='/login' className='text-emerald-600 hover:underline'>Sign in</Link>
       </p>

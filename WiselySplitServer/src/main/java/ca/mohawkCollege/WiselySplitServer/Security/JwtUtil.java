@@ -5,6 +5,8 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.security.Key;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 @Component
@@ -48,5 +50,26 @@ public class JwtUtil {
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    public String generateResetToken(int userId) {
+        return Jwts.builder()
+                .setSubject(String.valueOf(userId))
+                .claim("type", "reset_password")
+                .setExpiration(Date.from(Instant.now().plus(15, ChronoUnit.MINUTES)))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public int validateResetToken(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(key)
+                .parseClaimsJws(token)
+                .getBody();
+
+        if (!"reset_password".equals(claims.get("type"))) {
+            throw new RuntimeException("Invalid token type");
+        }
+        return Integer.parseInt(claims.getSubject()); // return userId
     }
 }

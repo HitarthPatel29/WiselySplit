@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/reset/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()   // login/reset open
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll() // signup
                         .anyRequest().authenticated()                  // everything else needs JWT

@@ -6,6 +6,11 @@ import Signup from './pages/Signup'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 
+function PrivateRoute({ children }) {
+  const { token } = useAuth(); // comes from AuthContext
+  return token ? children : <Navigate to="/login" replace />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -13,7 +18,14 @@ export default function App() {
       <Route path='/login' element={<Login />} />
       <Route path='/signup' element={<Signup />} />
       <Route path='/reset-password' element={<ResetPassword />} />
-      <Route path='/dashboard' element={<Dashboard />} />
+      {/* Protected route */}
+      <Route path='/dashboard'
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
       <Route path='*' element={<Navigate to='/login' replace />} />
     </Routes>
   )
