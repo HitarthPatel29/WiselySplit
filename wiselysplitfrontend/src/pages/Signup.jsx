@@ -1,4 +1,3 @@
-// Signup.jsx
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
@@ -6,6 +5,7 @@ import TextInput from '../components/TextInput'
 import PasswordInput from '../components/PasswordInput'
 import Divider from '../components/Divider'
 import GoogleButton from '../components/GoogleButton'
+import api from '../api.js';
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -15,6 +15,7 @@ export default function Signup() {
     email: '',
     phoneNum: '',
     password: '',
+    confirm: '',
     profilePicture: ''
   })
 
@@ -23,47 +24,68 @@ export default function Signup() {
     setForm(f => ({ ...f, [name]: value }))
   }
 
-  function onSubmit(e) {
-    e.preventDefault()
-    if (form.password !== form.confirm) return alert('Passwords do not match.')
-    // TODO: replace with real API call
-    alert('Signed up (demo).')
-    navigate('/login')
-  }
+  // password checks
+  const passwordValid = {
+    upper: /[A-Z]/.test(form.password),
+    lower: /[a-z]/.test(form.password),
+    digit: /[0-9]/.test(form.password),
+    special: /[^A-Za-z0-9]/.test(form.password),
+    length: form.password.length >= 8
+  };
+
+  const passedRules = Object.values(passwordValid).filter(Boolean).length;
+  const strength = passedRules; // 0–5
+  const confirmMatch = form.password && form.confirm && form.password === form.confirm;
+
+  // allow only if strength >= 4 and confirm matches
+  const canSubmit = strength >= 4 && confirmMatch;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.password !== form.confirm) return alert('Passwords do not match.')
-    try {
-      const res = await fetch('http://localhost:8080/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
 
-      if (res.ok) {
-        alert('Signup successful! Please login.');
-      } else {
-        const error = await res.json();
-        alert(`Error: ${error.error || 'Signup failed'}`);
-      }
-    } catch (err) {
-      alert('Error connecting to server');
+    if (!canSubmit) {
+      return alert('Password must be at least "Good" strength and match confirm field.');
     }
-    navigate('/login')
+
+    try {
+      await api.post('/users', form);
+      alert('Signup successful! Please login with your credentials.');
+      navigate('/login');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Signup failed');
+    }
   };
 
   return (
     <AuthLayout title='Create your account' subtitle='It only takes a minute'>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <TextInput id='name' label='Full name' placeholder='Jane Doe' autoComplete='name' value={form.name} onChange={update} />
-        <TextInput id='userName' label='Username' placeholder='janedoe' autoComplete='username' value={form.userName} onChange={update} />
+        <TextInput id='userName' label='Username' placeholder='janedoe' autoComplete='userName' value={form.userName} onChange={update} />
         <TextInput id='phoneNum' label='Phone Number' type='tel' placeholder='+1 234 567 8901' autoComplete='tel' value={form.phoneNum} onChange={update} />
         <TextInput id='email' label='Email' type='email' placeholder='you@example.com' autoComplete='email' value={form.email} onChange={update} />
-        <PasswordInput id='password' label='Password' value={form.password} onChange={update} />
-        <PasswordInput id='confirm' label='Confirm password' value={form.confirm} onChange={update} />
-        <button type='submit' className='w-full rounded-xl bg-emerald-500 py-2 text-white font-semibold hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400'>
+        
+        <PasswordInput id='password' label='Password' value={form.password} onChange={update} showStrength={true} />
+        <PasswordInput id='confirm' label='Confirm password' value={form.confirm} onChange={update} />    
+
+        {/* Inline confirm message */}
+        {form.confirm && (
+          <p className={`text-sm ${confirmMatch ? 'text-green-600' : 'text-red-600'}`}>
+            {confirmMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+          </p>
+        )}
+
+        <button
+          type='submit'
+          disabled={!canSubmit}
+          className={`w-full rounded-xl py-2 font-semibold focus:outline-none focus:ring-2 ${
+            canSubmit
+              ? 'bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-400'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+        >
           Sign up
         </button>
+
         <Divider text='or' />
         <GoogleButton label='Sign up with Google' />
       </form>
