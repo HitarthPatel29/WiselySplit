@@ -3,6 +3,8 @@ package ca.mohawkCollege.WiselySplitServer.controller;
 import ca.mohawkCollege.WiselySplitServer.Security.JwtUtil;
 import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.model.User;
+import ca.mohawkCollege.WiselySplitServer.service.EmailService;
+import ca.mohawkCollege.WiselySplitServer.service.OtpService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -28,38 +30,72 @@ public class AuthController {
     private final AuthenticationManager authManager;
     private final JwtUtil jwtUtil;
     private final UserDAO userDAO;
+    private final EmailService emailService;
+    private final OtpService otpService;
 
     @Value("${google.client.id}")
     private String googleClientId;
 
-    public AuthController(AuthenticationManager authManager, JwtUtil jwtUtil, UserDAO userDAO) {
+    public AuthController(AuthenticationManager authManager, JwtUtil jwtUtil, UserDAO userDAO, EmailService emailService, OtpService otpService) {
         this.authManager = authManager;
         this.jwtUtil = jwtUtil;
         this.userDAO = userDAO;
+        this.emailService = emailService;
+        this.otpService = otpService;
     }
 
+    /**
+     * Step 1: Validate email+password, send OTP (no JWT yet)
+     */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String,String> body) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
         String email = body.get("email");
         String password = body.get("password");
         if (email == null || password == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error","Email and password are required"));
+                    .body(Map.of("error", "Email and password are required"));
         }
 
         try {
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, password));
             UserDetails principal = (UserDetails) auth.getPrincipal();
-            String jwt = jwtUtil.generateToken(principal.getUsername());
+
+            // Generate OTP
+            String otp = otpService.generateOtp(email);
+            emailService.sendEmail(email, "Your Login OTP", "Your OTP is: " + otp);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "OTP sent to your email. Please verify."
+            ));
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid credentials"));
+        }
+    }
+
+    /**
+     * Step 2: Verify OTP, then issue JWT
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String otp = body.get("otp");
+
+        if (email == null || otp == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email and OTP are required"));
+        }
+
+        if (otpService.validateOtp(email, otp)) {
+            String jwt = jwtUtil.generateToken(email);
             return ResponseEntity.ok(Map.of(
                     "token", jwt,
                     "tokenType", "Bearer",
                     "expiresInMs", 3600000
             ));
-        } catch (BadCredentialsException e) {
+        } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error","Invalid credentials"));
+                    .body(Map.of("error", "Invalid or expired OTP"));
         }
     }
 

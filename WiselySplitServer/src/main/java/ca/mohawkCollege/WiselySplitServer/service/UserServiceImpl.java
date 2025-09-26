@@ -19,6 +19,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 public class UserServiceImpl implements UserService {
 
     private final UserDAO userDAO;
+    private static final String DEFAULT_AVATAR_URL = "https://res.cloudinary.com/dwq5yfjsd/image/upload/v1758920140/default-avatar-profile_esweq0.webp";
+
 
     @Autowired
     public UserServiceImpl(UserDAO userDAO) {
@@ -39,17 +41,18 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
     }
 
+
     @Override
     public User createUser(User user) {
-        // Email check
+        if (user.getProfilePicture() == null || user.getProfilePicture().isEmpty()) {
+            user.setProfilePicture(DEFAULT_AVATAR_URL);
+        }
+
         if (!ValidationUtil.isValidEmail(user.getEmail())) {
             throw new IllegalArgumentException("Invalid email format");
         }
-
-        // Password strength check
         if (!ValidationUtil.isStrongPassword(user.getPassword())) {
-            throw new IllegalArgumentException("Password must be at least 8 characters, "
-                    + "contain uppercase, lowercase, digit, and special character");
+            throw new IllegalArgumentException("Weak password");
         }
 
         try {
@@ -60,7 +63,6 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateUserException("Username or Email already exists");
         }
     }
-
     @Override
     public User updateUser(User user) {
         userDAO.findById(user.getUserId())

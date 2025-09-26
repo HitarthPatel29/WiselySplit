@@ -19,7 +19,7 @@ public class EmailService {
         message.setTo(to);
         message.setSubject(subject);
         message.setText(body);
-        message.setFrom("wiselysplit.noreply@gmail.com"); // change if needed
+        message.setFrom("wiselysplit.noreply@wiselysplit.com"); // change if needed
         mailSender.send(message);
     }
 }
