@@ -1,5 +1,6 @@
 package ca.mohawkCollege.WiselySplitServer.service;
 
+import ca.mohawkCollege.WiselySplitServer.Security.ValidationUtil;
 import ca.mohawkCollege.WiselySplitServer.dao.PasswordResetTokenDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.model.PasswordResetToken;
@@ -80,8 +81,11 @@ public class PasswordResetService {
         return true; // success
     }
 
-    /** Step 3: Reset password */
     public boolean resetPassword(int userID, String newPassword) {
+        if (!ValidationUtil.isStrongPassword(newPassword)) {
+            throw new IllegalArgumentException("Weak password – must include upper, lower, digit, special and be 8+ chars");
+        }
+
         Optional<User> userOpt = userDAO.findById(userID);
         if (userOpt.isEmpty()) return false;
 
@@ -89,7 +93,6 @@ public class PasswordResetService {
         String hashedPassword = passwordEncoder.encode(newPassword);
         userDAO.updatePassword(user.getUserId(), hashedPassword);
 
-        // Mark tokens consumed
         tokenDAO.findByUserId(user.getUserId()).ifPresent(t -> tokenDAO.markConsumed(t.getId()));
 
         return true;

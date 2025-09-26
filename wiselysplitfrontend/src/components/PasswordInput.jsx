@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react'
 
-export default function PasswordInput({ id, label, value, onChange, required = true, showStrength = false }) {
+export default function PasswordInput({
+  id,
+  label,
+  value,
+  onChange,
+  required = true,
+  showStrength = false,
+  onStrengthChange // NEW
+}) {
   const [show, setShow] = useState(false)
   const [criteria, setCriteria] = useState({
     upper: false,
@@ -21,15 +29,21 @@ export default function PasswordInput({ id, label, value, onChange, required = t
         length: value.length >= 8
       }
       setCriteria(checks)
-      setStrength(Object.values(checks).filter(Boolean).length)
+      const newStrength = Object.values(checks).filter(Boolean).length
+      setStrength(newStrength)
+
+      if (onStrengthChange) {
+        onStrengthChange(newStrength, checks) 
+      }
     } else {
       setCriteria({ upper: false, lower: false, digit: false, special: false, length: false })
       setStrength(0)
+      if (onStrengthChange) onStrengthChange(0, {})
     }
   }, [value, showStrength])
 
   const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500']
-  const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong']
+  const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Not Good Enough', 'Strong']
 
   return (
     <div className='flex flex-col gap-1'>
@@ -65,7 +79,7 @@ export default function PasswordInput({ id, label, value, onChange, required = t
               style={{ width: `${(strength / 5) * 100}%` }}
             ></div>
           </div>
-          <p className={`mt-1 text-xs font-medium ${strength >= 4 ? 'text-green-600' : 'text-gray-600'}`}>
+          <p className={`mt-1 text-xs font-medium ${strength > 4 ? 'text-green-600' : 'text-gray-600'}`}>
             {strengthLabels[strength - 1] || 'Too Short'}
           </p>
 

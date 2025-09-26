@@ -1,6 +1,7 @@
 package ca.mohawkCollege.WiselySplitServer.service;
 
 import ca.mohawkCollege.WiselySplitServer.Security.PasswordUtil;
+import ca.mohawkCollege.WiselySplitServer.Security.ValidationUtil;
 import ca.mohawkCollege.WiselySplitServer.model.User;
 import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.exceptions.UserNotFoundException;
@@ -40,6 +41,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(User user) {
+        // Email check
+        if (!ValidationUtil.isValidEmail(user.getEmail())) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+
+        // Password strength check
+        if (!ValidationUtil.isStrongPassword(user.getPassword())) {
+            throw new IllegalArgumentException("Password must be at least 8 characters, "
+                    + "contain uppercase, lowercase, digit, and special character");
+        }
+
         try {
             user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
             userDAO.save(user);
@@ -51,9 +63,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(User user) {
-        // check if user exists before updating
         userDAO.findById(user.getUserId())
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + user.getUserId() + " not found"));
+
+        // Same validations
+        if (!ValidationUtil.isValidEmail(user.getEmail())) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        if (!ValidationUtil.isStrongPassword(user.getPassword())) {
+            throw new IllegalArgumentException("Weak password");
+        }
 
         try {
             user.setPassword(PasswordUtil.hashPassword(user.getPassword()));

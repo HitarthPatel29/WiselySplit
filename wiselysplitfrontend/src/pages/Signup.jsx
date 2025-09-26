@@ -72,20 +72,20 @@ export default function Signup() {
         <TextInput id='phoneNum' label='Phone Number' type='tel' placeholder='+1 234 567 8901' autoComplete='tel' value={form.phoneNum} onChange={update} />
         <TextInput id='email' label='Email' type='email' placeholder='you@example.com' autoComplete='email' value={form.email} onChange={update} />
         
-        <PasswordInput id='password' label='Password' value={form.password} onChange={update} showStrength={true} autoComplete='new-password' />
+        <PasswordInput id='password' label='Password' value={form.password} onChange={update} showStrength={true} autoComplete='new-password' onStrengthChange={(val) => setForm(f => ({ ...f, strength: val }))} />
         <PasswordInput id='confirm' label='Confirm password' value={form.confirm} onChange={update} autoComplete='new-password' />    
 
         {form.confirm && (
-          <p className={`text-sm ${confirmMatch ? 'text-green-600' : 'text-red-600'}`}>
-            {confirmMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+          <p className={`text-sm ${form.password === form.confirm ? 'text-green-600' : 'text-red-600'}`}>
+            {form.password === form.confirm ? '✓ Passwords match' : '✗ Passwords do not match'}
           </p>
         )}
 
         <button
           type='submit'
-          disabled={!canSubmit}
+          disabled={!(form.strength > 4 && form.password === form.confirm)}
           className={`w-full rounded-xl py-2 font-semibold focus:outline-none focus:ring-2 ${
-            canSubmit
+            form.strength > 4 && form.password === form.confirm
               ? 'bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-400'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}

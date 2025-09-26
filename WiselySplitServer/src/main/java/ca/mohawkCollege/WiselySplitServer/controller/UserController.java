@@ -21,12 +21,16 @@ public class UserController {
         this.userService = userService;
     }
 
-    // Create User
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User created = userService.createUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<?> createUser(@RequestBody User user) {
+        try {
+            User created = userService.createUser(user);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
+
 
     // Get User by ID
     @GetMapping("/{id}")
@@ -44,10 +48,15 @@ public class UserController {
 
     // Update User
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable int id, @RequestBody User user) {
-        user.setUserId(id);
-        User updated = userService.updateUser(user);
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<?> updateUser(@PathVariable int id, @RequestBody User user) {
+        try {
+            user.setUserId(id);
+            User updated = userService.updateUser(user);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+
     }
 
     // Delete User

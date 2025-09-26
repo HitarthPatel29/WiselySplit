@@ -1,19 +1,23 @@
 // Login.jsx
 import { API_BASE_URL } from '../tailwind.config.js';
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import TextInput from '../components/TextInput'
 import PasswordInput from '../components/PasswordInput'
 import Divider from '../components/Divider'
 import GoogleButton from '../components/GoogleButton'
 import api from '../api.js';
-import { useAuth } from '../context/AuthContext.jsx'
+import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, token } = useAuth();
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '', remember: false })
+
+   if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   function update(e) {
     const { name, type, value, checked } = e.target
@@ -24,7 +28,7 @@ export default function Login() {
     e.preventDefault();
     try {
       const res = await api.post('/auth/login', form);
-      login(res.data.token, res.form.remember);
+      login(res.data.token, form.remember);
       alert('Login successful! :' + form.email);
       navigate('/dashboard')
     } catch (err) {
@@ -37,7 +41,7 @@ export default function Login() {
     <AuthLayout title='Welcome!' subtitle='Sign in to continue'>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <TextInput id='email' label='Email' type='email' placeholder='you@example.com' autoComplete='email' value={form.email} onChange={update} />
-        <PasswordInput id='password' label='Password' value={form.password} onChange={update} autoComplete='current-password'/>
+        <PasswordInput id='password' name='password' label='Password' value={form.password} onChange={update} autoComplete='current-password'/>
         <div className='flex items-center justify-between'>
           <label className='inline-flex items-center gap-2 text-sm text-gray-700'>
             <input id='remember' name='remember' type='checkbox' className='h-4 w-4 rounded border-gray-300' checked={form.remember} onChange={update} />

@@ -1,34 +1,61 @@
 // ResetPassword.jsx
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import TextInput from '../components/TextInput'
+import OtpInput from '../components/OtpInput'
 import PasswordInput from '../components/PasswordInput'
+import api from '../api.js'
 
 export default function ResetPassword() {
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [pass, setPass] = useState({ p1: '', p2: '' })
+  const [resetToken, setResetToken] = useState('')
 
-  function sendCode(e) {
+  async function sendCode(e) {
     e.preventDefault()
-    // TODO: send email OTP
-    alert('OTP sent (demo).')
-    setStep(2)
+    try {
+      await api.post('/auth/reset/request', { email })
+      alert('OTP sent to your email.')
+      setStep(2)
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send OTP')
+    }
   }
-  function verifyCode(e) {
+
+  async function verifyCode(e) {
     e.preventDefault()
-    // TODO: verify OTP
-    alert('OTP verified (demo).')
-    setStep(3)
+    try {
+      const res = await api.post('/auth/reset/verify', { email, otp })
+      if (res.data.resetToken) {
+        setResetToken(res.data.resetToken)
+        alert('OTP verified.')
+        setStep(3)
+      } else {
+        alert('No reset token received from server.')
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Invalid or expired OTP')
+    }
   }
-  function setPassword(e) {
+
+  async function setPassword(e) {
     e.preventDefault()
     if (pass.p1 !== pass.p2) return alert('Passwords do not match.')
-    // TODO: update password
-    alert('Password updated (demo).')
-    setStep(1)
+    try {
+      await api.post('/auth/reset/confirm', {
+        resetToken,
+        newPassword: pass.p1
+      })
+      alert('Password updated successfully. You can now sign in.')
+      setStep(1)
+      navigate('/login')
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update password')
+    }
   }
 
   return (
@@ -49,9 +76,11 @@ export default function ResetPassword() {
         </form>
       )}
 
+      
       {step === 2 && (
         <form onSubmit={verifyCode} className='flex flex-col gap-4'>
-          <TextInput id='otp' label='Enter 6-digit code' type='text' placeholder='123456' value={otp} onChange={e => setOtp(e.target.value)} />
+          <label htmlFor='otp' className='block text-sm font-medium text-gray-700'> Enter 6-digit code </label>
+          <OtpInput value={otp} onChange={setOtp} />
           <button type='submit' className='w-full rounded-xl bg-emerald-500 py-2 text-white font-semibold hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400'>
             Verify code
           </button>
@@ -60,9 +89,25 @@ export default function ResetPassword() {
 
       {step === 3 && (
         <form onSubmit={setPassword} className='flex flex-col gap-4'>
-          <PasswordInput id='new-password' label='New password' value={pass.p1} onChange={e => setPass(s => ({ ...s, p1: e.target.value }))} />
-          <PasswordInput id='confirm-password' label='Confirm password' value={pass.p2} onChange={e => setPass(s => ({ ...s, p2: e.target.value }))} />
-          <button type='submit' className='w-full rounded-xl bg-emerald-500 py-2 text-white font-semibold hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400'>
+          <PasswordInput id='new-password' label='New password' value={pass.p1} onChange={e => setPass(s => ({ ...s, p1: e.target.value }))} showStrength={true} autoComplete='new-password' onStrengthChange={(val) => setPass(s => ({ ...s, strength: val }))}/>
+          <PasswordInput id='confirm-password' label='Confirm password' value={pass.p2} onChange={e => setPass(s => ({ ...s, p2: e.target.value }))} autoComplete='new-password'/>
+                
+          {/* Password match indicator */}
+          {pass.p2 && (
+            <p className={`text-sm ${pass.p1 === pass.p2 ? 'text-green-600' : 'text-red-600'}`}>
+              {pass.p1 === pass.p2 ? '✓ Passwords match' : '✗ Passwords do not match'}
+            </p>
+          )}
+
+          <button
+            type='submit'
+            disabled={!(pass.strength > 4 && pass.p1 === pass.p2)}
+            className={`w-full rounded-xl py-2 font-semibold focus:outline-none focus:ring-2 ${
+              pass.strength > 4 && pass.p1 === pass.p2
+                ? 'bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-400'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
             Update password
           </button>
         </form>
