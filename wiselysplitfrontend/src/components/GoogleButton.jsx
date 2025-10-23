@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Navigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 
 
 function GoogleButton() {
-  const { Login } = useAuth()
+  const { login } = useAuth()
+  const navigate = useNavigate()
   useEffect(() => {
     /* global google */
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -36,10 +37,10 @@ function GoogleButton() {
       .then(res => res.json())
       .then(data => {
         console.log('Backend JWT:', data)
-        if (data.jwt) {
-          Login(data.jwt)
+        if (data.token) {
+          login(data.token, true) // remember me
           alert('Google login successful!')
-          Navigate('/dashboard')
+          navigate('/dashboard')
         }
       })
       .catch(err => console.error('Google login failed:', err))

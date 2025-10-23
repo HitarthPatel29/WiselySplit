@@ -45,6 +45,12 @@ public class UserDAO {
                 .stream().findFirst();
     }
 
+    public Optional<User> findByUsername(String username) {
+        String sql = "SELECT * FROM User WHERE LOWER(UserName) = LOWER(?)";
+        return jdbcTemplate.query(sql, new Object[]{username}, new UserRowMapper())
+                .stream().findFirst();
+    }
+
     public int update(User user) {
         String sql = "UPDATE User SET Name = ?, UserName = ?, Email = ?, PhoneNum = ?, Password = ?, ProfilePicture = ? WHERE UserID = ?";
         return jdbcTemplate.update(sql,

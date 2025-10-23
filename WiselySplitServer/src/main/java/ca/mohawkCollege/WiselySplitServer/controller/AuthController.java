@@ -87,7 +87,14 @@ public class AuthController {
         }
 
         if (otpService.validateOtp(email, otp)) {
-            String jwt = jwtUtil.generateToken(email);
+            Optional<User> userOpt = userDAO.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found"));
+            }
+            User user = userOpt.get();
+
+            String jwt = jwtUtil.generateToken(user.getUserId(), user.getEmail());
             return ResponseEntity.ok(Map.of(
                     "token", jwt,
                     "tokenType", "Bearer",
@@ -143,7 +150,7 @@ public class AuthController {
             });
 
             // Issue JWT
-            String jwt = jwtUtil.generateToken(user.getEmail());
+            String jwt = jwtUtil.generateToken(user.getUserId(), user.getEmail());
 
             return ResponseEntity.ok(Map.of(
                     "token", jwt,

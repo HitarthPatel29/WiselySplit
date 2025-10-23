@@ -67,6 +67,10 @@ export default function Signup() {
 
       await api.post("/users", formData); // let Axios set headers
       alert("Signup successful! Please login with your credentials.");
+
+      // initailize first login flag for onboarding
+      localStorage.setItem('firstLogin', 'true')
+      
       navigate("/login");
     } catch (err) {
       console.error(err); // log error in console

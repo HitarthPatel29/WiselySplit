@@ -2,6 +2,7 @@ package ca.mohawkCollege.WiselySplitServer.service;
 
 import ca.mohawkCollege.WiselySplitServer.Security.PasswordUtil;
 import ca.mohawkCollege.WiselySplitServer.Security.ValidationUtil;
+import ca.mohawkCollege.WiselySplitServer.dao.InviteDAO;
 import ca.mohawkCollege.WiselySplitServer.model.User;
 import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.exceptions.UserNotFoundException;
@@ -20,6 +21,9 @@ public class UserServiceImpl implements UserService {
 
     private final UserDAO userDAO;
     private static final String DEFAULT_AVATAR_URL = "https://res.cloudinary.com/dwq5yfjsd/image/upload/v1758920140/default-avatar-profile_esweq0.webp";
+
+    @Autowired
+    private InviteDAO inviteDAO;
 
 
     @Autowired
@@ -54,10 +58,17 @@ public class UserServiceImpl implements UserService {
         if (!ValidationUtil.isStrongPassword(user.getPassword())) {
             throw new IllegalArgumentException("Weak password");
         }
+        if (userDAO.findByEmail(user.getEmail()).isPresent()) {
+            throw new DuplicateUserException("This Email is already attached with an Existing Account");
+        }
+        if (userDAO.findByUsername(user.getUserName()).isPresent()) {
+            throw new DuplicateUserException("Username Not Available, Choose a Unique UserName");
+        }
 
         try {
             user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
             userDAO.save(user);
+            inviteDAO.linkInvitesToUser(user.getEmail(), user.getUserId());
             return user;
         } catch (DataIntegrityViolationException ex) {
             throw new DuplicateUserException("Username or Email already exists");
