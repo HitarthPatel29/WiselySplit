@@ -1,7 +1,9 @@
+//InviteNotifications.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
+import BackButton from '../components/BackButton'
 
 export default function InviteNotifications() {
   const { userId } = useAuth()
@@ -59,13 +61,7 @@ export default function InviteNotifications() {
     
     <div className="flex justify-center px-4 py-6">
       <div className="w-full max-w-2xl space-y-5">
-        <button
-          type='button'
-          onClick={() => navigate(-1)}
-          className='absolute top-4 left-4 rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300'
-        >
-          ← Back
-        </button>
+        <BackButton />
 
         <h1 className="text-4xl font-bold mb-4 text-center md:text-left">
           Invite Notifications

@@ -6,6 +6,7 @@ import TextInput from '../components/TextInput'
 import { UserPlusIcon, EnvelopeIcon } from '@heroicons/react/24/solid'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
+import BackButton from '../components/BackButton'
 
 export default function InviteUser() {
     const navigate = useNavigate()
@@ -16,7 +17,7 @@ export default function InviteUser() {
     const [result, setResult] = useState(null)
 
     // clear firstLogin flag (since user is already onboarding)
-    setFirstLogin(false)
+    localStorage.setItem('firstLogin', 'false')
 
     const handleInvite = async (e) => {
         e.preventDefault()

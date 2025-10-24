@@ -1,5 +1,5 @@
 // Dashboard.jsx
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -42,6 +42,30 @@ export default function Dashboard() {
           className="rounded-xl bg-emerald-500 px-4 py-2 text-white font-semibold hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         >
           View Invites
+        </button>
+
+        {/* New button: navigate to Friends list */}
+        <button
+          onClick={() => navigate('/friends')}
+          className="rounded-xl bg-indigo-500 px-4 py-2 text-white font-semibold hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        >
+          Friends
+        </button>
+
+        {/* Groups button */}
+        <button
+          onClick={() => navigate('/groups')}
+          className="rounded-xl bg-purple-500 px-4 py-2 text-white font-semibold hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-400"
+        >
+          Groups
+        </button>
+
+        {/* Edit Profile button */}
+        <button
+          onClick={() => navigate('/profile/edit')}
+          className="rounded-xl bg-gray-200 px-4 py-2 text-gray-800 font-semibold hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+        >
+          Edit Profile
         </button>
       </div>
 
