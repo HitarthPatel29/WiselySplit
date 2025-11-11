@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import BackButton from '../components/BackButton'
+import BackButton from '../components/IO/BackButton'
 import api from '../api'
+import { CameraIcon } from '@heroicons/react/24/solid'
 
 export default function EditProfile() {
   const navigate = useNavigate()
@@ -123,7 +124,7 @@ export default function EditProfile() {
   if (loading) return <div className='p-6 text-gray-600'>Loading profile...</div>
 
   return (
-    <div className='min-h-screen bg-white text-gray-800'>
+    <div className='min-h-screen'>
       <div className='w-full text-center py-5 border-b border-gray-200 relative'>
         <BackButton />
         <h1 className='text-xl font-bold'>Edit Profile</h1>
@@ -132,25 +133,30 @@ export default function EditProfile() {
       <main className='max-w-md mx-auto px-4 py-6'>
         <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
           <div className='flex flex-col items-center'>
-            <label htmlFor='profilePicture' className='relative h-28 w-28 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden cursor-pointer'>
+            <div className='relative w-28 h-28 md:w-32 md:h-32'>
+            <label htmlFor='profilePicture' className='block w-full h-full rounded-full border-2 overflow-hidden cursor-pointer bg-gray-200'>
               {previewUrl ? (
                 <img src={previewUrl} alt='preview' className='h-full w-full object-cover' />
               ) : (
-                <div className='text-gray-400'>Upload</div>
+                <div className='text-gray-400 dark:text-gray-600'>Upload</div>
               )}
               <input id='profilePicture' name='profilePicture' type='file' accept='image/*' onChange={update} className='hidden' />
             </label>
+            <div className='absolute bottom-0 right-0 bg-emerald-500 p-1.5 rounded-full shadow-lg'>
+              <CameraIcon className='w-6 h-6 text-white' />
+            </div>
+            </div>
             {errors.profilePicture && <p className='text-sm text-red-600 mt-2'>{errors.profilePicture}</p>}
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Full name</label>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Full name</label>
             <input name='name' value={form.name} onChange={update} className='w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-400' />
             {errors.name && <p className='text-sm text-red-600 mt-1'>{errors.name}</p>}
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Username</label>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Username</label>
             <input name='userName' value={form.userName} onChange={update} onBlur={checkUsername} className='w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-400' />
             {usernameAvailable === true && <p className='text-sm text-emerald-600 mt-1'>Username available</p>}
             {errors.userName && <p className='text-sm text-red-600 mt-1'>{errors.userName}</p>}
@@ -158,18 +164,18 @@ export default function EditProfile() {
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-1'>Phone</label>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Phone</label>
               <input name='phoneNum' value={form.phoneNum} onChange={update} className='w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-400' />
               {errors.phoneNum && <p className='text-sm text-red-600 mt-1'>{errors.phoneNum}</p>}
             </div>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-1'>Email</label>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Email</label>
               <input name='email' value={form.email} onChange={update} className='w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-400' />
               {errors.email && <p className='text-sm text-red-600 mt-1'>{errors.email}</p>}
             </div>
           </div>
 
-          <button type='button' onClick={() => navigate('/reset-password')} className='w-full flex items-center justify-center gap-2 border border-gray-300 rounded-xl py-3'>
+          <button type='button' onClick={() => navigate('/reset-password')} className='w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-900 rounded-xl py-3'>
             Reset Password
           </button>
 
@@ -177,7 +183,7 @@ export default function EditProfile() {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
 
-          <button type='button' onClick={() => navigate(-1)} className='w-full border border-gray-300 text-gray-700 font-semibold rounded-xl py-3'>
+          <button type='button' onClick={() => navigate(-1)} className='w-full border border-gray-300 text-gray-700 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-900 font-semibold rounded-xl py-3'>
             Cancel
           </button>
         </form>

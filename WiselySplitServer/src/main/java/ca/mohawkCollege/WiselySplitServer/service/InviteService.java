@@ -1,6 +1,8 @@
 package ca.mohawkCollege.WiselySplitServer.service;
 
 import ca.mohawkCollege.WiselySplitServer.Security.ValidationUtil;
+import ca.mohawkCollege.WiselySplitServer.dao.ExpensesDAO;
+import ca.mohawkCollege.WiselySplitServer.dao.GroupsDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.InviteDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.model.Invite;
@@ -21,6 +23,8 @@ public class InviteService {
     @Autowired private InviteDAO inviteDAO;
     @Autowired private UserDAO userDAO;
     @Autowired private EmailService emailService;
+    @Autowired private GroupsDAO groupsDAO;
+    @Autowired private ExpensesDAO expensesDAO;
 
     public String sendInvite(int senderId, String input, Integer groupId) {
         Optional<User> senderOpt = userDAO.findById(senderId);
@@ -109,6 +113,32 @@ public class InviteService {
 
     public void updateInviteStatus(int inviteId, String status) {
         inviteDAO.updateStatus(inviteId, status);
+
+        // If invite accepted and type = GROUP, add user to group
+        if ("ACCEPTED".equalsIgnoreCase(status)) {
+            Map<String, Object> invite = inviteDAO.findById(inviteId);
+            if (invite != null && "GROUP".equalsIgnoreCase((String) invite.get("Type"))) {
+
+                Object receiverObj = invite.get("ReceiverID");
+                Object groupObj = invite.get("GroupID");
+
+                if (receiverObj != null && groupObj != null) {
+                    int receiverId = ((Number) receiverObj).intValue();
+                    int groupId = ((Number) groupObj).intValue();
+                    groupsDAO.addParticipant(groupId, receiverId);
+                }
+            } else if (invite != null && "FRIEND".equalsIgnoreCase((String) invite.get("Type"))) {
+
+                Object receiverObj = invite.get("ReceiverID");
+                Object groupObj = invite.get("GroupID");
+
+                if (receiverObj != null && groupObj != null) {
+                    int receiverId = ((Number) receiverObj).intValue();
+                    int groupId = ((Number) groupObj).intValue();
+                    groupsDAO.addParticipant(groupId, receiverId);
+                }
+            }
+        }
     }
 
     public List<Map<String, Object>> getAllInvitesForUser(int userId) {

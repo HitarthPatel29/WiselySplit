@@ -1,4 +1,3 @@
-// Header.jsx
-// ...Header component implementation...
+// src/components/Divider.jsx
 
 

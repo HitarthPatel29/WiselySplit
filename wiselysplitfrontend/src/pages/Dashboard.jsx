@@ -70,7 +70,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Dashboard content */}
-      <div className="text-gray-600">
+      <div className="text-gray-500 dark:text-gray-400">
         <p>Welcome to your WiselySplit dashboard.</p>
         <p>From here you can view pending invites, manage groups, and more.</p>
       </div>

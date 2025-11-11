@@ -132,4 +132,15 @@ public class UserController {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/{userId}/connections")
+    public ResponseEntity<?> getConnections(@PathVariable int userId) {
+        try {
+            return ResponseEntity.ok(userService.getUserConnections(userId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
 }

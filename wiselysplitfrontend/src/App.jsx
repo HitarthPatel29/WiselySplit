@@ -1,23 +1,24 @@
 // src/App.jsx
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import ResetPassword from './pages/ResetPassword'
+import Login from './pages/auth/Login.jsx'
+import Signup from './pages/auth/Signup.jsx'
+import ResetPassword from './pages/auth/ResetPassword.jsx'
 import Dashboard from './pages/Dashboard'
 import { useAuth } from './context/AuthContext'
-import InviteUser from './pages/InviteUser'
-import InviteNotifications from './pages/InviteNotifications'
-import FriendsList from './pages/FriendsList'
-import IndividualView from './pages/IndividualView'
-import AddExpense from './pages/AddExpense'
-import ExpenseDetails from './pages/ExpenseDetails'
-import EditExpense from './pages/EditExpense'
-import GroupsList from './pages/GroupsList'
+import InviteUser from './pages/invite/InviteUser'
+import InviteNotifications from './pages/invite/InviteNotifications'
+import FriendsList from './pages/friend/FriendsList.jsx'
+import IndividualView from './pages/friend/IndividualView.jsx'
+import AddExpense from './pages/expense/AddExpense.jsx'
+import ExpenseDetails from './pages/expense/ExpenseDetails.jsx'
+import EditExpense from './pages/expense/EditExpense.jsx'
+import GroupsList from './pages/group/GroupsList.jsx'
 import EditProfile from './pages/EditProfile'
-import CreateGroup from './pages/CreateGroup'
-import GroupView from './pages/GroupView'
-import AddParticipants from './pages/AddParticipants'
+import CreateGroup from './pages/group/CreateGroup.jsx'
+import GroupView from './pages/group/GroupView.jsx'
+import AddParticipants from './pages/group/AddParticipants.jsx'
+import EditGroup from './pages/group/EditGroup.jsx'
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -141,6 +142,14 @@ export default function App() {
         }
       />
       <Route
+        path="/groups/:id/edit"
+        element={
+          <PrivateRoute>
+            <EditGroup />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/profile/edit"
         element={
           <PrivateRoute>
@@ -149,7 +158,7 @@ export default function App() {
         }
       />
       <Route
-        path="/friends/:id"
+        path="/friends/:friendId"
         element={
           <PrivateRoute>
             <IndividualView />

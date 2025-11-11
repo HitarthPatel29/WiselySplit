@@ -1,6 +1,13 @@
-/* Tailwind base (ensure Tailwind is configured) */
 @import 'tailwindcss';
 
-/* Minor tweaks */
-/* :root { color-scheme: light; } 
-body { @apply bg-gray-50; } */
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 transition-colors duration-300;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      @apply bg-gray-900 text-gray-100;
+    }
+  }
+}

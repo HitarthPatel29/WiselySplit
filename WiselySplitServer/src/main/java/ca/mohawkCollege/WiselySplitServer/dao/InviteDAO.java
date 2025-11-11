@@ -29,6 +29,12 @@ public class InviteDAO {
                 invite.getExpiresAt());
     }
 
+    public Map<String, Object> findById(int inviteId) {
+        String sql = "SELECT * FROM Invites WHERE InviteID = ?";
+        List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, inviteId);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
     public List<Invite> findByReceiverId(int receiverId) {
         String sql = "SELECT * FROM Invites WHERE ReceiverID = ?";
         return jdbcTemplate.query(sql, new InviteRowMapper(), receiverId);

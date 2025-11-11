@@ -1,3 +1,4 @@
+// src/components/SimpleLayout.jsx
 import React from 'react'
 
 export default function SimpleLayout({ title, subtitle, children }) {

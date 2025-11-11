@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -76,5 +77,50 @@ public class UserDAO {
     public int updatePassword(int userId, String hashedPassword) {
         String sql = "UPDATE User SET Password = ? WHERE UserID = ?";
         return jdbcTemplate.update(sql, hashedPassword, userId);
+    }
+
+    public List<Map<String, Object>> findFriendsForUser(int userId) {
+        String sql = """
+            SELECT DISTINCT u.UserID, u.Name
+            FROM User u
+            WHERE u.UserID IN (
+                SELECT DISTINCT ep.UserID
+                FROM ExpenseParticipation ep
+                JOIN Expenses e ON e.ExpenseID = ep.ExpenseID
+                WHERE e.PayerID = ? OR ep.UserID = ?
+                UNION
+                SELECT DISTINCT e.PayerID
+                FROM Expenses e
+                JOIN ExpenseParticipation ep ON ep.ExpenseID = e.ExpenseID
+                WHERE ep.UserID = ? OR e.PayerID = ?
+            )
+            AND u.UserID <> ?
+            ORDER BY u.Name
+        """;
+        return jdbcTemplate.queryForList(sql, userId, userId, userId, userId, userId);
+    }
+
+    /** All groups user participates in */
+    public List<Map<String, Object>> findGroupsForUser(int userId) {
+        String sql = """
+            SELECT g.GroupID, g.GroupName
+            FROM ExpenseGroups g
+            JOIN GroupParticipants gp ON gp.GroupID = g.GroupID
+            WHERE gp.UserID = ?
+            ORDER BY g.GroupName
+        """;
+        return jdbcTemplate.queryForList(sql, userId);
+    }
+
+    /** Members of a specific group */
+    public List<Map<String, Object>> findMembersInGroup(int groupId) {
+        String sql = """
+            SELECT u.UserID, u.Name
+            FROM GroupParticipants gp
+            JOIN User u ON gp.UserID = u.UserID
+            WHERE gp.GroupID = ?
+            ORDER BY u.Name
+        """;
+        return jdbcTemplate.queryForList(sql, groupId);
     }
 }

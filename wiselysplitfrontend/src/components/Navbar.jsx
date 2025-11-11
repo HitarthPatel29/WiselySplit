@@ -1,5 +1,4 @@
-// Navbar.jsx
-// ...Navbar component implementation...
+// src/components/Navbar.jsx
 
 import React from 'react';
 
