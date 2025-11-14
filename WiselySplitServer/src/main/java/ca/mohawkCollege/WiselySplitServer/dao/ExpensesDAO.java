@@ -39,7 +39,7 @@ public class ExpensesDAO {
         return keyHolder.getKey().intValue();
     }
 
-    /** ✅ Insert ExpenseParticipation records */
+    /**  Insert ExpenseParticipation records */
     public void insertExpenseParticipation(int expenseId, int userId, double contribution, double contributionPortion) {
         jdbcTemplate.update(
                 "INSERT INTO ExpenseParticipation (ExpenseID, UserID, Contribution, ContributionPortion) VALUES (?, ?, ?, ?)",
@@ -47,7 +47,7 @@ public class ExpensesDAO {
         );
     }
 
-    /** ✅ Fetch Expense details */
+    /**  Fetch Expense details */
     public Map<String, Object> findExpenseById(int expenseId) {
         String sql = """
             SELECT 
@@ -66,7 +66,7 @@ public class ExpensesDAO {
         return jdbcTemplate.queryForMap(sql, expenseId);
     }
 
-    /** ✅ Fetch Expense participants */
+    /**  Fetch Expense participants */
     public List<Map<String, Object>> findExpenseParticipants(int expenseId) {
         String sql = """
             SELECT 
@@ -81,7 +81,7 @@ public class ExpensesDAO {
         return jdbcTemplate.queryForList(sql, expenseId);
     }
 
-    /** ✅ Delete Expense + participation records */
+    /**  Delete Expense + participation records */
     public void deleteExpense(int expenseId) {
         jdbcTemplate.update("DELETE FROM ExpenseParticipation WHERE ExpenseID = ?", expenseId);
         jdbcTemplate.update("DELETE FROM Expenses WHERE ExpenseID = ?", expenseId);

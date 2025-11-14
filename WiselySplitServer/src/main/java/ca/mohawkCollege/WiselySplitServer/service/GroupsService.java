@@ -62,7 +62,7 @@ public class GroupsService {
         for (Map<String, Object> g : groups) {
             double net = ((Number) g.get("NetBalance")).doubleValue();
             g.put("amount", Math.abs(net));
-            g.put("status", net >= 0 ? "owed" : "owe");
+            g.put("status", net==0? "" : (net > 0 ? "lent" : "owe"));
             g.put("subtitle", "Shared Group");
         }
         return groups;
@@ -71,22 +71,6 @@ public class GroupsService {
     public Map<String, Object> getGroupDetails(int groupId, int userId) {
         Map<String, Object> groupInfo = groupsDAO.findGroupInfo(groupId);
         List<Map<String, Object>> expenses = groupsDAO.findGroupExpenses(groupId, userId);
-        List<Map<String, Object>> membersStanding = groupsDAO.findGroupMemberStandings(groupId, userId);
-
-        // Calculate total net balance for "overallStanding"
-        double total = membersStanding.stream()
-                .mapToDouble(m -> ((Number) m.get("balance")).doubleValue())
-                .sum();
-
-        Map<String, Object> overall = Map.of(
-                "text", total >= 0
-                        ? String.format("You are Owed $%.2f", total)
-                        : String.format("You Owe $%.2f", Math.abs(total)),
-                "color", total >= 0 ? "text-emerald-600" : "text-red-500"
-        );
-
-        groupInfo.put("overallStanding", overall);
-        groupInfo.put("membersStanding", membersStanding);
 
         return Map.of("group", groupInfo, "expenses", expenses);
     }

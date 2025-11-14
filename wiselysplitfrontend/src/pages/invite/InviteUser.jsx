@@ -22,31 +22,31 @@ export default function InviteUser() {
     const handleInvite = async (e) => {
         e.preventDefault()
         if (!query.trim()) {
-        setMessage('Please enter a username or email.')
-        return
+            setMessage('Please enter a username or email.')
+            return
         }
         if (!userId) {
-        setMessage('Error: user ID not available.')
-        return
+            setMessage('Error: user ID not available.')
+            return
         }
 
         setLoading(true)
         setMessage('')
 
         try {
-        const res = await api.post('/invite/send', {
-            senderId: userId,
-            target: query.trim()
-        })
-        setResult({ success: true, text: res.data.message })
+            const res = await api.post('/invite/send', {
+                senderId: userId,
+                target: query.trim()
+            })
+            setResult({ success: true, text: res.data.message })
         } catch (err) {
-        console.error(err)
-        setResult({
-            success: false,
-            text: err.response?.data?.error || 'Failed to send invite.'
-        })
+            console.error(err)
+            setResult({
+                success: false,
+                text: err.response?.data?.error || 'Failed to send invite.'
+            })
         } finally {
-        setLoading(false)
+            setLoading(false)
         }
     }
 

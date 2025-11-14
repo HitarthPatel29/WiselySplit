@@ -42,11 +42,11 @@ export default function EditExpense() {
       setSaving(true)
       console.log('payload:', payload)
 
-      const res = await api.post('/expenses', payload)
-      alert('Expense added successfully!')
+      const res = await api.put(`/expenses/${expenseId}`, payload)
+      alert('Expense updated successfully!')
 
-      if (payload.shareWithType === 'group') navigate(`/groups/${id}`)
-      else navigate(`/friends/${id}`)
+      if (payload.shareWithType === 'group') navigate(`/groups/${payload.shareWithId}`)
+      else navigate(`/friends/${payload.shareWithId}`)
     } catch (err) {
       console.error('❌ Failed to save expense:', err)
       alert(err.response?.data?.error || 'Failed to save expense.')

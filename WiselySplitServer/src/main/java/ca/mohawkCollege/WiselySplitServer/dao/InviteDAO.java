@@ -49,7 +49,7 @@ public class InviteDAO {
         String sql = """
             SELECT COUNT(*) FROM Invites
             WHERE SenderID=? AND ReceiverEmail=? AND COALESCE(GroupID,0)=COALESCE(?,0)
-            AND Status='PENDING'
+            AND (Status='PENDING' OR Status='ACCEPTED')
         """;
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, senderId, email, groupId);
         return count != null && count > 0;

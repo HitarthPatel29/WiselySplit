@@ -25,6 +25,7 @@ public class InviteService {
     @Autowired private EmailService emailService;
     @Autowired private GroupsDAO groupsDAO;
     @Autowired private ExpensesDAO expensesDAO;
+    @Autowired private ExpensesService expensesService;
 
     public String sendInvite(int senderId, String input, Integer groupId) {
         Optional<User> senderOpt = userDAO.findById(senderId);
@@ -127,15 +128,20 @@ public class InviteService {
                     int groupId = ((Number) groupObj).intValue();
                     groupsDAO.addParticipant(groupId, receiverId);
                 }
-            } else if (invite != null && "FRIEND".equalsIgnoreCase((String) invite.get("Type"))) {
+            } else if (invite != null && "USER".equalsIgnoreCase((String) invite.get("Type"))) {
 
                 Object receiverObj = invite.get("ReceiverID");
-                Object groupObj = invite.get("GroupID");
+                Object senderObj = invite.get("SenderID");
 
-                if (receiverObj != null && groupObj != null) {
+                if (receiverObj != null && senderObj != null) {
                     int receiverId = ((Number) receiverObj).intValue();
-                    int groupId = ((Number) groupObj).intValue();
-                    groupsDAO.addParticipant(groupId, receiverId);
+                    int senderID = ((Number) senderObj).intValue();
+                    System.out.println("reached here");
+                    int expenseId = expensesDAO.insertExpense("Fugazi Expense", java.time.LocalDate.now().toString(), "Fugazi", 0, senderID, null);
+                    // Insert participants (both sides)
+                    System.out.println(expenseId);
+                    expensesDAO.insertExpenseParticipation(expenseId, senderID, 0.0, 1.0);
+                    expensesDAO.insertExpenseParticipation(expenseId, receiverId, 0.0, 1.0);
                 }
             }
         }

@@ -102,29 +102,6 @@ export default function ExpenseForm({
       if (name === 'amount' && next.shareWithType === 'group') {
         next = equalSplit ? equalDivide(next) : amountsFromPortions(next)
       }
-      //This section is moved to normalizeExpenseForAPI function
-      //
-      // if (fieldName === 'owes' && next.shareWithType === 'friend') {
-      //   const friendId = next.shareWithId
-      //   const friendName = next.shareWith
-      //   //const total = parseFloat(next.amount) || 0
-      //   const half = parseFloat((total / 2).toFixed(2))
-
-      //   if (value === `You and ${friendName} split equally`) {
-      //     next.splitDetails = [
-      //       { userId: currentUserId, name: 'You', amount: half, portion: 1 },
-      //       { userId: friendId, name: friendName, amount: half, portion: 1 },
-      //     ]
-      //   } else if (value === 'You owe full amount') {
-      //     next.splitDetails = [
-      //       { userId: currentUserId, name: 'You', amount: total, portion: 1 },
-      //     ]
-      //   } else if (value === `${friendName} owes full amount`) {
-      //     next.splitDetails = [
-      //       { userId: friendId, name: friendName, amount: total, portion: 1 },
-      //     ]
-      //   }
-      // }
       return next
     })
   }
@@ -204,9 +181,8 @@ export default function ExpenseForm({
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const error = validateExpense(expense)
+    const error = validateExpense(expense, currentUserId)
     console.log('ExpenseForm: Validating expense:', expense, 'Error:', error)
-    console.log('ExpenseForm: Current User ID:', currentUserId)
     if (error) return alert(error)
     const payload = normalizeExpenseForAPI({...expense}, currentUserId)
     onSubmit(payload)

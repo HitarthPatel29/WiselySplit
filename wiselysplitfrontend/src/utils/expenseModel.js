@@ -56,8 +56,8 @@ export const createNewExpense = (shareWithId, shareWith, type = 'friend', member
 /**
  * Helper: Validate fields before submission
  */
-export const validateExpense = (expense) => {
-  console.log('ExpenseModel: Validating expense:', expense)
+export const validateExpense = (expense, currentUserId) => {
+  console.log('ExpenseModel: Validating expense')
   if (!expense.shareWith) return 'Please select who to share expense with.'
   if (!expense.title) return 'Expense title is required.'
   if (!expense.date) return 'Date is required.'
@@ -65,13 +65,40 @@ export const validateExpense = (expense) => {
   if (!expense.payerId) return 'Please select who paid.'
 
   // Friend-level rule
-  if (expense.shareWithType === 'friend' && expense.owes=='' && expense.splitDetails.length === 0)
-    return 'Please specify who owes the amount.'
+  if (expense.shareWithType === 'friend') {
+    if (expense.owes === '' && expense.splitDetails.length === 0)
+      return 'Please specify who owes the amount.'
+
+    // Avoid case where payer pays 100% for themselves only
+    if (expense.owes === 'You owe full amount' && expense.payerId === currentUserId)
+      return 'You cannot create an expense where you owe yourself the full amount.'
+
+    // Optional: If payerId is friend and owes says friend owes full → also block
+    if (
+      expense.owes === `${expense.shareWith} owes full amount` &&
+      expense.payerId === expense.shareWithId
+    )
+      return `${expense.shareWith} cannot owe themselves the full amount.`
+  }
 
   // Group-level rule
   if (expense.shareWithType === 'group' && (!expense.splitDetails || expense.splitDetails.length === 0))
     return 'Please include at least one member in the split.'
+  // --- GROUP RULES ---
+  if (expense.shareWithType === 'group') {
+    if (!expense.splitDetails || expense.splitDetails.length === 0)
+      return 'Please include at least one member in the split.'
 
+    //  Avoid case where only payer is included
+    const includedMembers = expense.splitDetails.filter((m) => m.include)
+    if (
+      includedMembers.length === 1 &&
+      includedMembers[0].userId === expense.payerId
+    ) {
+      const payerName = includedMembers[0].name || 'Payer'
+      return `The expense cannot be payed by and shared by only ${payerName}. Please include at least one more member to share the Expense.`
+    }
+  }
   
   return null
 }
@@ -84,10 +111,9 @@ export const validateExpense = (expense) => {
  * @param {number} currentUserId - Logged-in user's ID (used only for 'friend' owes translation).
  */
 export const normalizeExpenseForAPI = (expense, currentUserId) => {
-  console.log('ExpenseModel: Current User ID:', currentUserId)
   const clean = { ...expense }
 
-  console.log('Normalizing expense for API:', expense)
+  console.log('Normalizing expense for API')
   clean.amount = parseFloat(expense.amount)
 
   // --- GROUP EXPENSE ---
@@ -129,7 +155,7 @@ export const normalizeExpenseForAPI = (expense, currentUserId) => {
       ]
     }
   }
-  console.log('Normalized expense for API:', clean)
+  console.log('Normalized expense for API')
 
   // Cleanup
   delete clean.owes
@@ -149,7 +175,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
     return null
   }
 
-  console.log('unnormalized Expense:', data)
+  console.log('normalizing Expense for Fields')
   const normalized = {
     id: data.expenseId || data.id || null,
     title: data.title || data.expenseTitle || '',
@@ -235,7 +261,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
       normalized.owes = `${friendName} owes full amount`
     }
   }
-  console.log('normalized Expense:', normalized)
+  console.log('normalized Expense for feilds')
   return normalized
 }
 

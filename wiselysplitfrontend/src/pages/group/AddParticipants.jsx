@@ -25,11 +25,11 @@ export default function AddParticipants() {
 
     try {
       console.log('✅ Sent group invite:', { groupId: id, senderId: userId, target: query.trim() })
-      await api.post(`/groups/${id}/invite`, {
+      const res = await api.post(`/groups/${id}/invite`, {
         senderId: userId,
         target: query.trim()
       })
-      setResult({ success: true, text: `Invite sent to "${query.trim()}" successfully!` })
+      setResult({ success: true, text: res.data.message })
       setQuery('')
     } catch (err) {
       console.error(err)

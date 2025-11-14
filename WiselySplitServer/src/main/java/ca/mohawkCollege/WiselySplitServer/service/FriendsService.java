@@ -23,17 +23,17 @@ public class FriendsService {
         List<Map<String, Object>> results = friendsDAO.findFriendsBalances(userId);
         for (Map<String, Object> r : results) {
             double amount = ((Number) r.get("NetBalance")).doubleValue();
-            r.put("status", amount > 0 ? "owed" : "owe");
+            r.put("status", amount > 0 ? "lent" : "owe");
             r.put("amount", Math.abs(amount));
         }
         return results;
     }
 
     public Map<String, Object> getSharedExpensesBetween(int userId, int friendId) {
-        // 1️⃣ Fetch all shared expenses
+        // 1. Fetch all shared expenses
         List<Map<String, Object>> expenses = friendsDAO.findSharedExpenses(userId, friendId);
 
-        // 2️⃣ Fetch friend info safely
+        // 2. Fetch friend info safely
         User friendUser = userDAO.findById(friendId)
                 .orElseThrow(() -> new RuntimeException("Friend not found"));
 
@@ -42,7 +42,7 @@ public class FriendsService {
         friend.put("name", friendUser.getName());
         friend.put("profilePicture", friendUser.getProfilePicture());
 
-        // 3️⃣ Handle case when no expenses exist yet
+        // 3. Handle case when no expenses exist yet
         if (expenses == null || expenses.isEmpty()) {
             friend.put("amount", 0.0);
             friend.put("youOwe", false);
@@ -54,7 +54,7 @@ public class FriendsService {
             );
         }
 
-        // 4️⃣ Compute total balance only if expenses exist
+        // 4. Compute total balance only if expenses exist
         double balance = expenses.stream()
                 .mapToDouble(e -> ((Number) e.get("balance")).doubleValue())
                 .sum();
@@ -62,7 +62,7 @@ public class FriendsService {
         friend.put("amount", Math.abs(balance));
         friend.put("youOwe", balance < 0);
 
-        // 5️⃣ Return combined result
+        // 5. Return combined result
         return Map.of(
                 "friend", friend,
                 "expenses", expenses,

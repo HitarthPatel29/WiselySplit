@@ -13,7 +13,7 @@ public class ExpensesService {
     @Autowired
     private ExpensesDAO expensesDAO;
 
-    /** ✅ Create expense for friend or group */
+    /** Create expense for friend or group */
     @Transactional
     public Map<String, Object> createExpense(Map<String, Object> payload) {
         try {
@@ -49,7 +49,7 @@ public class ExpensesService {
         }
     }
 
-    /** ✅ Fetch single expense details */
+    /**  Fetch single expense details */
     public Map<String, Object> getExpenseDetails(int expenseId) {
         Map<String, Object> expense = expensesDAO.findExpenseById(expenseId);
         List<Map<String, Object>> participants = expensesDAO.findExpenseParticipants(expenseId);
@@ -57,7 +57,7 @@ public class ExpensesService {
         return expense;
     }
 
-    /** ✅ Delete expense */
+    /**  Delete expense */
     public void deleteExpense(int expenseId) {
         expensesDAO.deleteExpense(expenseId);
     }

@@ -14,14 +14,24 @@ export default function FriendsList() {
   const [friends, setFriends] = useState([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [overallNet, setOverallNet] = useState(0)
 
   useEffect(() => {
     const fetchFriends = async () => {
       try {
         const res = await api.get(`/friends/${userId}`)
+        const list = res.data || []
         setFriends(res.data || []) 
         console.log('Fetched friends:', friends)
         console.log('API response data:', res.data)
+
+        const totalNet = list.reduce(
+          (sum, f) => sum + Number(f.NetBalance || 0),
+          0
+        )
+        console.log('Calculated overall net balance:', totalNet)
+        setOverallNet(totalNet)
+
         if (!res.data || res.data.length === 0) setMessage('No friends right now.')
       } catch (err) {
         console.error(err)
@@ -53,25 +63,67 @@ export default function FriendsList() {
         <header className='w-full max-w-2xl px-4 flex flex-col'>
           <p className='text-gray-600 dark:text-gray-400 text-2xl font-bold mb-1'>Individual Shared Expenses</p>
           <p className='text-gray-700 dark:text-gray-300 text-base font-bold mb-1'>
-            Overall you are owed{' '}
-            <span className='font-semibold text-emerald-600'>$9.4</span>
+            Overall{' '}
+            {overallNet > 0 && (
+              <>
+                you are owed{' '}
+                <span className='font-semibold text-emerald-600'>
+                  ${overallNet.toFixed(2)}
+                </span>
+              </>
+            )}
+
+            {overallNet < 0 && (
+              <>
+                you owe{' '}
+                <span className='font-semibold text-red-500'>
+                  ${Math.abs(overallNet).toFixed(2)}
+                </span>
+              </>
+            )}
+
+            {overallNet === 0 && (
+              <span className='font-semibold text-gray-500'>you are settled up</span>
+            )}
           </p>
         </header>
       </div>
 
-      {/* Search + Add Friend */}
+      {/* Search + Add Friend + Add Expense */}
       <div className='flex justify-center w-full mb-6'>
-        <div className='flex items-center gap-3 w-full max-w-2xl px-4'>
+        <div className='flex flex-wrap items-center gap-3 w-full max-w-2xl px-4'>
+
+          {/* Search Bar */}
           <input
             type='text'
             placeholder='Search friends...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className='flex-1 border border-gray-300 rounded-xl px-4 py-2 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-400'
+            className='flex-1 min-w-[55%] border border-gray-300 rounded-xl px-4 py-2 
+                      text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 
+                      focus:ring-emerald-400'
           />
-          <PrimaryButton label='Add Friend' onClick={() => navigate('/invite')} />
+
+          {/* Add Friend */}
+          <PrimaryButton
+            label='Add Friend'
+            onClick={() => navigate('/invite')}
+            className='min-w-[40%] sm:min-w-fit'
+          />
+
+          {/* Add Expense — full width on mobile */}
+          <button
+            onClick={() => navigate(`/friends/0/add-expense`)}
+            className='w-full sm:w-auto bg-emerald-100 text-emerald-700 
+                      dark:text-emerald-100 dark:bg-emerald-700 font-semibold 
+                      rounded-xl py-2 px-4 hover:bg-emerald-200 dark:hover:bg-emerald-600'
+          >
+            Add Expense
+          </button>
+          
         </div>
       </div>
+
 
       {/* List */}
       <div className='flex justify-center'>
@@ -82,7 +134,7 @@ export default function FriendsList() {
               avatar={f.profilePicture || f.ProfilePicture || f.avatar}
               name={f.name || f.friendName || ''}
               username={f.username || f.userName || ''}
-              amount={f.amount || f.balance || 0}
+              amount={f.NetBalance || f.amount || f.balance || 0}
               status={f.status || 'neutral'}
               onClick={() => navigate(`/friends/${f.friendId || f.userId || f.id}`)}
             />

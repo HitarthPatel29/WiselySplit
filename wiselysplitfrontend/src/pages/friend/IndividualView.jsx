@@ -22,6 +22,7 @@ export default function IndividualView() {
         const res = await api.get(`/friends/${userId}/${friendId}`)
         const data = res.data || {}
 
+        console.log('Fetched individual friend data:', data)
         // Normalize friend object (backend uses profilePicture, amount, userId, youOwe)
         const backendFriend = data.friend || null
         const normalizedFriend = backendFriend
@@ -36,30 +37,33 @@ export default function IndividualView() {
 
         // Normalize expenses array (backend uses expenseId, expenseTitle, expenseDate, amount, subtitle, type)
         const backendExpenses = data.expenses || []
-        const normalizedExpenses = backendExpenses.map((e) => {
-          // format date to 'Mon DD'
-          let dateStr = ''
-          if (e.expenseDate) {
-            try {
-              const d = new Date(e.expenseDate)
-              const month = d.toLocaleString('en-US', { month: 'short' })
-              const day = String(d.getDate()).padStart(2, '0')
-              dateStr = `${month} ${day}`
-            } catch (err) {
-              dateStr = e.expenseDate
+        const normalizedExpenses = backendExpenses
+          .filter(e => e.expenseType?.toLowerCase() !== 'fugazi')
+          .map((e) => {
+            // format date to 'Mon DD'
+            let dateStr = ''
+            if (e.expenseDate) {
+              try {
+                const d = new Date(e.expenseDate)
+                const month = d.toLocaleString('en-US', { month: 'short' })
+                const day = String(d.getDate()).padStart(2, '0')
+                dateStr = `${month} ${day}`
+              } catch (err) {
+                dateStr = e.expenseDate
+              }
             }
-          }
 
-          return {
-            id: e.expenseId || e.id,
-            date: dateStr || e.date || '',
-            title: e.expenseTitle || e.title || '',
-            subtitle: e.subtitle || e.expenseType || '',
-            amount: e.amount || 0,
-            type: e.type || (e.expenseType ? (e.expenseType.toLowerCase() === 'lent' ? 'lent' : 'owe') : ''),
-            highlight: !!e.highlight,
-          }
-        })
+            return {
+              id: e.expenseId || e.id,
+              date: dateStr || e.date || '',
+              title: e.expenseTitle || e.title || '',
+              expenseType: e.expenseType || '',
+              amount: e.amount || 0,
+              balance:  Math.abs(e.balance || 0),
+              type: e.type || (e.expenseType ? (e.expenseType.toLowerCase() === 'lent' ? 'lent' : 'owe') : ''),
+              highlight: !!e.highlight,
+            }
+          })
 
         setFriend(normalizedFriend)
         setExpenses(normalizedExpenses)
@@ -108,7 +112,7 @@ export default function IndividualView() {
 
         <div className='flex flex-col sm:flex-row gap-3 justify-center mt-4'>
           <button
-            onClick={() => navigate(`/friends/${friendId}/add-expense`)}
+            onClick={() => navigate(`/friends/0/add-expense`)}
             className='sm:w-full bg-emerald-100 text-emerald-700 dark:text-emerald-100 dark:bg-emerald-700 font-semibold rounded-xl py-3 hover:bg-emerald-200 dark:hover:bg-emerald-600'
           >
             + Add Expense
@@ -127,8 +131,8 @@ export default function IndividualView() {
               key={ex.id}
               date={ex.date}
               title={ex.title}
-              subtitle={ex.subtitle}
-              amount={ex.amount}
+              subtitle={ex.expenseType}
+              amount={ex.balance}
               type={ex.type}
               highlight={ex.highlight}
               onClick={() =>

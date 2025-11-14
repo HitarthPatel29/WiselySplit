@@ -6,15 +6,15 @@ export default function ListItemCard({
   name, 
   username, 
   amount, 
-  status, // 'owe' | 'owed' | 'neutral'
+  status, // 'owe' | 'lent' | 'neutral'
   onClick 
 }) {
   const colorClass = 
-    status === 'owed' ? 'text-emerald-600' : 
+    status === 'lent' ? 'text-emerald-600' : 
     status === 'owe' ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
-
+console.log('ListItemCard - amount:', amount, 'status:', status)
   const label = 
-    status === 'owed' ? `Owes you $${amount}` :
+    status === 'lent' ? `Owes you $${amount}` :
     status === 'owe' ? `You owe $${amount}` :
     'Settled'
 
