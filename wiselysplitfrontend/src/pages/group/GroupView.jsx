@@ -66,6 +66,7 @@ export default function GroupView() {
   const [expenses, setExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [participants, setParticipants] = useState([])
 
   /* -----------------------------------------------------
      Fetch group details
@@ -84,8 +85,12 @@ export default function GroupView() {
         setGroup({
           id: g.groupId,
           name: g.name || g.groupName || '',
-          avatar: g.ProfilePicture || g.profilePicture || '',
+          avatar: g.photo || g.ProfilePicture || g.profilePicture || '',
+          type: g.type || '',
         })
+
+        const p = data.participants || []
+        setParticipants(p)
 
         /* ---------------------- EXPENSES ------------------------ */
         const normalizedExpenses = (data.expenses || []).map((e) => {
@@ -137,6 +142,8 @@ export default function GroupView() {
           name: memberNames[m.userId] || 'User',
         }))
 
+        console.log('Computed member standing:', finalStanding)
+
         setMembersStanding(finalStanding)
 
         /* ------------------ OVERALL STANDING -------------------- */
@@ -144,20 +151,24 @@ export default function GroupView() {
 
         if (net > 0) {
           setOverallStanding({
+            balance: net.toFixed(2),
             text: `You are owed $${net.toFixed(2)}`,
             color: 'text-emerald-600',
           })
         } else if (net < 0) {
           setOverallStanding({
+            balance: net.toFixed(2),
             text: `You owe $${Math.abs(net).toFixed(2)}`,
             color: 'text-red-500',
           })
         } else {
           setOverallStanding({
+            balance: net.toFixed(2),
             text: 'All settled up!',
             color: 'text-gray-500',
           })
         }
+        console.log('Computed overall standing:', net)
       } catch (err) {
         console.error(err)
         setMessage('Failed to fetch group details.')
@@ -244,7 +255,9 @@ export default function GroupView() {
           </button>
 
           <button
-            onClick={() => navigate(`/groups/${id}/edit`)}
+            onClick={() =>navigate(`/groups/${id}/edit`, {state: {group, participants, membersStanding, overallStanding},
+              })
+            }
             className='sm:w-24 bg-emerald-500 text-white rounded-xl py-3 hover:bg-emerald-600 flex items-center justify-center transition'
           >
             ⚙

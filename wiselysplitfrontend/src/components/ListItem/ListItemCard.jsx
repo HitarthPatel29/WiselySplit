@@ -4,7 +4,7 @@ import React from 'react'
 export default function ListItemCard({ 
   avatar, 
   name, 
-  username, 
+  subtitle, 
   amount, 
   status, // 'owe' | 'lent' | 'neutral'
   onClick 
@@ -12,12 +12,11 @@ export default function ListItemCard({
   const colorClass = 
     status === 'lent' ? 'text-emerald-600' : 
     status === 'owe' ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
-console.log('ListItemCard - amount:', amount, 'status:', status)
   const label = 
     status === 'lent' ? `Owes you $${amount}` :
     status === 'owe' ? `You owe $${amount}` :
     'Settled'
-
+  console.log('ListItemCard - name:', name) // --- IGNORE ---
   return (
     <div
       onClick={onClick}
@@ -31,7 +30,7 @@ console.log('ListItemCard - amount:', amount, 'status:', status)
         />
         <div>
           <p className='font-medium text-gray-900 dark:text-gray-100 leading-tight'>{name}</p>
-          <p className='text-sm text-gray-500 dark:text-gray-400'>@{username}</p>
+          <p className='text-sm text-gray-500 dark:text-gray-400'>{subtitle}</p>
         </div>
       </div>
       <p className={`font-semibold ${colorClass}`}>{label}</p>

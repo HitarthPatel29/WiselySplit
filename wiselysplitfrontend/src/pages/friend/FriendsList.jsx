@@ -133,8 +133,8 @@ export default function FriendsList() {
               key={f.friendId || f.userId || f.id}
               avatar={f.profilePicture || f.ProfilePicture || f.avatar}
               name={f.name || f.friendName || ''}
-              username={f.username || f.userName || ''}
-              amount={f.NetBalance || f.amount || f.balance || 0}
+              subtitle={f.username || f.userName || ''}
+              amount={Math.abs(f.NetBalance || f.amount || f.balance || 0)}
               status={f.status || 'neutral'}
               onClick={() => navigate(`/friends/${f.friendId || f.userId || f.id}`)}
             />

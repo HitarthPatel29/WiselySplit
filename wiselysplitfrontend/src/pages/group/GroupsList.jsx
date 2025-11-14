@@ -69,7 +69,7 @@ export default function GroupsList() {
               key={g.groupId}
               avatar={g.ProfilePicture || g.profilePicture || g.avatar}
               name={g.name}
-              username={g.subtitle || g.groupType || ''}
+              subtitle={ g.type || g.groupType || ''}
               amount={g.amount || 0}
               status={g.status || 'neutral'}
               onClick={() => navigate(`/groups/${g.groupId}`)}

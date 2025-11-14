@@ -4,6 +4,7 @@ import ca.mohawkCollege.WiselySplitServer.dao.ExpensesDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.GroupsDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,11 +16,12 @@ import java.util.Map;
 @Service
 public class GroupsService {
 
+    @Value("${cloudinary.default_photo_link}")
+    private String DEFAULT_PHOTO_LINK;
     @Autowired
     private GroupsDAO groupsDAO;
     @Autowired
     private UserDAO userDAO;
-
     @Autowired
     private ExpensesDAO expensesDAO;
     @Autowired
@@ -39,7 +41,7 @@ public class GroupsService {
             if (photo != null && !photo.isEmpty()) {
                 profilePicture = imageUploadService.uploadProfilePicture(photo);
             } else {
-                profilePicture = "https://res.cloudinary.com/dwq5yfjsd/image/upload/v1758920140/default-group_yhn6xa.webp";
+                profilePicture = DEFAULT_PHOTO_LINK;
             }
         } catch (Exception e) {
             throw new RuntimeException("Photo upload failed: " + e.getMessage());
@@ -69,9 +71,87 @@ public class GroupsService {
     }
 
     public Map<String, Object> getGroupDetails(int groupId, int userId) {
-        Map<String, Object> groupInfo = groupsDAO.findGroupInfo(groupId);
+        Map<String, Object> groupInfo = groupsDAO.findGroupInfo(groupId);                    // includes type now
         List<Map<String, Object>> expenses = groupsDAO.findGroupExpenses(groupId, userId);
+        List<Map<String, Object>> participants = groupsDAO.findGroupParticipantsWithBalances(groupId, userId);
 
-        return Map.of("group", groupInfo, "expenses", expenses);
+        return Map.of(
+                "group", groupInfo,
+                "expenses", expenses,
+                "participants", participants
+        );
     }
+
+    // Update group (name, type, optional photo)
+    @Transactional
+    public Map<String, Object> updateGroup(int groupId, String name, String type, MultipartFile photo) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Group name is required.");
+        }
+
+        if (!name.matches("^[a-zA-Z0-9\\s]+$")) {
+            throw new IllegalArgumentException("Group name must be alphanumeric.");
+        }
+
+        // Type validation can be stricter if you only support specific values
+        if (type == null || type.trim().isEmpty()) {
+            throw new IllegalArgumentException("Group type is required.");
+        }
+
+        String profilePicture = null;
+        try {
+            if (photo != null && !photo.isEmpty()) {
+                // Upload new photo
+                profilePicture = imageUploadService.uploadProfilePicture(photo);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Photo upload failed: " + e.getMessage());
+        }
+
+        // If photo is null, DAO will keep the existing picture
+        groupsDAO.updateGroup(groupId, name.trim(), type.trim(), profilePicture);
+
+        Map<String, Object> updatedGroup = groupsDAO.findGroupInfo(groupId);
+        return Map.of(
+                "message", "Group updated successfully",
+                "group", updatedGroup
+        );
+    }
+
+    // Leave group: only if user's net balance in group is 0
+    @Transactional
+    public void leaveGroup(int groupId, int userId) {
+        if (!groupsDAO.isUserInGroup(groupId, userId)) {
+            throw new IllegalArgumentException("You are not a member of this group.");
+        }
+
+        double net = groupsDAO.getUserNetBalanceInGroup(groupId, userId);
+        if (Math.abs(net) > 0.009) { // small epsilon to avoid float noise
+            throw new IllegalStateException("Cannot leave group with unsettled balance: " + net);
+        }
+
+        groupsDAO.removeParticipant(groupId, userId);
+    }
+
+    // Delete group: only if all members are settled
+    @Transactional
+    public void deleteGroup(int groupId, int userId) {
+        if (!groupsDAO.isUserInGroup(groupId, userId)) {
+            throw new IllegalArgumentException("You are not a member of this group.");
+        }
+
+        // Optional: if you add an "owner" field, enforce only owner can delete here
+
+        List<Integer> participantIds = groupsDAO.findParticipantIds(groupId);
+        for (Integer participantId : participantIds) {
+            double net = groupsDAO.getUserNetBalanceInGroup(groupId, participantId);
+            if (Math.abs(net) > 0.009) {
+                throw new IllegalStateException("Cannot delete group; not all balances are settled.");
+            }
+        }
+
+        groupsDAO.deleteGroup(groupId);
+    }
+
 }
