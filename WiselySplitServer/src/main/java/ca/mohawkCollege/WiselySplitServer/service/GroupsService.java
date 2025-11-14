@@ -16,8 +16,6 @@ import java.util.Map;
 @Service
 public class GroupsService {
 
-    @Value("${cloudinary.default_photo_link}")
-    private String DEFAULT_PHOTO_LINK;
     @Autowired
     private GroupsDAO groupsDAO;
     @Autowired
@@ -41,7 +39,7 @@ public class GroupsService {
             if (photo != null && !photo.isEmpty()) {
                 profilePicture = imageUploadService.uploadProfilePicture(photo);
             } else {
-                profilePicture = DEFAULT_PHOTO_LINK;
+                profilePicture = "https://res.cloudinary.com/dwq5yfjsd/image/upload/v1758920140/default-avatar-profile_esweq0.webp";
             }
         } catch (Exception e) {
             throw new RuntimeException("Photo upload failed: " + e.getMessage());
