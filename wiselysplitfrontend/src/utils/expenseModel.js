@@ -56,7 +56,7 @@ export const createNewExpense = (shareWithId, shareWith, type = 'friend', member
 /**
  * Helper: Validate fields before submission
  */
-export const validateExpense = (expense, currentUserId) => {
+export const validateExpense = (expense, currentUserId, billSplitApplied) => {
   console.log('ExpenseModel: Validating expense')
   if (!expense.shareWith) return 'Please select who to share expense with.'
   if (!expense.title) return 'Expense title is required.'
@@ -65,7 +65,7 @@ export const validateExpense = (expense, currentUserId) => {
   if (!expense.payerId) return 'Please select who paid.'
 
   // Friend-level rule
-  if (expense.shareWithType === 'friend') {
+  if (!billSplitApplied && expense.shareWithType === 'friend') {
     if (expense.owes === '' && expense.splitDetails.length === 0)
       return 'Please specify who owes the amount.'
 
@@ -85,9 +85,7 @@ export const validateExpense = (expense, currentUserId) => {
   if (expense.shareWithType === 'group' && (!expense.splitDetails || expense.splitDetails.length === 0))
     return 'Please include at least one member in the split.'
   // --- GROUP RULES ---
-  if (expense.shareWithType === 'group') {
-    if (!expense.splitDetails || expense.splitDetails.length === 0)
-      return 'Please include at least one member in the split.'
+  if (billSplitApplied || expense.shareWithType === 'group') {
 
     //  Avoid case where only payer is included
     const includedMembers = expense.splitDetails.filter((m) => m.include)
@@ -110,14 +108,14 @@ export const validateExpense = (expense, currentUserId) => {
  * @param {object} expense - The expense data from the form.
  * @param {number} currentUserId - Logged-in user's ID (used only for 'friend' owes translation).
  */
-export const normalizeExpenseForAPI = (expense, currentUserId) => {
+export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied) => {
   const clean = { ...expense }
 
   console.log('Normalizing expense for API')
   clean.amount = parseFloat(expense.amount)
 
   // --- GROUP EXPENSE ---
-  if (clean.shareWithType === 'group') {
+  if (billSplitApplied || clean.shareWithType === 'group') {
     clean.splitDetails = (expense.splitDetails || []).map((m) => ({
       ...m,
       amount: parseFloat(m.amount) || 0,
@@ -125,9 +123,8 @@ export const normalizeExpenseForAPI = (expense, currentUserId) => {
     }))
   }
 
-  //TODO: move owes to splitDetails translation logic here
   // --- FRIEND EXPENSE ---
-  if (clean.shareWithType === 'friend') {
+  if (!billSplitApplied && clean.shareWithType === 'friend') {
     // Translate 'owes' into splitDetails
     const total = parseFloat(clean.amount) || 0
     const half = parseFloat((total / 2).toFixed(2))
@@ -249,6 +246,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
     const half = parseFloat((total / 2).toFixed(2))
     const friendName = normalized.shareWith
     const userShare = normalized.splitDetails.find((m) => m.userId === currentUserId)
+    const friendShare = normalized.splitDetails.find((m) => m.userId === normalized.shareWithId)
 
     if (
       normalized.splitDetails.length === 2 &&
@@ -257,8 +255,11 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
       normalized.owes = `You and ${friendName} split equally`
     } else if (userShare && userShare.amount === total) {
       normalized.owes = 'You owe full amount'
-    } else {
+    } else if (friendShare && friendShare.amount === total) {
       normalized.owes = `${friendName} owes full amount`
+    }
+    else {
+      normalized.billSplitUsed = true // custom split outside presets
     }
   }
   console.log('normalized Expense for feilds')

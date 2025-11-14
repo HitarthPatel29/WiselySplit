@@ -1,4 +1,5 @@
 // src/components/form/ExpenseForm.jsx
+
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
@@ -7,6 +8,7 @@ import {
   normalizeExpenseForAPI,
   getFriendOweOptions,
 } from '../../utils/expenseModel'
+import BillSplit from '../../pages/expense/BillSplit'
 
 // Small toggle switch
 function ToggleSwitch({ checked, onChange }) {
@@ -36,8 +38,12 @@ export default function ExpenseForm({
 }) {
   const navigate = useNavigate()
   const { id } = useParams()
+
   const [expense, setExpense] = useState(initialData)
   const [equalSplit, setEqualSplit] = useState(true)
+
+  const [showBillSplit, setShowBillSplit] = useState(false)
+  const [billSplitApplied, setBillSplitApplied] = useState(false)
 
   // ---------- helpers ----------
   const clone = (obj) => JSON.parse(JSON.stringify(obj))
@@ -60,13 +66,16 @@ export default function ExpenseForm({
     const next = clone(prev)
     const inc = includedOf(next.splitDetails)
     const totalPortions = inc.reduce((s, m) => s + (Number(m.portion) || 0), 0)
+
     next.splitDetails = next.splitDetails.map((m) => {
       if (!m.include) return { ...m, amount: 0 }
       if (totalPortions <= 0) return { ...m, amount: 0 }
+
       const share = (Number(m.portion) || 0) / totalPortions
       const calculated = (Number(next.amount) || 0) * share
       return { ...m, amount: Number(calculated.toFixed(2)) }
     })
+
     return next
   }
 
@@ -75,13 +84,16 @@ export default function ExpenseForm({
     const inc = includedOf(next.splitDetails)
     const sumAmt = inc.reduce((s, m) => s + (Number(m.amount) || 0), 0)
     const n = inc.length || 1
+
     next.splitDetails = next.splitDetails.map((m) => {
       if (!m.include) return { ...m, portion: 0 }
       if (sumAmt <= 0) return { ...m, portion: 0 }
+    
       const avg = sumAmt / n
       const calculated = (Number(m.amount) || 0) / avg
       return { ...m, portion: Number(calculated.toFixed(1)) }
     })
+    
     return next
   }
 
@@ -91,17 +103,51 @@ export default function ExpenseForm({
       const today = new Date().toISOString().split('T')[0]
       setExpense((p) => ({ ...p, date: today }))
     }
+    setBillSplitApplied(expense?.billSplitUsed || false)
+    console.log('billSplitApplied set to:', billSplitApplied)
   }, [])
+
+  // ---------- BUILD MEMBERS FOR BILL SPLIT ----------
+  const buildBillSplitMembers = () => {
+    if (!expense) return []
+
+    // GROUP → use group members
+    if (expense.shareWithType === 'group') {
+      const unique = []
+      const seen = new Set()
+
+      ;(expense.splitDetails || []).forEach((m) => {
+        if (!seen.has(m.userId)) {
+          seen.add(m.userId)
+          unique.push({ userId: m.userId, name: m.name })
+        }
+      })
+
+      return unique
+    }
+
+    // FRIEND → you + friend
+    return [
+      { userId: currentUserId, name: 'You' },
+      {
+        userId: expense.shareWithId,
+        name: expense.shareWith,
+      },
+    ]
+  }
 
   // ---------- field handlers ----------
   const updateField = (e) => {
     const { name, value } = e.target
+
     setExpense((prev) => {
       let next = clone(prev)
       next[name] = value
+
       if (name === 'amount' && next.shareWithType === 'group') {
         next = equalSplit ? equalDivide(next) : amountsFromPortions(next)
       }
+
       return next
     })
   }
@@ -109,6 +155,7 @@ export default function ExpenseForm({
   // when user changes “Share With”
   const handleShareWithChange = (e) => {
     const selected = friendsAndGroups.find((p) => p.id === parseInt(e.target.value))
+
     setExpense((prev) => {
       const base = createNewExpense(
         selected.id,        // shareWithId
@@ -116,13 +163,16 @@ export default function ExpenseForm({
         selected.type,      // friend/group
         selected.members || []
       )
+
       base.title = prev.title
       base.amount = prev.amount
       base.date = prev.date
       base.type = prev.type
       base.payerId = prev.payerId
+
       return base.shareWithType === 'group' ? equalDivide(base) : base
     })
+
     setEqualSplit(true)
   }
 
@@ -130,6 +180,7 @@ export default function ExpenseForm({
     setExpense((prev) => {
       let next = clone(prev)
       const member = next.splitDetails[index]
+
       member.include = !member.include
 
       if (!member.include) {
@@ -149,6 +200,7 @@ export default function ExpenseForm({
 
   const handleEqualToggle = (val) => {
     setEqualSplit(val)
+
     setExpense((prev) => {
       if (prev.shareWithType !== 'group') return prev
       return val ? equalDivide(prev) : amountsFromPortions(prev)
@@ -157,35 +209,107 @@ export default function ExpenseForm({
 
   const handlePortionChange = (index, value) => {
     const v = value === '' ? '' : Number(value)
+
     setExpense((prev) => {
       let next = clone(prev)
       next.splitDetails[index].portion = v
+
       if (next.shareWithType === 'group' && !equalSplit) {
         next = amountsFromPortions(next)
       }
+
       return next
     })
   }
 
   const handleAmountChange = (index, value) => {
     const v = value === '' ? '' : Number(value)
+
     setExpense((prev) => {
       let next = clone(prev)
       next.splitDetails[index].amount = v
+
       if (next.shareWithType === 'group' && !equalSplit) {
         next = portionsFromAmounts(next)
       }
+
       return next
     })
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
+
     const error = validateExpense(expense, currentUserId)
-    console.log('ExpenseForm: Validating expense:', expense, 'Error:', error)
     if (error) return alert(error)
-    const payload = normalizeExpenseForAPI({...expense}, currentUserId)
+
+    const payload = normalizeExpenseForAPI({...expense}, currentUserId, billSplitApplied )
     onSubmit(payload)
+  }
+
+
+  const handleOpenBillSplit = () => {
+    const members = buildBillSplitMembers()
+    if (!members.length) {
+      alert('No participants available to split this bill.')
+      return
+    }
+
+    setShowBillSplit(true)
+  }
+
+  const handleBillSplitApply = (billSplitDetails, totalAmount) => {
+    setExpense((prev) => {
+      const updatedSplitDetails = prev.splitDetails.map((member) => {
+        // find the matching member from bill split results
+        const updated = billSplitDetails.find((m) => m.userId === member.userId)
+
+        if (updated) {
+          // member participated → update amount, include = true
+          return {
+            ...member,
+            amount: Number(updated.amount.toFixed(2)),
+            include: true,
+            portion: 1, // item-based bill split uses portion=1
+          }
+        }
+
+        // member did NOT participate → preserve them with include: false and amount: 0
+        return {
+          ...member,
+          amount: 0,
+          include: false,
+          portion: 0,
+        }
+      })
+
+      return {
+        ...prev,
+        amount: Number(totalAmount.toFixed(2)),
+        splitDetails: updatedSplitDetails,
+      }
+    })
+
+    setEqualSplit(false)
+    setShowBillSplit(false)
+    setBillSplitApplied(true)
+  }
+
+  const handleBillSplitCancel = () => {
+    setShowBillSplit(false)
+  }
+
+  // ---------- RENDER BILL SPLIT SCREEN ----------
+  if (showBillSplit) {
+    const members = buildBillSplitMembers()
+
+    return (
+      <BillSplit
+        members={members}
+        onApply={handleBillSplitApply}
+        onCancel={handleBillSplitCancel}
+      />
+    )
   }
 
   // ---------- UI ----------
@@ -258,6 +382,7 @@ export default function ExpenseForm({
         </div>
         <button
           type='button'
+          onClick={handleOpenBillSplit}
           className='bg-emerald-500 font-semibold rounded-xl py-2 hover:bg-emerald-600 transition'
         >
           Split a Bill
@@ -306,7 +431,7 @@ export default function ExpenseForm({
       </div>
 
       {/* Who Owes (friend only) */}
-      {expense.shareWithType === 'friend' && (
+      {!billSplitApplied && expense.shareWithType === 'friend' && (
         <div>
           <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Who Owes:</label>
           <select
@@ -325,7 +450,7 @@ export default function ExpenseForm({
       )}
 
       {/* Group Split UI */}
-      {expense.shareWithType === 'group' && (
+      {(billSplitApplied || expense.shareWithType === 'group') && (
         <div className='mt-4 border border-gray-200 bg-white dark:bg-gray-800 rounded-xl overflow-hidden'>
           <div className='flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2 border-b'>
             <span className='font-semibold text-sm text-gray-700 dark:text-gray-300'>Split Between:</span>
