@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Base config
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api'
+  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:8080/api'
 });
 
 // Add token interceptor
