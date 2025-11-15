@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import BackButton from '../components/IO/BackButton'
 import api from '../api'
 import { CameraIcon } from '@heroicons/react/24/solid'
+import Header from '../components/Header.jsx'
 
 export default function EditProfile() {
   const navigate = useNavigate()
@@ -125,10 +126,8 @@ export default function EditProfile() {
 
   return (
     <div className='min-h-screen'>
-      <div className='w-full text-center py-5 border-b border-gray-200 relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold'>Edit Profile</h1>
-      </div>
+
+      <Header title='Edit Profile' />
 
       <main className='max-w-md mx-auto px-4 py-6'>
         <form onSubmit={handleSubmit} className='flex flex-col gap-4'>

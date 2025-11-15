@@ -5,6 +5,7 @@ import BackButton from '../../components/IO/BackButton.jsx'
 import api from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import ListItemCard from '../../components/ListItem/ListItemCard.jsx'
+import Header from '../../components/Header.jsx'
 
 export default function EditGroup() {
   const navigate = useNavigate()
@@ -133,10 +134,7 @@ export default function EditGroup() {
   return (
       <div className='min-h-screen'>
         {/* Header */}
-        <div className='w-full text-center py-5 border-b relative'>
-          <BackButton />
-          <h1 className='text-xl font-bold'>Edit Group</h1>
-        </div>
+        <Header title='Edit Group' />
 
         <main className='max-w-md md:max-w-2xl mx-auto px-6 py-10'>
           <form onSubmit={handleSave} className='flex flex-col items-center gap-6 rounded-xl'>

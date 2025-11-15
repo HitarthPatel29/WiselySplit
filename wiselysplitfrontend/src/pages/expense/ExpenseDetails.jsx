@@ -5,6 +5,7 @@ import BackButton from '../../components/IO/BackButton.jsx'
 import api from '../../api'
 import { normalizeExpenseForFields } from '../../utils/expenseModel'
 import { useAuth } from '../../context/AuthContext.jsx'
+import Header from '../../components/Header.jsx'
 
 export default function ExpenseDetails() {
   const { id, expenseId } = useParams()
@@ -69,10 +70,7 @@ export default function ExpenseDetails() {
 
   return (
     <div className='min-h-screen'>
-      <div className='w-full text-center py-5 border-b relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold'>Expense Details</h1>
-      </div>
+      <Header title='Expense Details' />
 
       <main className='max-w-2xl mx-auto px-4 py-10'>
         <div className='bg-white dark:bg-gray-800 shadow-xl rounded-xl p-6'>

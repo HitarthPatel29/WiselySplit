@@ -6,6 +6,7 @@ import ExpenseForm from '../../components/form/ExpenseForm'
 import { createNewExpense, validateExpense, normalizeExpenseForAPI } from '../../utils/expenseModel'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
+import Header from '../../components/Header.jsx'
 
 export default function AddExpense() {
   const navigate = useNavigate()
@@ -54,10 +55,7 @@ export default function AddExpense() {
 
   return (
     <div className='min-h-screen'>
-      <div className='w-full text-center py-5 border-b border-gray-200 relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold'>Add Expense</h1>
-      </div>
+      <Header title='Add Expense' />
       <main className='max-w-2xl mx-auto px-4 py-10'>
         <ExpenseForm
           mode='create'

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
 import ListItemCard from '../../components/ListItem/ListItemCard.jsx'
 import PrimaryButton from '../../components/IO/PrimaryButton.jsx'
-import BackButton from '../../components/IO/BackButton.jsx'
+import Header from '../../components/Header.jsx'
 
 export default function FriendsList() {
   const navigate = useNavigate()
@@ -54,11 +54,8 @@ export default function FriendsList() {
   return (
     <div className='min-h-screen'>
       {/* Header */}
-      <div className='w-full text-center py-4 border-b'>
-        <BackButton />
-        <h1 className='text-xl font-bold mb-1'>Friends</h1>
-      </div>
-
+      <Header title='Friends List' />
+      
       <div className='flex justify-center'>
         <header className='w-full max-w-2xl px-4 flex flex-col'>
           <p className='text-gray-600 dark:text-gray-400 text-2xl font-bold mb-1'>Individual Shared Expenses</p>

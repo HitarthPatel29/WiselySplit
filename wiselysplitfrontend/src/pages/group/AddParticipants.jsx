@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { UserPlusIcon } from '@heroicons/react/24/solid'
 import api from '../../api'
 import BackButton from '../../components/IO/BackButton.jsx'
+import Header from '../../components/Header.jsx'
 
 export default function AddParticipants() {
   const navigate = useNavigate()
@@ -45,10 +46,7 @@ export default function AddParticipants() {
   return (
     <div className='min-h-screen'>
       {/* Header */}
-      <div className='w-full text-center py-5 border-b relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold'>Add Participants</h1>
-      </div>
+      <Header title='Add Participants' />
 
       <main className='max-w-md md:max-w-xl mx-auto px-6 py-10'>
         <form onSubmit={handleInvite} className='flex flex-col gap-5'>

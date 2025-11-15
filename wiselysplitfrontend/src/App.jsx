@@ -19,6 +19,7 @@ import CreateGroup from './pages/group/CreateGroup.jsx'
 import GroupView from './pages/group/GroupView.jsx'
 import AddParticipants from './pages/group/AddParticipants.jsx'
 import EditGroup from './pages/group/EditGroup.jsx'
+import PersonalSummary from './pages/personalExpense/PersonalSummary.jsx'
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -186,6 +187,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <EditExpense />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/personalSummary"
+        element={
+          <PrivateRoute>
+            <PersonalSummary />
           </PrivateRoute>
         }
       />

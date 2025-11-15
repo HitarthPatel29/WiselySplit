@@ -4,6 +4,7 @@ import BackButton from '../../components/IO/BackButton.jsx'
 import ExpenseItemCard from '../../components/ListItem/ExpenseItemCard.jsx'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
+import Header from '../../components/Header.jsx'
 
 export default function IndividualView() {
   const navigate = useNavigate()
@@ -84,10 +85,7 @@ export default function IndividualView() {
 
   return (
     <div className='min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100'>
-      <div className='w-full text-center py-5 border-b border-gray-200 relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold mb-1'>Individual View</h1>
-      </div>
+      <Header title='Individual View' />
 
       <section className='max-w-3xl mx-auto px-4 py-6'>
         <div className='flex flex-col sm:flex-row sm:items-center gap-4'>

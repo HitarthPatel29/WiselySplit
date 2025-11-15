@@ -6,6 +6,7 @@ import ExpenseForm from '../../components/form/ExpenseForm.jsx'
 import { validateExpense, normalizeExpenseForAPI, normalizeExpenseForFields } from '../../utils/expenseModel.js'
 import api from '../../api.js'
 import { useAuth } from '../../context/AuthContext.jsx'
+import Header from '../../components/Header.jsx'
 
 export default function EditExpense() {
   const navigate = useNavigate()
@@ -59,10 +60,8 @@ export default function EditExpense() {
 
   return (
     <div className='min-h-screen '>
-      <div className='w-full text-center py-5 border-b relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold'>Edit Expense</h1>
-      </div>
+
+      <Header title='Edit Expense' />
 
       <main className='max-w-2xl mx-auto px-4 py-10'>
         <ExpenseForm

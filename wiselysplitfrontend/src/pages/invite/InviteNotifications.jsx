@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
 import BackButton from '../../components/IO/BackButton'
+import Header from '../../components/Header.jsx'
 
 export default function InviteNotifications() {
   const { userId } = useAuth()
@@ -61,11 +62,8 @@ export default function InviteNotifications() {
     
     <div className="flex justify-center px-4 py-6">
       <div className="w-full max-w-2xl space-y-5">
-        <BackButton />
-
-        <h1 className="text-4xl font-bold mb-4 text-center md:text-left">
-          Invite Notifications
-        </h1>
+        
+        <Header title='Invite Notifications' />
         {message && (
           <p className="mb-4 text-center text-sm text-gray-600">{message}</p>
         )}

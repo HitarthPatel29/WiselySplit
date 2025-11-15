@@ -4,6 +4,7 @@ import { CameraIcon } from '@heroicons/react/24/solid'
 import BackButton from '../../components/IO/BackButton.jsx'
 import api from '../../api' // 👈 make sure api.js has axios instance with baseURL
 import { useAuth } from '../../context/AuthContext' // 👈 to get current user ID
+import Header from '../../components/Header.jsx'
 
 export default function CreateGroup() {
   const navigate = useNavigate()
@@ -69,10 +70,7 @@ export default function CreateGroup() {
   return (
     <div className='min-h-screen'>
       {/* Header */}
-      <div className='w-full text-center py-5 border-b  relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold'>Create a Group</h1>
-      </div>
+      <Header title='Create a Group' />
 
       {/* Main Form */}
       <main className='max-w-md md:max-w-2xl mx-auto px-6 py-10'>

@@ -4,6 +4,7 @@ import BackButton from '../../components/IO/BackButton.jsx'
 import ExpenseItemCard from '../../components/ListItem/ExpenseItemCard.jsx'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
+import Header from '../../components/Header.jsx'
 
 /* -----------------------------------------------------
    Helper: Format a date into "Nov 11"
@@ -189,10 +190,7 @@ export default function GroupView() {
   return (
     <div className='min-h-screen'>
       {/* Header */}
-      <div className='w-full text-center py-5 border-b relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold mb-1'>Group View</h1>
-      </div>
+      <Header title='Group View' />
 
       {/* ----------------- GROUP INFO ----------------- */}
       <section className='max-w-3xl mx-auto px-4 py-6'>

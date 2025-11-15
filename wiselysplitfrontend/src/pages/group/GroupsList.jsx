@@ -5,6 +5,7 @@ import api from '../../api'
 import ListItemCard from '../../components/ListItem/ListItemCard.jsx'
 import PrimaryButton from '../../components/IO/PrimaryButton.jsx'
 import BackButton from '../../components/IO/BackButton.jsx'
+import Header from '../../components/Header.jsx'
 
 export default function GroupsList() {
   const navigate = useNavigate()
@@ -38,10 +39,7 @@ export default function GroupsList() {
   return (
     <div className='min-h-screen'>
       {/* Header */}
-      <div className='w-full text-center py-5 border-b '>
-        <BackButton />
-        <h1 className='text-xl font-bold mb-1'>Groups</h1>
-      </div>
+      <Header title='Groups' />
       <div className='flex justify-center'>
         <header className='w-full max-w-2xl px-4 flex flex-col'>
           <p className='text-gray-600 dark:text-gray-400 text-2xl font-bold mb-1'>Shared Expense Groups</p>
