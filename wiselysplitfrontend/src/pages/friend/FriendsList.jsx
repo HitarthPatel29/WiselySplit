@@ -28,7 +28,7 @@ export default function FriendsList() {
         const totalNet = list.reduce(
           (sum, f) => sum + Number(f.NetBalance || 0),
           0
-        )
+        ).toFixed(2)
         console.log('Calculated overall net balance:', totalNet)
         setOverallNet(totalNet)
 
@@ -65,7 +65,7 @@ export default function FriendsList() {
               <>
                 you are owed{' '}
                 <span className='font-semibold text-emerald-600'>
-                  ${overallNet.toFixed(2)}
+                  ${overallNet}
                 </span>
               </>
             )}
@@ -74,7 +74,7 @@ export default function FriendsList() {
               <>
                 you owe{' '}
                 <span className='font-semibold text-red-500'>
-                  ${Math.abs(overallNet).toFixed(2)}
+                  ${overallNet}
                 </span>
               </>
             )}

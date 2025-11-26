@@ -105,11 +105,11 @@ export default function GroupView() {
             // I paid → others owe me
             userAmount = splits
               .filter((p) => Number(p.userId) !== me)
-              .reduce((sum, p) => sum + Number(p.amount), 0)
+              .reduce((sum, p) => sum + Number(p.amount), 0).toFixed(2)
           } else {
             // Another user paid → I owe them
             const mySplit = splits.find((p) => Number(p.userId) === me)
-            userAmount = mySplit ? Number(mySplit.amount) : 0
+            userAmount = (mySplit ? Number(mySplit.amount) : 0).toFixed(2)
           }
 
           return {
@@ -125,7 +125,8 @@ export default function GroupView() {
             type: payer === me ? 'lent' : 'owe', // for ExpenseItemCard styling
           }
         })
-        setExpenses(normalizedExpenses)
+        console.log("normalizedExpenses: ", normalizedExpenses)
+        setExpenses(normalizedExpenses) 
 
         /* ------------------ MEMBER STANDING --------------------- */
         const standingList = computeMemberStanding(normalizedExpenses, Number(userId))

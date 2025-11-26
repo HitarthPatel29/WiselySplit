@@ -22,7 +22,7 @@ public class InviteService {
 
     @Autowired private InviteDAO inviteDAO;
     @Autowired private UserDAO userDAO;
-    @Autowired private EmailService emailService;
+    @Autowired private EmailServiceMailTrapAPI emailServiceMailTrapAPI;
     @Autowired private GroupsDAO groupsDAO;
     @Autowired private ExpensesDAO expensesDAO;
     @Autowired private ExpensesService expensesService;
@@ -91,7 +91,7 @@ public class InviteService {
             if (receiverOpt.isPresent()) {
                 // Existing user — in-app + email notification
                 User receiver = receiverOpt.get();
-                emailService.sendEmail(
+                emailServiceMailTrapAPI.sendEmail(
                         receiver.getEmail(),
                         subject,
                         message + "\n\nWe thought you'd like a reminder 😊"
@@ -99,7 +99,7 @@ public class InviteService {
                 return "In-app invite and email notification sent to " + receiver.getName() + ".";
             } else {
                 // Non-existing user — email-only invite
-                emailService.sendEmail(
+                emailServiceMailTrapAPI.sendEmail(
                         input.trim(),
                         "You're invited to join WiselySplit!",
                         sender.getName() + " invited you to join WiselySplit.\n\n" +

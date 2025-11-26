@@ -5,11 +5,11 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
-public class EmailService {
+public class EmailServiceSMTP {
 
     private final JavaMailSender mailSender;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailServiceSMTP(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 

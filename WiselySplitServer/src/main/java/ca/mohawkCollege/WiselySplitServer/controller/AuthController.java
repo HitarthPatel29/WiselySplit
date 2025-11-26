@@ -3,7 +3,7 @@ package ca.mohawkCollege.WiselySplitServer.controller;
 import ca.mohawkCollege.WiselySplitServer.Security.JwtUtil;
 import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.model.User;
-import ca.mohawkCollege.WiselySplitServer.service.EmailService;
+import ca.mohawkCollege.WiselySplitServer.service.EmailServiceMailTrapAPI;
 import ca.mohawkCollege.WiselySplitServer.service.OtpService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
@@ -30,17 +30,17 @@ public class AuthController {
     private final AuthenticationManager authManager;
     private final JwtUtil jwtUtil;
     private final UserDAO userDAO;
-    private final EmailService emailService;
+    private final EmailServiceMailTrapAPI emailServiceMailTrapAPI;
     private final OtpService otpService;
 
     @Value("${google.client.id}")
     private String googleClientId;
 
-    public AuthController(AuthenticationManager authManager, JwtUtil jwtUtil, UserDAO userDAO, EmailService emailService, OtpService otpService) {
+    public AuthController(AuthenticationManager authManager, JwtUtil jwtUtil, UserDAO userDAO, EmailServiceMailTrapAPI emailServiceMailTrapAPI, OtpService otpService) {
         this.authManager = authManager;
         this.jwtUtil = jwtUtil;
         this.userDAO = userDAO;
-        this.emailService = emailService;
+        this.emailServiceMailTrapAPI = emailServiceMailTrapAPI;
         this.otpService = otpService;
     }
 
@@ -63,7 +63,7 @@ public class AuthController {
 
             // Generate OTP
             String otp = otpService.generateOtp(email);
-            emailService.sendEmail(email, "Your Login OTP", "Your OTP is: " + otp);
+            emailServiceMailTrapAPI.sendEmail(email, "Your Login OTP", "Your OTP is: " + otp);
 
             return ResponseEntity.ok(Map.of(
                     "message", "OTP sent to your email. Please verify."

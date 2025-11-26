@@ -17,13 +17,13 @@ public class PasswordResetService {
 
     private final UserDAO userDAO;
     private final PasswordResetTokenDAO tokenDAO;
-    private final EmailService emailService; // you already have/will need this
+    private final EmailServiceMailTrapAPI emailServiceMailTrapAPI; // you already have/will need this
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public PasswordResetService(UserDAO userDAO, PasswordResetTokenDAO tokenDAO, EmailService emailService) {
+    public PasswordResetService(UserDAO userDAO, PasswordResetTokenDAO tokenDAO, EmailServiceMailTrapAPI emailServiceMailTrapAPI) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
-        this.emailService = emailService;
+        this.emailServiceMailTrapAPI = emailServiceMailTrapAPI;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
@@ -53,7 +53,7 @@ public class PasswordResetService {
         // Send email
         String subject = "WiselySplit – Password Reset OTP";
         String body = "Your OTP is: " + otp + "\nThis code will expire in 10 minutes.";
-        emailService.sendEmail(user.getEmail(), subject, body);
+        emailServiceMailTrapAPI.sendEmail(user.getEmail(), subject, body);
 
         return true;
     }
