@@ -49,6 +49,14 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
     }
 
+    public boolean checkUserNameExists(String username) {
+        return userDAO.findByUsername(username).isPresent();
+    }
+
+    public boolean checkEmailExists(String email) {
+        return userDAO.findByEmail(email).isPresent();
+    }
+
 
     @Override
     public User createUser(User user) {
@@ -92,7 +100,6 @@ public class UserServiceImpl implements UserService {
         }
 
         try {
-            user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
             userDAO.update(user);
             return user;
         } catch (DataIntegrityViolationException ex) {

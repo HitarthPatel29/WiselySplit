@@ -13,4 +13,6 @@ public interface UserService {
     void deleteUser(int id);
     List<User> getAllUsers();
     Map<String, Object> getUserConnections(int userId);
+    public boolean checkUserNameExists(String username);
+    public boolean checkEmailExists(String email);
 }

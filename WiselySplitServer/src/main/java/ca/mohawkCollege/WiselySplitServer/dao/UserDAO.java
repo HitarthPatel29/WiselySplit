@@ -53,13 +53,12 @@ public class UserDAO {
     }
 
     public int update(User user) {
-        String sql = "UPDATE User SET Name = ?, UserName = ?, Email = ?, PhoneNum = ?, Password = ?, ProfilePicture = ? WHERE UserID = ?";
+        String sql = "UPDATE User SET Name = ?, UserName = ?, Email = ?, PhoneNum = ?, ProfilePicture = ? WHERE UserID = ?";
         return jdbcTemplate.update(sql,
                 user.getName(),
                 user.getUserName(),
                 user.getEmail(),
                 user.getPhoneNum(),
-                user.getPassword(),
                 user.getProfilePicture(),
                 user.getUserId());
     }

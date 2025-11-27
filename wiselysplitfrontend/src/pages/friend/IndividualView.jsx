@@ -31,7 +31,7 @@ export default function IndividualView() {
               name: backendFriend.name,
               avatar: backendFriend.profilePicture || backendFriend.avatar || '',
               youOwe: backendFriend.youOwe,
-              amountOwed: backendFriend.amount,
+              amountOwed: backendFriend.amount.toFixed(2),
               userId: backendFriend.userId || backendFriend.id,
             }
           : null

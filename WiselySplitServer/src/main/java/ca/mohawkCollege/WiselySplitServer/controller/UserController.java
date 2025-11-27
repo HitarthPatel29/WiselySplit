@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -60,10 +61,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error: " + e.getMessage());
         }
-
-//        catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-//        }
     }
 
 
@@ -81,6 +78,34 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @GetMapping("/{id}/check-username")
+    public ResponseEntity<?> checkUsername(@PathVariable int id, @RequestParam("username") String userName) {
+        User existing = userService.getUserById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Username uniqueness (excluding current user)
+        if (!existing.getUserName().equalsIgnoreCase(userName) && userService.checkUserNameExists(userName)) {
+            return ResponseEntity.ok(Map.of("available", false));
+        }
+        else{
+            return ResponseEntity.ok(Map.of("available", true));
+        }
+    }
+
+    @GetMapping("/{id}/check-email")
+    public ResponseEntity<?> checkEmail(@PathVariable int id, @RequestParam("email") String email) {
+        User existing = userService.getUserById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Email uniqueness (excluding current user)
+        if (!existing.getEmail().equalsIgnoreCase(email) && userService.checkEmailExists(email)) {
+            return ResponseEntity.ok(Map.of("available", false));
+        }
+        else{
+            return ResponseEntity.ok(Map.of("available", true));
+        }
+    }
+
     // Update User
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     public ResponseEntity<?> updateUser(
@@ -89,19 +114,39 @@ public class UserController {
             @RequestParam("userName") String userName,
             @RequestParam("email") String email,
             @RequestParam("phoneNum") Long phoneNum,
-            @RequestParam("password") String password,
             @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
         try {
             // Fetch existing user
             User existing = userService.getUserById(id)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
+            // Username uniqueness (excluding current user)
+            if (!existing.getUserName().equalsIgnoreCase(userName)){
+                if(userService.checkUserNameExists(userName)) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(Map.of(
+                                    "field", "userName",
+                                    "message", "Username already taken"
+                            ));
+                }
+            }
+
+            // Email uniqueness
+            if (!existing.getEmail().equalsIgnoreCase(email) &&
+                    userService.checkEmailExists(email)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of(
+                                "field", "email",
+                                "message", "Email already exists"
+                        ));
+            }
+
+
             // Update fields
             existing.setName(name);
             existing.setUserName(userName);
             existing.setEmail(email);
             existing.setPhoneNum(phoneNum);
-            existing.setPassword(password);
 
             // Handle profile picture
             if (profilePicture != null && !profilePicture.isEmpty()) {
