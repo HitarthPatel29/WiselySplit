@@ -34,7 +34,7 @@ export default function Header({ title = '' }) {
       {/* Slide-In Menu */}
       {open && (
         <div className='fixed inset-0 bg-black/40 z-50 flex justify-end'>
-          <div className='w-64 h-full shadow-lg p-5 flex flex-col animate-slideLeft'>
+          <div className='w-64 h-full bg-gray-50 dark:bg-gray-900 shadow-lg p-5 flex flex-col animate-slideLeft'>
 
             {/* Close button */}
             <div className='flex justify-between items-center mb-6'>
@@ -87,14 +87,14 @@ export default function Header({ title = '' }) {
 
               <button
                 onClick={() => navigate('/profile/edit')}
-                className='rounded-xl bg-gray-200 px-4 py-2 text-gray-800 font-semibold hover:bg-gray-300'
+                className='rounded-xl bg-gray-500 px-4 py-2 text-white font-semibold hover:bg-gray-300'
               >
                 Edit Profile
               </button>
 
               <button
                 onClick={() => navigate('/personalSummary')}
-                className='rounded-xl bg-yellow-500 px-4 py-2 text-gray-800 font-semibold hover:bg-yellow-600'
+                className='rounded-xl bg-yellow-500 px-4 py-2 text-white font-semibold hover:bg-yellow-600'
               >
                 Personal Summary
               </button>

@@ -1,176 +1,265 @@
-// src/pages/summary/PersonalSummary.jsx
-import React, { useMemo, useState } from 'react'
-import BackButton from '../../components/IO/BackButton.jsx'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import api from '../../api'
+import FilterModal from '../../components/Modals/FilterModal'
+import Header from '../../components/Header.jsx'
 import ExpenseItemCard from '../../components/ListItem/ExpenseItemCard.jsx'
+import { AdjustmentsHorizontalIcon} from '@heroicons/react/24/solid';
+
+
+const formatDate = (raw) => {
+  if (!raw) return ''
+  try {
+    const d = new Date(raw)
+    const month = d.toLocaleString('en-US', { month: 'short' })
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${month} ${day}`
+  } catch {
+    return raw
+  }
+}
 
 export default function PersonalSummary() {
+
+  const navigate = useNavigate()
+  const { userId } = useAuth()
+
+  const [rawExpenses, setRawExpenses] = useState([])
+  const [filteredExpenses, setFilteredExpenses] = useState([])
+
+  const [totals, setTotals] = useState({ totalLent: 0, totalOwed: 0 })
+
+  // Filters
   const [search, setSearch] = useState('')
-  const [filterType, setFilterType] = useState('all') // all | lent | owe
+  const [typeFilter, setTypeFilter] = useState('')
+  const [groupFilter, setGroupFilter] = useState('')
+  const [sort, setSort] = useState('newest')
+  const [monthFilter, setMonthFilter] = useState('')
 
-  // Dummy data for now
-  const expenses = useMemo(
-    () => [
-      {
-        id: 1,
-        date: 'Mar 01',
-        title: 'Lunch with client',
-        subtitle: 'You lent to Trish',
-        amount: 45,
-        type: 'lent',
-      },
-      {
-        id: 2,
-        date: 'Mar 02',
-        title: 'Lunch with client',
-        subtitle: 'You owe Jay M.',
-        amount: 25,
-        type: 'owe',
-      },
-      {
-        id: 3,
-        date: 'Mar 04',
-        title: 'Lunch with client',
-        subtitle: 'You lent to Jay M.',
-        amount: 100,
-        type: 'lent',
-      },
-      {
-        id: 4,
-        date: 'Mar 07',
-        title: 'Lunch with client',
-        subtitle: 'You owe Trish',
-        amount: 15,
-        type: 'owe',
-      },
-      {
-        id: 5,
-        date: 'Mar 10',
-        title: 'Lunch with client',
-        subtitle: 'You lent to Trish',
-        amount: 150,
-        type: 'lent',
-      },
-    ],
-    []
-  )
+  // Date range for backend fetch
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
-  const totalLent = useMemo(
-    () =>
-      expenses
-        .filter((e) => e.type === 'lent')
-        .reduce((sum, e) => sum + e.amount, 0),
-    [expenses]
-  )
+  // Show Modal
+  const [showFilter, setShowFilter] = useState(false)
 
-  const totalOwed = useMemo(
-    () =>
-      expenses
-        .filter((e) => e.type === 'owe')
-        .reduce((sum, e) => sum + e.amount, 0),
-    [expenses]
-  )
+  // You may already have group list from context; otherwise you preload them here
+  const [groups, setGroups] = useState([])
 
-  const filteredExpenses = expenses.filter((ex) => {
-    const matchesSearch =
-      ex.title.toLowerCase().includes(search.toLowerCase()) ||
-      ex.subtitle.toLowerCase().includes(search.toLowerCase())
+  // -----------------------------------------------------------
+  // Default 1 Month Range calculation
+  // -----------------------------------------------------------
+  useEffect(() => {
+    const now = new Date()
+    const end = now.toISOString().split('T')[0]
 
-    const matchesType = filterType === 'all' ? true : ex.type === filterType
+    const monthAgo = new Date(now)
+    monthAgo.setMonth(now.getMonth() - 1)
+    const start = monthAgo.toISOString().split('T')[0]
 
-    return matchesSearch && matchesType
-  })
+    setStartDate(start)
+    setEndDate(end)
+  }, [])
 
-  const handleFilterClick = () => {
-    // Simple cycle: all -> lent -> owe -> all
-    setFilterType((prev) =>
-      prev === 'all' ? 'lent' : prev === 'lent' ? 'owe' : 'all'
-    )
+  // -----------------------------------------------------------
+  // Fetch Groups (Optional but needed for Filter)
+  // -----------------------------------------------------------
+  useEffect(() => {
+    const loadGroups = async () => {
+      try {
+        const res = await api.get('/groups/' + userId)
+        const cleaned = (res.data || []).map(g => ({
+          groupId: g.groupId,
+          groupName: g.name    // your DB returns 'name'
+        }))
+        setGroups(cleaned)
+      } catch (err) {
+        console.error('Error loading groups:', err)
+      }
+    }
+
+    loadGroups()
+  }, [userId])
+
+  // -----------------------------------------------------------
+  // Fetch Personal Summary from backend (Option 3)
+  // -----------------------------------------------------------
+  useEffect(() => {
+    if (!startDate || !endDate) return
+
+    const fetchSummary = async () => {
+      try {
+        const res = await api.get(`/expenses/${userId}/personal-summary`,
+          { params: { startDate: startDate, endDate: endDate } }
+        )
+
+        const data = res.data || {}
+
+        setRawExpenses(data.expenses || [])
+        setFilteredExpenses(data.expenses || [])
+
+        setTotals(data.summary || { totalLent: 0, totalOwed: 0 })
+
+      } catch (err) {
+        console.error('Error fetching personal summary:', err)
+      }
+    }
+
+    fetchSummary()
+  }, [userId, startDate, endDate])
+
+  // -----------------------------------------------------------
+  // Apply All FE Filters
+  // -----------------------------------------------------------
+  useEffect(() => {
+    let list = [...rawExpenses]
+
+    // Keyword Search
+    if (search.trim() !== '') {
+      list = list.filter(e =>
+        e.title.toLowerCase().includes(search.toLowerCase())
+      )
+    }
+
+    // Expense Type
+    if (typeFilter) {
+      list = list.filter(e => e.type === typeFilter)
+    }
+
+    // Group
+    if (groupFilter) {
+      list = list.filter(e => String(e.groupId) === String(groupFilter))
+    }
+
+    // Filter by Month
+    if (monthFilter) {
+      list = list.filter(e => {
+        const monthIndex = new Date(e.date).getMonth() // 0-11
+        const monthName = getMonthName(monthIndex)
+        return monthName === monthFilter
+      })
+    }
+
+    // Sort
+    list.sort((a, b) => {
+      if (sort === 'newest') {
+        return new Date(b.date) - new Date(a.date)
+      }
+      return new Date(a.date) - new Date(b.date)
+    })
+
+    setFilteredExpenses(list)
+
+    // Recalculate Totals for filtered list
+    let lent = 0
+    let owed = 0
+
+    list.forEach(e => {
+      if (e.netAmount < 0) lent += Math.abs(e.netAmount)
+      else if (e.netAmount > 0) owed += e.netAmount
+    })
+
+    setTotals({ totalLent: lent, totalOwed: owed })
+
+  }, [search, typeFilter, groupFilter, sort, monthFilter, rawExpenses])
+
+  // Helper to map numeric month → Name
+  const getMonthName = index => {
+    const names = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ]
+    return names[index]
   }
 
-  const filterLabel =
-    filterType === 'all'
-      ? 'Filter: All'
-      : filterType === 'lent'
-      ? 'Filter: Lent'
-      : 'Filter: Owe'
+  // -----------------------------------------------------------
+  // Handle apply from FilterModal
+  // -----------------------------------------------------------
+  const handleApplyFilters = (f) => {
+    setTypeFilter(f.typeFilter)
+    setGroupFilter(f.groupFilter)
+    setSort(f.sort)
+    setMonthFilter(f.month)
 
-  return (
-    <div className='min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100'>
-      {/* Top header bar */}
-      <div className='w-full text-center py-4 border-b border-gray-200 relative'>
-        <BackButton />
-        <h1 className='text-xl font-bold mb-1'>Personal Summary</h1>
-      </div>
+    // If user picked a manual date range — trigger backend fetch again
+    if (f.startDate && f.endDate) {
+      setStartDate(f.startDate)
+      setEndDate(f.endDate)
+    }
 
-      {/* Main content container */}
-      <div className='max-w-4xl mx-auto px-4 py-5 sm:py-6'>
-        {/* Page title (matches desktop screenshot) */}
-        <h2 className='text-xl sm:text-2xl font-semibold mb-4'>
-          Personal Summary
-        </h2>
+    setShowFilter(false)
+  }
 
-        {/* Search + Filter */}
-        <div className='flex flex-col sm:flex-row sm:items-center gap-3 mb-4'>
+  // -----------------------------------------------------------
+  // UI
+  // -----------------------------------------------------------
+
+   return (
+    <div className='min-h-screen'>
+
+      <Header title='Personal Summary' />
+
+      {/* MAIN CONTENT AREA */}
+      <main className='max-w-3xl mx-auto px-4 py-6'>
+
+        {/* Summary Section */}
+        <div className='mb-5'>
+          <p className='text-emerald-600 dark:text-emerald-400 font-semibold'>
+            Total Amount Lent: ${totals.totalLent.toFixed(2)}
+          </p>
+          <p className='text-red-500 dark:text-red-400 font-semibold'>
+            Total Amount Owed: ${totals.totalOwed.toFixed(2)}
+          </p>
+        </div>
+
+        {/* Search + Filter Button */}
+        <div className='flex items-center gap-3 mb-6'>
           <input
             type='text'
-            placeholder='Search...'
+            placeholder='Search expenses...'
+            className='flex-1 border p-3 border border-gray-300 rounded-xl px-4 py-2 
+                      text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 
+                      focus:ring-emerald-400' 
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className='flex-1 border border-gray-300 rounded-xl px-4 py-2 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-400'
+            onChange={e => setSearch(e.target.value)}
           />
 
           <button
-            type='button'
-            onClick={handleFilterClick}
-            className='inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-gray-300 bg-white dark:bg-gray-800 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700'
+            onClick={() => setShowFilter(true)}
+            className='p-3 rounded-xl border border-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
           >
-            <span>Filter</span>
-            <span className='text-xs text-gray-500 dark:text-gray-400'>
-              {filterLabel.replace('Filter: ', '')}
-            </span>
+            <AdjustmentsHorizontalIcon className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Totals */}
-        <div className='mb-6 text-sm sm:text-base'>
-          <p className='font-semibold'>
-            Total Amount Lent:{' '}
-            <span className='text-emerald-600'>
-              ${totalLent.toFixed(2)}
-            </span>
-          </p>
-          <p className='font-semibold'>
-            Total Amount Owed:{' '}
-            <span className='text-red-500'>
-              ${totalOwed.toFixed(2)}
-            </span>
-          </p>
-        </div>
-
-        {/* Expenses heading */}
-        <h3 className='text-lg font-semibold mb-2'>Expenses</h3>
-
-        {/* Expense list */}
-        <div className='flex flex-col gap-3 pb-10'>
-          {filteredExpenses.map((ex) => (
+        {/* Expense List */}
+        <div className='flex flex-col gap-3'>
+          {filteredExpenses.map((e) => (
             <ExpenseItemCard
-              key={ex.id}
-              date={ex.date} // 'Mar 01' → your ExpenseItemCard splits this into month/day
-              title={ex.title}
-              subtitle={ex.subtitle}
-              amount={ex.amount}
-              type={ex.type} // 'lent' | 'owe' → controls green/red text
-              onClick={() => {}}
+              key={e.expenseId}
+              date={formatDate(e.date)}
+              title={e.title}
+              subtitle={`Type: ${e.type} ${e.groupId!=null? ` , Group: ${e.groupName}`: ``}`}
+              amount={Math.abs(e.netAmount.toFixed(2))}
+              type={e.netAmount < 0 ? 'lent' : 'owe'}
+              onClick={() =>
+                navigate(`/personalSummary/expenses/${e.expenseId}`, {state: { ...e, from: 'personalSummary' }})
+              }
             />
           ))}
-
-          {filteredExpenses.length === 0 && (
-            <p className='text-gray-500 dark:text-gray-400 text-center mt-6'>
-              No expenses found for this search/filter.
-            </p>
-          )}
         </div>
-      </div>
+
+      </main>
+
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={showFilter}
+        onClose={() => setShowFilter(false)}
+        onApply={handleApplyFilters}
+        groups={groups}
+      />
+
     </div>
   )
 }

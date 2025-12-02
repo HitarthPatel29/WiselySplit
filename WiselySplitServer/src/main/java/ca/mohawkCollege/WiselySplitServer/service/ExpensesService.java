@@ -49,6 +49,29 @@ public class ExpensesService {
         }
     }
 
+    public Map<String, Object> getPersonalSummary(int userId, String startDate, String endDate) {
+
+        List<Map<String, Object>> rows =
+                expensesDAO.fetchPersonalSummary(userId, startDate, endDate);
+
+        double totalLent = 0;
+        double totalOwed = 0;
+
+        for (Map<String, Object> r : rows) {
+            double net = ((Number) r.get("netAmount")).doubleValue();
+            if (net < 0) totalLent += Math.abs(net);
+            else if (net > 0) totalOwed += net;
+        }
+
+        return Map.of(
+                "summary", Map.of(
+                        "totalLent", totalLent,
+                        "totalOwed", totalOwed
+                ),
+                "expenses", rows
+        );
+    }
+
     /**  Fetch single expense details */
     public Map<String, Object> getExpenseDetails(int expenseId) {
         Map<String, Object> expense = expensesDAO.findExpenseById(expenseId);

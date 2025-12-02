@@ -81,6 +81,44 @@ public class ExpensesDAO {
         return jdbcTemplate.queryForList(sql, expenseId);
     }
 
+    /** Personal Summary (Option 3: dateRange from backend, rest of filtering on FE) */
+    public List<Map<String, Object>> fetchPersonalSummary(int userId, String startDate, String endDate) {
+
+        String sql = """
+        SELECT 
+            e.ExpenseID AS expenseId,
+            e.ExpenseTitle AS title,
+            e.ExpenseDate AS date,
+            e.ExpenseType AS type,
+            e.Amount AS totalExpenseAmount,
+            e.PayerID AS payerId,
+            u.Name AS payerName,
+            e.GroupID AS groupId,
+            g.GroupName AS groupName,
+            ep.Contribution AS userContribution,
+
+            CASE 
+                WHEN e.PayerID = ? THEN 1 
+                ELSE 0 
+            END AS isUserPayer,
+
+            CASE 
+                WHEN e.PayerID = ? THEN (ep.Contribution * -1) 
+                ELSE ep.Contribution
+            END AS netAmount
+
+        FROM Expenses e
+        JOIN ExpenseParticipation ep ON e.ExpenseID = ep.ExpenseID
+        JOIN User u ON e.PayerID = u.UserID
+        LEFT JOIN ExpenseGroups g ON e.GroupID = g.GroupID
+        WHERE ep.UserID = ?
+          AND e.ExpenseDate BETWEEN ? AND ?
+        ORDER BY e.ExpenseDate DESC
+        """;
+
+        return jdbcTemplate.queryForList(sql, userId, userId, userId, startDate, endDate);
+    }
+
     /**  Delete Expense + participation records */
     public void deleteExpense(int expenseId) {
         jdbcTemplate.update("DELETE FROM ExpenseParticipation WHERE ExpenseID = ?", expenseId);

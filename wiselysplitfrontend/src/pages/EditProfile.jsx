@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
 import { CameraIcon } from '@heroicons/react/24/solid'
+
 import Header from '../components/Header.jsx'
 
 export default function EditProfile() {

@@ -20,8 +20,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Dashboard - {userId}</h1>
+    <div className='min-h-screen'>
+      {/* Header */}
+      <Header title='Dashboard' />
+      <div class="p-6">
+      <h1 className="text-2xl font-bold mb-4">UserId - {userId}</h1>
 
       <div className="flex items-center gap-3 mb-6">
         <button
@@ -74,6 +77,7 @@ export default function Dashboard() {
       <div className="text-gray-500 dark:text-gray-400">
         <p>Welcome to your WiselySplit dashboard.</p>
         <p>From here you can view pending invites, manage groups, and more.</p>
+      </div>
       </div>
     </div>
   )

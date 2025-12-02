@@ -38,6 +38,26 @@ public class ExpensesController {
         }
     }
 
+    /** PERSONAL SUMMARY for given date-range (default 1 month) */
+    @GetMapping("/{userId}/personal-summary")
+    public ResponseEntity<?> getPersonalSummary(
+            @PathVariable int userId,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
+
+        try {
+            Map<String, Object> data =
+                    expensesService.getPersonalSummary(userId, startDate, endDate);
+
+            return ResponseEntity.ok(data);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /**  DELETE Expense */
     @DeleteMapping("/{expenseId}")
     public ResponseEntity<?> deleteExpense(@PathVariable int expenseId) {

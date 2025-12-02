@@ -134,7 +134,7 @@ export default function IndividualView() {
               type={ex.type}
               highlight={ex.highlight}
               onClick={() =>
-                navigate(`/friends/${friendId}/expenses/${ex.id}`, { state: ex })
+                navigate(`/friends/${friendId}/expenses/${ex.id}`, { state: {...ex, from: 'friend' } })
               }
             />
           ))}

@@ -279,7 +279,7 @@ export default function GroupView() {
               type={ex.type}
               highlight={ex.highlight}
               onClick={() => navigate(`/groups/${id}/expenses/${ex.id}`, {
-                state: { ...ex, fromGroup: true }
+                  state: {...ex, from: 'group' }
               })}
             />
           ))}

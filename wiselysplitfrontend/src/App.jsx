@@ -198,6 +198,22 @@ export default function App() {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/personalSummary/expenses/:expenseId"
+        element={
+          <PrivateRoute>
+            <ExpenseDetails />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/personalSummary/expenses/:expenseId/edit"
+        element={
+          <PrivateRoute>
+            <EditExpense />
+          </PrivateRoute>
+        }
+      />
 
     </Routes>
   )

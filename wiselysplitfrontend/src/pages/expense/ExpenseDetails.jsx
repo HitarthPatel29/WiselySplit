@@ -1,7 +1,6 @@
 // src/pages/Expense/ExpenseDetails.jsx
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import BackButton from '../../components/IO/BackButton.jsx'
 import api from '../../api'
 import { normalizeExpenseForFields } from '../../utils/expenseModel'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -12,6 +11,7 @@ export default function ExpenseDetails() {
   const {userId, friendsAndGroups} = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const from = location.state?.from || null
   const [expense, setExpense] = useState(location.state || null)
   const [loading, setLoading] = useState(!location.state)
 
@@ -55,8 +55,11 @@ export default function ExpenseDetails() {
       .delete(`/expenses/${expenseId}`)
       .then(() => {
         alert('Expense deleted')
-        // navigate back to group or friend based on expense.fromGroup or shareWithType
-        if (expense.fromGroup || expense.shareWithType === 'group') {
+        // navigate back to group or friend based on location.state?.from
+        if (from === 'personalSummary') {
+          navigate(-1)
+        }
+        else if (from === 'personalSummary') {
           navigate(`/groups/${id}`)
         } else {
           navigate(`/friends/${id}`)
@@ -100,9 +103,17 @@ export default function ExpenseDetails() {
 
           <div className='flex flex-col sm:flex-row gap-3 mt-6'>
             <button
-              onClick={() =>
-                navigate(`/friends/${id}/expenses/${expenseId}/edit`, { state: expense })
-              }
+              onClick={() =>{
+                if (from === 'personalSummary') {
+                  navigate(`/personalSummary/expenses/${expenseId}/edit`, {state: { ...expense, from }})
+                }
+                else if (from === 'group') {
+                  navigate(`/groups/${id}/expenses/${expenseId}/edit`, {state: { ...expense, from }})
+                }
+                else {
+                  navigate(`/friends/${id}/expenses/${expenseId}/edit`, {state: { ...expense, from }})
+                }
+              }}
               className='flex-1 bg-emerald-500 text-white font-semibold rounded-xl py-3 hover:bg-emerald-600 transition'
             >
               Edit Expense

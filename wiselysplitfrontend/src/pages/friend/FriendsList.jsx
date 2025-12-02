@@ -65,7 +65,7 @@ export default function FriendsList() {
               <>
                 you are owed{' '}
                 <span className='font-semibold text-emerald-600'>
-                  ${overallNet}
+                  ${Math.abs(overallNet)}
                 </span>
               </>
             )}
@@ -74,7 +74,7 @@ export default function FriendsList() {
               <>
                 you owe{' '}
                 <span className='font-semibold text-red-500'>
-                  ${overallNet}
+                  ${Math.abs(overallNet)}
                 </span>
               </>
             )}
