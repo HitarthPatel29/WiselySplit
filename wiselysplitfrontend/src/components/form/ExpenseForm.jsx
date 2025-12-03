@@ -403,7 +403,10 @@ export default function ExpenseForm({
           <option value='Work'>Work</option>
           <option value='Food'>Food</option>
           <option value='Travel'>Travel</option>
-          <option value='Personal'>Personal</option>
+          <option value='Personal'>Personal</option> 
+          <option value='Utilities'>Personal</option> 
+          <option value='Entertainment'>Entertainment</option> 
+          <option value='Other'>Other</option>
         </select>
       </div>
 

@@ -113,6 +113,7 @@ public class ExpensesDAO {
         LEFT JOIN ExpenseGroups g ON e.GroupID = g.GroupID
         WHERE ep.UserID = ?
           AND e.ExpenseDate BETWEEN ? AND ?
+          AND e.ExpenseType != 'Fugazi'
         ORDER BY e.ExpenseDate DESC
         """;
 

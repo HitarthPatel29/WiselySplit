@@ -23,7 +23,7 @@ export default function Dashboard() {
     <div className='min-h-screen'>
       {/* Header */}
       <Header title='Dashboard' />
-      <div class="p-6">
+      <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">UserId - {userId}</h1>
 
       <div className="flex items-center gap-3 mb-6">
