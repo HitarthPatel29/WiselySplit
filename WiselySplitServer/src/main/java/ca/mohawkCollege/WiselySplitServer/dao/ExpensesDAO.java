@@ -95,29 +95,31 @@ public class ExpensesDAO {
             u.Name AS payerName,
             e.GroupID AS groupId,
             g.GroupName AS groupName,
-            ep.Contribution AS userContribution,
-
+            COALESCE(ep.Contribution, 0) AS userContribution,
+            CASE WHEN e.PayerID = ? THEN 1 ELSE 0 END AS isUserPayer,
             CASE 
-                WHEN e.PayerID = ? THEN 1 
-                ELSE 0 
-            END AS isUserPayer,
-
-            CASE 
-                WHEN e.PayerID = ? THEN (ep.Contribution * -1) 
-                ELSE ep.Contribution
+                WHEN e.PayerID = ? THEN -COALESCE((
+                    SELECT SUM(ep2.Contribution)
+                    FROM ExpenseParticipation ep2
+                    WHERE ep2.ExpenseID = e.ExpenseID
+                      AND ep2.UserID != e.PayerID
+                ), 0)
+                ELSE COALESCE(ep.Contribution, 0)
             END AS netAmount
-
         FROM Expenses e
-        JOIN ExpenseParticipation ep ON e.ExpenseID = ep.ExpenseID
-        JOIN User u ON e.PayerID = u.UserID
-        LEFT JOIN ExpenseGroups g ON e.GroupID = g.GroupID
-        WHERE ep.UserID = ?
-          AND e.ExpenseDate BETWEEN ? AND ?
-          AND e.ExpenseType != 'Fugazi'
+        LEFT JOIN ExpenseParticipation ep 
+            ON ep.ExpenseID = e.ExpenseID 
+            AND ep.UserID = ?
+        JOIN User u ON u.UserID = e.PayerID
+        LEFT JOIN ExpenseGroups g ON g.GroupID = e.GroupID
+        WHERE 
+            (ep.UserID = ? OR e.PayerID = ?)
+            AND e.ExpenseDate BETWEEN ? AND ?
+            AND e.ExpenseType != 'Fugazi'
         ORDER BY e.ExpenseDate DESC
         """;
 
-        return jdbcTemplate.queryForList(sql, userId, userId, userId, startDate, endDate);
+        return jdbcTemplate.queryForList(sql, userId, userId, userId, userId, userId, startDate, endDate);
     }
 
     /**  Delete Expense + participation records */
