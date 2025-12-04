@@ -18,10 +18,19 @@ public class ExpensesDAO {
     private JdbcTemplate jdbcTemplate;
 
     /** Insert Expense and return ExpenseID */
-    public int insertExpense(String title, String date, String type, double amount, int payerId, Integer groupId) {
+    public int insertExpense(
+            String title,
+            String date,
+            String type,
+            double amount,
+            int payerId,
+            Integer groupId,
+            boolean isSettleUp,
+            Integer paymentId
+    ) {
         String sql = """
-            INSERT INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, GroupID)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, GroupID, IsSettleUp, PaymentID)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -34,9 +43,35 @@ public class ExpensesDAO {
             ps.setInt(5, payerId);
             if (groupId != null) ps.setInt(6, groupId);
             else ps.setNull(6, Types.INTEGER);
+            ps.setBoolean(7, isSettleUp);
+            if (paymentId != null) ps.setInt(8, paymentId);
+            else ps.setNull(8, Types.INTEGER);
             return ps;
         }, keyHolder);
         return keyHolder.getKey().intValue();
+    }
+
+    /** Insert Payment row (if applicable) and return PaymentID */
+    public Integer addPayment(
+            double amount,
+            Integer payerId,
+            Integer receiverId
+    ) {
+        String sql = """
+            INSERT INTO Payments (Amount, PayerID, ReceiverID, PaymentDate)
+            VALUES (?, ?, ?, NOW())
+        """;
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setDouble(1, amount);
+            ps.setInt(2, payerId);
+            ps.setInt(3, receiverId);
+            return ps;
+        }, keyHolder);
+
+        return keyHolder.getKey() != null ? keyHolder.getKey().intValue() : null;
     }
 
     /**  Insert ExpenseParticipation records */
@@ -56,6 +91,8 @@ public class ExpensesDAO {
                 e.ExpenseDate AS date,
                 e.ExpenseType AS type,
                 e.Amount AS amount,
+                e.IsSettleUp AS isSettleUp,
+                e.PaymentID AS paymentId,
                 e.GroupID AS groupId,
                 u.Name AS payer,
                 u.UserID AS payerId
@@ -95,6 +132,8 @@ public class ExpensesDAO {
             u.Name AS payerName,
             e.GroupID AS groupId,
             g.GroupName AS groupName,
+            e.IsSettleUp AS isSettleUp,
+            e.PaymentID AS paymentId,
             COALESCE(ep.Contribution, 0) AS userContribution,
             CASE WHEN e.PayerID = ? THEN 1 ELSE 0 END AS isUserPayer,
             CASE 

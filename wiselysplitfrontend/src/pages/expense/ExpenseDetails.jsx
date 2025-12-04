@@ -58,8 +58,7 @@ export default function ExpenseDetails() {
         // navigate back to group or friend based on location.state?.from
         if (from === 'personalSummary') {
           navigate(-1)
-        }
-        else if (from === 'personalSummary') {
+        } else if (from === 'group') {
           navigate(`/groups/${id}`)
         } else {
           navigate(`/friends/${id}`)

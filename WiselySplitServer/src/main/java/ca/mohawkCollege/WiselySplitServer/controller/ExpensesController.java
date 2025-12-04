@@ -26,6 +26,19 @@ public class ExpensesController {
         }
     }
 
+    /** CREATE Payment (returns PaymentID) */
+    @PostMapping("/payments")
+    public ResponseEntity<?> createPayment(@RequestBody Map<String, Object> payload) {
+        try {
+            Map<String, Object> result = expensesService.createPayment(payload);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /** GET Expense details */
     @GetMapping("/{expenseId}")
     public ResponseEntity<?> getExpense(@PathVariable int expenseId) {

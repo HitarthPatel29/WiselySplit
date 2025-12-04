@@ -20,6 +20,8 @@ import GroupView from './pages/group/GroupView.jsx'
 import AddParticipants from './pages/group/AddParticipants.jsx'
 import EditGroup from './pages/group/EditGroup.jsx'
 import PersonalSummary from './pages/personalExpense/PersonalSummary.jsx'
+import StripeSettleUp from './pages/settle/StripeSettleUp.jsx'
+import SettlementDetails from './pages/settle/SettlementDetails.jsx'
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -127,6 +129,14 @@ export default function App() {
         }
       />
       <Route
+        path="/groups/:id/settlements/:expenseId"
+        element={
+          <PrivateRoute>
+            <SettlementDetails />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/groups/:id/expenses/:expenseId/edit"
         element={
           <PrivateRoute>
@@ -183,6 +193,14 @@ export default function App() {
         }
       />
       <Route
+        path="/friends/:id/settlements/:expenseId"
+        element={
+          <PrivateRoute>
+            <SettlementDetails />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/friends/:id/expenses/:expenseId/edit"
         element={
           <PrivateRoute>
@@ -207,10 +225,26 @@ export default function App() {
         }
       />
       <Route
+        path="/personalSummary/settlements/:expenseId"
+        element={
+          <PrivateRoute>
+            <SettlementDetails />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/personalSummary/expenses/:expenseId/edit"
         element={
           <PrivateRoute>
             <EditExpense />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/settle/stripe-checkout"
+        element={
+          <PrivateRoute>
+            <StripeSettleUp />
           </PrivateRoute>
         }
       />

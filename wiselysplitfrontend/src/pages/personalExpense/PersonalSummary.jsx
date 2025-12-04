@@ -355,9 +355,15 @@ export default function PersonalSummary() {
               title={e.title}
               subtitle={`Type: ${e.type} ${e.groupId!=null? ` , Group: ${e.groupName}`: ``}`}
               amount={Math.abs(e.netAmount.toFixed(2))}
-              type={e.netAmount < 0 ? 'lent' : 'owe'}
+              type={e.isSettleUp ? 'settle' : e.netAmount < 0 ? 'lent' : 'owe'}
+              highlight={e.isSettleUp || !!e.highlight}
               onClick={() =>
-                navigate(`/personalSummary/expenses/${e.expenseId}`, {state: { ...e, from: 'personalSummary' }})
+                navigate(
+                  e.isSettleUp
+                    ? `/personalSummary/settlements/${e.expenseId}`
+                    : `/personalSummary/expenses/${e.expenseId}`,
+                  { state: { ...e, from: 'personalSummary' } }
+                )
               }
             />
           ))}

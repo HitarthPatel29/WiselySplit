@@ -6,15 +6,39 @@ export default function ExpenseItemCard({
   title,
   subtitle,
   amount,
-  type, // 'lent' | 'owe'
+  type, // 'lent' | 'owe' | 'settle'
   highlight = false,
   onClick,
 }) {
+  const isSettle = type === 'settle'
+  const wrapperStyles = isSettle
+    ? 'bg-emerald-50/80 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800'
+    : highlight
+        ? 'bg-emerald-50 hover:bg-emerald-100'
+        : 'bg-white dark:bg-gray-800 hover:shadow-sm'
+
+  const amountLabel =
+    type === 'lent'
+      ? `you lent $${amount}`
+      : type === 'owe'
+        ? `you owe $${amount}`
+        : type === 'settle'
+          ? `settled $${amount}`
+          : `$${amount}`
+
+  const amountColor =
+    type === 'lent'
+      ? 'text-emerald-600'
+      : type === 'owe'
+        ? 'text-red-500'
+        : type === 'settle'
+          ? 'text-emerald-700 dark:text-emerald-300'
+          : 'text-gray-500 dark:text-gray-400'
+
   return (
     <div
       onClick={onClick}
-      className={`flex justify-between items-center rounded-xl border border-gray-200 px-4 py-2 cursor-pointer transition
-        ${highlight ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-white dark:bg-gray-800 hover:shadow-sm'}`}
+      className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-2 transition ${wrapperStyles}`}
     >
       {/* Left Section: Date + Info */}
       <div className='flex items-start gap-3'>
@@ -32,17 +56,7 @@ export default function ExpenseItemCard({
       </div>
 
       {/* Right Section: Amount */}
-      <p
-        className={`font-semibold ${
-          type === 'lent' ? 'text-emerald-600' : type === 'owe' ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
-        }`}
-      >
-        {type === 'lent'
-          ? `you lent $${amount}`
-          : type === 'owe'
-          ? `you owe $${amount}`
-          : `$${amount}`}
-      </p>
+      <p className={`font-semibold ${amountColor}`}>{amountLabel}</p>
     </div>
   )
 }

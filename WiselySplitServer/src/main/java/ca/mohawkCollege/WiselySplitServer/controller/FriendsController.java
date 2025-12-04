@@ -28,7 +28,6 @@ public class FriendsController {
         }
     }
 
-
     @GetMapping("/{userId}/{friendId}")
     public ResponseEntity<?> getSharedExpenses(
             @PathVariable int userId,

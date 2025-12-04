@@ -29,8 +29,13 @@ public class ExpensesService {
                 groupId = ((Number) payload.get("shareWithId")).intValue();
             }
 
+            boolean isSettleUp = Boolean.TRUE.equals(payload.get("isSettleUp"));
+            Integer paymentId = payload.get("paymentId") != null
+                    ? ((Number) payload.get("paymentId")).intValue()
+                    : null;
+
             // Insert into Expenses table
-            int expenseId = expensesDAO.insertExpense(title, date, type, amount, payerId, groupId);
+            int expenseId = expensesDAO.insertExpense(title, date, type, amount, payerId, groupId, isSettleUp, paymentId);
 
             // Insert participants
             List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
@@ -46,6 +51,25 @@ public class ExpensesService {
             return Map.of("success", true, "expenseId", expenseId, "message", "Expense created successfully");
         } catch (Exception e) {
             throw new RuntimeException("Error creating expense: " + e.getMessage());
+        }
+    }
+
+    /** Create a payment record (used by Stripe flow) */
+    public Map<String, Object> createPayment(Map<String, Object> payload) {
+        try {
+            double amount = ((Number) payload.get("amount")).doubleValue();
+            Integer payerId = ((Number) payload.get("payerId")).intValue();
+            Integer receiverId = ((Number) payload.get("receiverId")).intValue();
+
+            Integer paymentId = expensesDAO.addPayment(amount, payerId, receiverId);
+
+            return Map.of(
+                    "success", true,
+                    "paymentId", paymentId,
+                    "message", "Payment record created successfully"
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating payment: " + e.getMessage());
         }
     }
 

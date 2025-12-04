@@ -189,6 +189,9 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
       portion: m.portion || 1,
       include: true,
     })),
+    isSettleUp: !!data.isSettleUp,
+    // settlementMethod: data.settlementMethod || data.paymentMethod || null,
+    paymentId: data.paymentId || data.stripePaymentId || null,
   }
 
   //Fill missing group members in splitDetails
@@ -217,7 +220,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
     const group = friendsAndGroups.find(
       (g) => g.type === 'group' && g.id === data.groupId
     )
-    normalized.shareWith = group?.name || data.groupName || ''
+    normalized.shareWith = group?.name || data.groupName || data.shareWith || ''
     normalized.shareWithId = data.groupId || group?.id || null
     if (group?.members?.length) {
       const existingIds = normalized.splitDetails.map((m) => m.userId)
@@ -236,7 +239,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
       (m) => m.userId !== currentUserId
     )
     //if no friend entry found in split details, try payerId
-    normalized.shareWith = friendEntry?.name || (data.payerId !== currentUserId ? data.payer : '')
+    normalized.shareWith = friendEntry?.name || (data.payerId !== currentUserId ? data.payer : '') || data.shareWith
     normalized.shareWithId = friendEntry?.userId || (data.payerId !== currentUserId ? data.payerId : null)
   }
 

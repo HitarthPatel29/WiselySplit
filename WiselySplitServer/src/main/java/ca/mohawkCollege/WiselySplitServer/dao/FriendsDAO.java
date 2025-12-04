@@ -61,6 +61,8 @@ public class FriendsDAO {
             e.ExpenseDate AS expenseDate,
             e.ExpenseType AS expenseType,
             e.Amount AS amount,
+            e.IsSettleUp AS isSettleUp,
+            e.PaymentID AS paymentId,
             p.Name AS paidBy,
             CASE
                 WHEN e.PayerID = ? THEN 'lent'
