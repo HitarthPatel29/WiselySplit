@@ -22,9 +22,15 @@ function GoogleButton() {
           callback: handleCredentialResponse
         })
 
+        const container = document.getElementById('googleSignInDiv');
+        // // Clear the container before re-rendering
+        // container.innerHTML = "";
+        // Get the current width of the container
+        const containerWidth = container.getBoundingClientRect().width;
+        
         window.google.accounts.id.renderButton(
-          document.getElementById('googleSignInDiv'),
-          { theme: 'outline', size: 'large' }
+          container,
+          { theme: 'outline', size: 'large' , with: containerWidth}
         )
       }
     }, 100)
@@ -55,7 +61,7 @@ function GoogleButton() {
       .catch(err => console.error('Google login failed:', err))
   }
 
-  return <div id='googleSignInDiv'></div>
+  return <div id='googleSignInDiv' className='w-full'></div>
 }
 
 export default GoogleButton;

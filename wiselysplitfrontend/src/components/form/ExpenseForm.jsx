@@ -100,7 +100,7 @@ export default function ExpenseForm({
   // ---------- lifecycle ----------
   useEffect(() => {
     if (!expense?.date) {
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toLocaleDateString('en-CA')
       setExpense((p) => ({ ...p, date: today }))
     }
     setBillSplitApplied(expense?.billSplitUsed || false)
@@ -259,7 +259,17 @@ export default function ExpenseForm({
   }
 
   const handleBillSplitApply = (billSplitDetails, totalAmount) => {
+    console.log('ExpenseForm 262 : billSplitDetails', billSplitDetails)
     setExpense((prev) => {
+
+      // Initialize splitDetails for friend expenses if they don't exist
+      if (prev.shareWithType === 'friend' && (!prev.splitDetails || prev.splitDetails.length === 0)) {
+        prev.splitDetails = [
+          { userId: currentUserId, name: 'You', amount: 0, portion: 0, include: false },
+          { userId: prev.shareWithId, name: prev.shareWith, amount: 0, portion: 0, include: false },
+        ]
+      }
+      
       const updatedSplitDetails = prev.splitDetails.map((member) => {
         // find the matching member from bill split results
         const updated = billSplitDetails.find((m) => m.userId === member.userId)

@@ -78,7 +78,7 @@ function BillSplit({ members, onApply, onCancel }) {
         })
 
         const totalAmount = splitDetails.reduce((sum, m) => sum + m.amount, 0)
-
+        console.log('BillSplit 81 : splitDetails', splitDetails)
         onApply(splitDetails, totalAmount)
     }
 
