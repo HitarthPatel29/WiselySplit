@@ -4,6 +4,16 @@
   body {
     @apply bg-gray-50 text-gray-900 transition-colors duration-300;
   }
+  #googleSignInDiv iframe {
+    width: 100% !important;
+    height: 44px !important;
+    margin: 0 !important;    
+  }
+    #googleSignInDiv iframe {
+      width: 100% !important;
+      height: 44px !important;
+      margin: 0 !important;   
+    }
 
   @media (prefers-color-scheme: dark) {
     body {
