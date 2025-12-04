@@ -51,15 +51,15 @@ public class ExpensesDAO {
         return keyHolder.getKey().intValue();
     }
 
-    /** Insert Payment row (if applicable) and return PaymentID */
+    /** Insert Payment row (if applicable) and return PaymentID - Legacy method for backward compatibility */
     public Integer addPayment(
             double amount,
             Integer payerId,
             Integer receiverId
     ) {
         String sql = """
-            INSERT INTO Payments (Amount, PayerID, ReceiverID, PaymentDate)
-            VALUES (?, ?, ?, NOW())
+            INSERT INTO Payments (Amount, PayerID, ReceiverID, PaymentDate, Status)
+            VALUES (?, ?, ?, NOW(), 'PENDING')
         """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();

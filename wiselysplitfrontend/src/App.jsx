@@ -22,6 +22,7 @@ import EditGroup from './pages/group/EditGroup.jsx'
 import PersonalSummary from './pages/personalExpense/PersonalSummary.jsx'
 import StripeSettleUp from './pages/settle/StripeSettleUp.jsx'
 import SettlementDetails from './pages/settle/SettlementDetails.jsx'
+import StripeConnectSetup from './pages/stripe/StripeConnectSetup.jsx'
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -245,6 +246,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <StripeSettleUp />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/stripe/connect"
+        element={
+          <PrivateRoute>
+            <StripeConnectSetup />
           </PrivateRoute>
         }
       />

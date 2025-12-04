@@ -23,6 +23,7 @@ export default function EditProfile() {
 
   const [previewUrl, setPreviewUrl] = useState(null)
   const [errors, setErrors] = useState({})
+  const [stripeAccountId, setStripeAccountId] = useState(null)
 
   // Load existing profile
   useEffect(() => {
@@ -41,6 +42,10 @@ export default function EditProfile() {
 
         if (data.profilePicture) {
           setPreviewUrl(data.profilePicture)
+        }
+
+        if (data.stripeAccountId) {
+          setStripeAccountId(data.stripeAccountId)
         }
       } catch (err) {
         console.error(err)
@@ -343,6 +348,42 @@ export default function EditProfile() {
                 <p className="text-sm text-red-600 mt-1">{errors.email}</p>
               )}
             </div>
+          </div>
+
+          {/* Stripe Connect */}
+          <div className="border border-gray-300 rounded-xl p-4 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Stripe Connect
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {stripeAccountId
+                    ? 'Connected - You can receive payments'
+                    : 'Not connected - Connect to receive payments'}
+                </p>
+              </div>
+              {stripeAccountId ? (
+                <span className="text-green-600 dark:text-green-400 text-sm font-semibold">
+                  ✓ Connected
+                </span>
+              ) : (
+                <span className="text-gray-400 dark:text-gray-500 text-sm">
+                  Not Connected
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/stripe/connect')}
+              className={`w-full mt-2 rounded-xl py-2 text-sm font-semibold transition ${
+                stripeAccountId
+                  ? 'border border-gray-300 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  : 'bg-emerald-500 text-white hover:bg-emerald-600'
+              }`}
+            >
+              {stripeAccountId ? 'Manage Stripe Account' : 'Connect Stripe Account'}
+            </button>
           </div>
 
           {/* Reset Password */}

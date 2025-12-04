@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/reset/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()   // login/reset open
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll() // signup
+                        .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll() // Stripe webhook
                         .anyRequest().authenticated()                  // everything else needs JWT
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

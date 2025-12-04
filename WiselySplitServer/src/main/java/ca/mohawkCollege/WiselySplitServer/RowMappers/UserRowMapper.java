@@ -17,6 +17,13 @@ public class UserRowMapper implements RowMapper<User> {
         user.setPhoneNum(rs.getLong("PhoneNum"));
         user.setPassword(rs.getString("Password"));
         user.setProfilePicture(rs.getString("ProfilePicture"));
+        // Handle StripeAccountId - may be null
+        String stripeAccountId = rs.getString("StripeAccountId");
+        if (rs.wasNull()) {
+            user.setStripeAccountId(null);
+        } else {
+            user.setStripeAccountId(stripeAccountId);
+        }
         return user;
     }
 }

@@ -122,4 +122,21 @@ public class UserDAO {
         """;
         return jdbcTemplate.queryForList(sql, groupId);
     }
+
+    /** Update Stripe Account ID for a user */
+    public int updateStripeAccountId(int userId, String stripeAccountId) {
+        String sql = "UPDATE User SET StripeAccountId = ? WHERE UserID = ?";
+        return jdbcTemplate.update(sql, stripeAccountId, userId);
+    }
+
+    /** Get Stripe Account ID for a user */
+    public Optional<String> getStripeAccountId(int userId) {
+        String sql = "SELECT StripeAccountId FROM User WHERE UserID = ?";
+        try {
+            String accountId = jdbcTemplate.queryForObject(sql, String.class, userId);
+            return Optional.ofNullable(accountId);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
 }

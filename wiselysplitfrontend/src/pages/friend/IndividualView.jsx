@@ -200,7 +200,7 @@ export default function IndividualView() {
 
         <div className='flex flex-col sm:flex-row gap-3 justify-center mt-4'>
           <button
-            onClick={() => navigate(`/friends/0/add-expense`)}
+            onClick={() => navigate(`/friends/${friendId}/add-expense`)}
             className='sm:w-full bg-emerald-100 text-emerald-700 dark:text-emerald-100 dark:bg-emerald-700 font-semibold rounded-xl py-3 hover:bg-emerald-200 dark:hover:bg-emerald-600'
           >
             + Add Expense

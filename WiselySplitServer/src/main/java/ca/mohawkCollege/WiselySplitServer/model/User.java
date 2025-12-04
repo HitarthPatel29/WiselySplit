@@ -30,6 +30,8 @@ public class User {
 
     private String profilePicture; // optional, no constraints
 
+    private String stripeAccountId; // Stripe Connect account ID for receiving payments
+
     // --- Constructors ---
     public User() {}
 
@@ -41,6 +43,17 @@ public class User {
         this.phoneNum = phoneNum;
         this.password = password;
         this.profilePicture = profilePicture;
+    }
+
+    public User(int userId, String name, String userName, String email, Long phoneNum, String password, String profilePicture, String stripeAccountId) {
+        this.userId = userId;
+        this.name = name;
+        this.userName = userName;
+        this.email = email;
+        this.phoneNum = phoneNum;
+        this.password = password;
+        this.profilePicture = profilePicture;
+        this.stripeAccountId = stripeAccountId;
     }
 
     // --- Getters & Setters ---
@@ -65,6 +78,9 @@ public class User {
     public String getProfilePicture() { return profilePicture; }
     public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
 
+    public String getStripeAccountId() { return stripeAccountId; }
+    public void setStripeAccountId(String stripeAccountId) { this.stripeAccountId = stripeAccountId; }
+
     @Override
     public String toString() {
         return "User{" +
@@ -74,6 +90,7 @@ public class User {
                 ", email='" + email + '\'' +
                 ", phoneNum=" + phoneNum +
                 ", profilePicture='" + profilePicture + '\'' +
+                ", stripeAccountId='" + stripeAccountId + '\'' +
                 '}';
     }
 }

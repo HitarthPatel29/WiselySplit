@@ -1,6 +1,7 @@
 package ca.mohawkCollege.WiselySplitServer.service;
 
 import ca.mohawkCollege.WiselySplitServer.dao.ExpensesDAO;
+import ca.mohawkCollege.WiselySplitServer.dao.PaymentDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,9 @@ public class ExpensesService {
 
     @Autowired
     private ExpensesDAO expensesDAO;
+
+    @Autowired
+    private PaymentDAO paymentDAO;
 
     /** Create expense for friend or group */
     @Transactional
@@ -61,7 +65,15 @@ public class ExpensesService {
             Integer payerId = ((Number) payload.get("payerId")).intValue();
             Integer receiverId = ((Number) payload.get("receiverId")).intValue();
 
-            Integer paymentId = expensesDAO.addPayment(amount, payerId, receiverId);
+            // Use PaymentDAO instead of ExpensesDAO to properly handle Stripe fields
+            Integer paymentId = paymentDAO.addPayment(
+                amount, 
+                payerId, 
+                receiverId, 
+                null,  // stripePaymentIntentId - will be set later
+                null,  // stripeTransferId - will be set later
+                "PENDING"  // status
+            );
 
             return Map.of(
                     "success", true,
