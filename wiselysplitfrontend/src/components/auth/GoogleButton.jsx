@@ -13,24 +13,32 @@ function GoogleButton() {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
     // Load Google One Tap or button
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: handleCredentialResponse
-    })
+    const interval = setInterval(() => {
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        clearInterval(interval)
 
-    google.accounts.id.renderButton(
-      document.getElementById('googleSignInDiv'),
-      { theme: 'outline', size: 'large' }
-    )
-  }, [])
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleCredentialResponse
+        })
 
+        window.google.accounts.id.renderButton(
+          document.getElementById('googleSignInDiv'),
+          { theme: 'outline', size: 'large' }
+        )
+      }
+    }, 100)
+    return () => clearInterval(interval)
+  },[])
+    
   const handleCredentialResponse = (response) => {
     // Google gives us the ID token (JWT)
     const idToken = response.credential
     console.log('Google ID Token:', idToken)
+    const frontendURL = import.meta.env.VITE_FRONTEND_URL
 
     // Send token to backend
-    fetch('http://localhost:8080/api/auth/google', {
+    fetch(frontendURL + '/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: idToken })

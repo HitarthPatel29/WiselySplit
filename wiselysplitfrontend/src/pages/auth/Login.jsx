@@ -1,5 +1,5 @@
 // src/pages/auth/Login.jsx
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
 import AuthLayout from '../../components/auth/AuthLayout.jsx'
 import TextInput from '../../components/IO/TextInput.jsx'
@@ -133,6 +133,7 @@ export default function Login() {
           </button>
           <Divider />
           <GoogleButton label='Sign in with Google' />
+          
         </form>
       )}
 
