@@ -10,6 +10,7 @@ import {
 import Header from '../../components/Header.jsx'
 import api from '../../api'
 import { formatCurrency } from '../../utils/settleUp.js'
+import { useNotification } from '../../context/NotificationContext'
 
 // Initialize Stripe - you'll need to add your Stripe publishable key to .env
 const stripePromise = loadStripe(
@@ -105,6 +106,7 @@ export default function StripeSettleUp() {
   const navigate = useNavigate()
   const { state } = useLocation()
   const { payload, summary, returnTo } = state || {}
+  const { showSuccess, showError } = useNotification()
   const [loading, setLoading] = useState(true)
   const [paymentIntentId, setPaymentIntentId] = useState(null)
   const [clientSecret, setClientSecret] = useState(null)
@@ -176,13 +178,14 @@ export default function StripeSettleUp() {
       }
 
       await api.post('/expenses', expensePayload)
-      alert('Payment successful! Settlement recorded.')
+      showSuccess('Payment successful! Settlement recorded.', { asSnackbar: true })
       navigate(returnTo || '/dashboard', { replace: true })
     } catch (err) {
       console.error('Failed to record settlement:', err)
-      alert(
+      showError(
         err.response?.data?.error ||
-          'Payment succeeded but failed to record settlement. Please contact support.'
+          'Payment succeeded but failed to record settlement. Please contact support.',
+        { asSnackbar: true }
       )
     }
   }

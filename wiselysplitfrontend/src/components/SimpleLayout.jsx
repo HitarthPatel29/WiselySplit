@@ -11,7 +11,13 @@ export default function SimpleLayout({ title, subtitle, children }) {
         </div>
       </header>
 
-      <main className='p-6 max-w-5xl mx-auto'>{children}</main>
+      <main 
+        id="main-content"
+        className='p-6 max-w-5xl mx-auto'
+        role="main"
+      >
+        {children}
+      </main>
     </div>
   )
 }

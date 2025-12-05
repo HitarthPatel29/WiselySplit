@@ -9,21 +9,26 @@ import {
   getFriendOweOptions,
 } from '../../utils/expenseModel'
 import BillSplit from '../../pages/expense/BillSplit'
+import { useNotification } from '../../context/NotificationContext'
 
 // Small toggle switch
-function ToggleSwitch({ checked, onChange }) {
+function ToggleSwitch({ checked, onChange, label, ariaLabel }) {
   return (
     <button
       type='button'
       onClick={() => onChange(!checked)}
-      className={`w-10 h-5 flex items-center rounded-full transition ${
-        checked ? 'bg-emerald-500' : 'bg-gray-300'
+      role="switch"
+      aria-checked={checked}
+      aria-label={ariaLabel || label || 'Toggle'}
+      className={`w-10 h-5 flex items-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+        checked ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
       }`}
     >
       <div
         className={`h-4 w-4 bg-white rounded-full shadow transform transition ${
           checked ? 'translate-x-5' : 'translate-x-1'
         }`}
+        aria-hidden="true"
       />
     </button>
   )
@@ -38,6 +43,7 @@ export default function ExpenseForm({
 }) {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { showError } = useNotification()
 
   const [expense, setExpense] = useState(initialData)
   const [equalSplit, setEqualSplit] = useState(true)
@@ -241,7 +247,10 @@ export default function ExpenseForm({
     e.preventDefault()
 
     const error = validateExpense(expense, currentUserId)
-    if (error) return alert(error)
+    if (error) {
+      showError(error, { asSnackbar: true })
+      return
+    }
 
     const payload = normalizeExpenseForAPI({...expense}, currentUserId, billSplitApplied )
     onSubmit(payload)
@@ -251,7 +260,7 @@ export default function ExpenseForm({
   const handleOpenBillSplit = () => {
     const members = buildBillSplitMembers()
     if (!members.length) {
-      alert('No participants available to split this bill.')
+      showError('No participants available to split this bill.', { asSnackbar: true })
       return
     }
 

@@ -5,12 +5,14 @@ import api from '../../api'
 import { normalizeExpenseForFields } from '../../utils/expenseModel'
 import { useAuth } from '../../context/AuthContext.jsx'
 import Header from '../../components/Header.jsx'
+import { useNotification } from '../../context/NotificationContext'
 
 export default function ExpenseDetails() {
   const { id, expenseId } = useParams()
   const {userId, friendsAndGroups} = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { showSuccess, showError, showAlert } = useNotification()
   const from = location.state?.from || null
   const [expense, setExpense] = useState(location.state || null)
   const [loading, setLoading] = useState(!location.state)
@@ -48,26 +50,34 @@ export default function ExpenseDetails() {
       </div>
     )
 
-  const handleDelete = () => {
-    if (!window.confirm('Are you sure you want to delete this expense?')) return
+  const handleDelete = async () => {
+    const confirmed = await showAlert({
+      title: 'Delete Expense',
+      message: 'Are you sure you want to delete this expense?',
+      type: 'warning',
+      showCancel: true,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    })
+    
+    if (!confirmed) return
+
     // Perform API delete
-    api
-      .delete(`/expenses/${expenseId}`)
-      .then(() => {
-        alert('Expense deleted')
-        // navigate back to group or friend based on location.state?.from
-        if (from === 'personalSummary') {
-          navigate(-1)
-        } else if (from === 'group') {
-          navigate(`/groups/${id}`)
-        } else {
-          navigate(`/friends/${id}`)
-        }
-      })
-      .catch((err) => {
-        console.error(err)
-        alert(err.response?.data?.error || 'Failed to delete expense')
-      })
+    try {
+      await api.delete(`/expenses/${expenseId}`)
+      showSuccess('Expense deleted', { asSnackbar: true })
+      // navigate back to group or friend based on location.state?.from
+      if (from === 'personalSummary') {
+        navigate(-1)
+      } else if (from === 'group') {
+        navigate(`/groups/${id}`)
+      } else {
+        navigate(`/friends/${id}`)
+      }
+    } catch (err) {
+      console.error(err)
+      showError(err.response?.data?.error || 'Failed to delete expense', { asSnackbar: true })
+    }
   }
 
   return (

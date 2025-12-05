@@ -7,12 +7,14 @@ import { validateExpense, normalizeExpenseForAPI, normalizeExpenseForFields } fr
 import api from '../../api.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import Header from '../../components/Header.jsx'
+import { useNotification } from '../../context/NotificationContext'
 
 export default function EditExpense() {
   const navigate = useNavigate()
   const location = useLocation()
   const { id, expenseId } = useParams() // id = friendId or groupId
   const { userId, friendsAndGroups } = useAuth()
+  const { showSuccess, showError } = useNotification()
   const [expense, setExpense] = useState(location.state || null)
   const [loading, setLoading] = useState(!location.state)
   const [saving, setSaving] = useState(false)
@@ -29,7 +31,7 @@ export default function EditExpense() {
         setExpense(normalized)
       } catch (err) {
         console.error('❌ Failed to load expense:', err)
-        alert('Failed to load expense details.')
+        showError('Failed to load expense details.', { asSnackbar: true })
       } finally {
         setLoading(false)
       }
@@ -44,13 +46,13 @@ export default function EditExpense() {
       console.log('payload:', payload)
 
       const res = await api.put(`/expenses/${expenseId}`, payload)
-      alert('Expense updated successfully!')
+      showSuccess('Expense updated successfully!', { asSnackbar: true })
 
       if (payload.shareWithType === 'group') navigate(`/groups/${payload.shareWithId}`)
       else navigate(`/friends/${payload.shareWithId}`)
     } catch (err) {
       console.error('❌ Failed to save expense:', err)
-      alert(err.response?.data?.error || 'Failed to save expense.')
+      showError(err.response?.data?.error || 'Failed to save expense.', { asSnackbar: true })
     } finally {
       setSaving(false)
     }

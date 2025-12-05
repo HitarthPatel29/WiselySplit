@@ -28,7 +28,16 @@ function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>  // or spinner
+    return (
+      <div role="status" aria-live="polite" aria-label="Loading">
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" aria-hidden="true"></div>
+            <p className="sr-only">Loading...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return token ? children : <Navigate to="/" replace />
@@ -37,7 +46,18 @@ function PrivateRoute({ children }) {
 function OnboardingRoute({ children }) {
   const { token, loading, firstLogin } = useAuth()
 
-  if (loading) return <div>Loading...</div>
+  if (loading) {
+    return (
+      <div role="status" aria-live="polite" aria-label="Loading">
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" aria-hidden="true"></div>
+            <p className="sr-only">Loading...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // If logged in & first time → show onboarding (invite)
   if (token && firstLogin) return children
@@ -51,7 +71,15 @@ function OnboardingRoute({ children }) {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      {/* Skip to main content link for keyboard navigation */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400"
+      >
+        Skip to main content
+      </a>
+      <Routes>
       {/* Public routes */}
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
@@ -259,5 +287,6 @@ export default function App() {
       />
 
     </Routes>
+    </>
   )
 }

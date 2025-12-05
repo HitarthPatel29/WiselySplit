@@ -44,18 +44,25 @@ export default function OtpInput({ value, length = 6, onChange }) {
   }
 
   return (
-    <div className='flex justify-center gap-2' onPaste={handlePaste}>
+    <div 
+      className='flex justify-center gap-2' 
+      onPaste={handlePaste}
+      role="group"
+      aria-label={`Enter ${length}-digit verification code`}
+    >
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
           type='text'
           inputMode='numeric'
+          pattern='[0-9]'
           maxLength={1}
           ref={(el) => (inputsRef.current[i] = el)}
-          className='w-12 h-12 text-center text-lg border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-400'
+          className='w-12 h-12 text-center text-lg border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-400'
           value={value[i] || ''}
           onChange={(e) => handleChange(e, i)}
           onKeyDown={(e) => handleKeyDown(e, i)}
+          aria-label={`Digit ${i + 1} of ${length}`}
         />
       ))}
     </div>

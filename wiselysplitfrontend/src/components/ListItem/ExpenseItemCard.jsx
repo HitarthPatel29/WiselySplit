@@ -14,8 +14,8 @@ export default function ExpenseItemCard({
   const wrapperStyles = isSettle
     ? 'bg-emerald-50/80 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800'
     : highlight
-        ? 'bg-emerald-50 hover:bg-emerald-100'
-        : 'bg-white dark:bg-gray-800 hover:shadow-sm'
+        ? 'bg-emerald-50 hover:bg-emerald-100 border-gray-300 dark:border-gray-700'
+        : 'bg-white dark:bg-gray-800 hover:shadow-sm border-gray-300 dark:border-gray-700'
 
   const amountLabel =
     type === 'lent'
@@ -36,27 +36,32 @@ export default function ExpenseItemCard({
           : 'text-gray-500 dark:text-gray-400'
 
   return (
-    <div
+    <button
       onClick={onClick}
-      className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-2 transition ${wrapperStyles}`}
+      className={`w-full flex cursor-pointer items-center justify-between rounded-xl border shadow-sm hover:shadow-md hover:border-gray-100 dark:hover:border-gray-600 px-4 py-2 transition focus:outline-none focus:ring-2 focus:ring-emerald-400 ${wrapperStyles}`}
+      aria-label={`${title}. ${amountLabel}${date ? ` on ${date}` : ''}${subtitle ? `. ${subtitle}` : ''}`}
     >
       {/* Left Section: Date + Info */}
-      <div className='flex items-start gap-3'>
+      <div className='flex items-start gap-3 flex-1'>
         {/* Date */}
-        <div className='text-sm font-semibold w-12 text-center leading-tight'>
-          {date?.split(' ')[0]} <br />
-          <span className='text-base font-normal'>{date?.split(' ')[1]}</span>
-        </div>
+        {date && (
+          <div className='text-sm font-semibold w-12 text-center leading-tight' aria-hidden="true">
+            {date?.split(' ')[0]} <br />
+            <span className='text-base font-normal'>{date?.split(' ')[1]}</span>
+          </div>
+        )}
 
         {/* Title + Subtitle */}
-        <div>
-          <p className='font-medium'>{title}</p>
-          {subtitle && <p className='text-sm text-gray-500 dark:text-gray-400'>{subtitle}</p>}
+        <div className="text-left flex-1">
+          <p className='font-medium text-gray-900 dark:text-gray-100'>{title}</p>
+          {subtitle && (
+            <p className='text-sm text-gray-500 dark:text-gray-400'>{subtitle}</p>
+          )}
         </div>
       </div>
 
       {/* Right Section: Amount */}
-      <p className={`font-semibold ${amountColor}`}>{amountLabel}</p>
-    </div>
+      <p className={`font-semibold ${amountColor}`} aria-hidden="true">{amountLabel}</p>
+    </button>
   )
 }

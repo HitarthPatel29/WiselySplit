@@ -6,11 +6,13 @@ import api from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import ListItemCard from '../../components/ListItem/ListItemCard.jsx'
 import Header from '../../components/Header.jsx'
+import { useNotification } from '../../context/NotificationContext'
 
 export default function EditGroup() {
   const navigate = useNavigate()
   const { id } = useParams()
   const { userId } = useAuth()
+  const { showSuccess, showError, showAlert } = useNotification()
 
   const [group, setGroup] = useState({
     name: '',
@@ -71,7 +73,10 @@ export default function EditGroup() {
   /* Save: PUT /api/groups/{id} */
   const handleSave = async (e) => {
     e.preventDefault()
-    if (!group.name.trim()) return alert('Group name is required.')
+    if (!group.name.trim()) {
+      showError('Group name is required.', { asSnackbar: true })
+      return
+    }
 
     setLoading(true)
 
@@ -87,46 +92,69 @@ export default function EditGroup() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
 
-      alert('Group updated successfully!')
+      showSuccess('Group updated successfully!', { asSnackbar: true })
       navigate(`/groups/${id}`)
     } catch (err) {
       console.error(err)
-      alert('Failed to update group.')
+      showError('Failed to update group.', { asSnackbar: true })
     } finally {
       setLoading(false)
     }
   }
   /* Leave group */
   const handleLeaveGroup = async () => {
-    if (!canLeave) return alert('You must settle all balances before leaving.')
-      if (!window.confirm('Are you sure you want to leave this group?')) return
+    if (!canLeave) {
+      showError('You must settle all balances before leaving.', { asSnackbar: true })
+      return
+    }
+    
+    const confirmed = await showAlert({
+      title: 'Leave Group',
+      message: 'Are you sure you want to leave this group?',
+      type: 'warning',
+      showCancel: true,
+      confirmText: 'Leave',
+      cancelText: 'Cancel',
+    })
+    
+    if (!confirmed) return
 
     try {
       await api.post(`/groups/${id}/leave`, null, {
         params: { userId },
       })
 
-      alert('Left group.')
+      showSuccess('Left group.', { asSnackbar: true })
       navigate('/groups')
     } catch (err) {
       console.error(err)
-      alert(err.response?.data?.error || 'Failed to leave group.')
+      showError(err.response?.data?.error || 'Failed to leave group.', { asSnackbar: true })
     }
   }
 
   /* Delete group */
   const handleDeleteGroup = async () => {
-    if (!window.confirm('Delete group? This is permanent.')) return
+    const confirmed = await showAlert({
+      title: 'Delete Group',
+      message: 'Delete group? This is permanent.',
+      type: 'warning',
+      showCancel: true,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    })
+    
+    if (!confirmed) return
+    
     try {
       await api.delete(`/groups/${id}`, {
         params: { userId },
       })
 
-      alert('Group deleted.')
+      showSuccess('Group deleted.', { asSnackbar: true })
       navigate('/groups')
     } catch (err) {
       console.error(err)
-      alert(err.response?.data?.error || 'Failed to delete group.')
+      showError(err.response?.data?.error || 'Failed to delete group.', { asSnackbar: true })
     }
   }
 
@@ -215,7 +243,10 @@ export default function EditGroup() {
                       groupType={`@${p.username}`}
                       amount={p.amount}
                       status={p.status || 'neutral'}
-                      onClick={() => {}}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                      }}
                     />
                   )
                 })}

@@ -67,8 +67,8 @@ public class StripeService {
         // Create account link for onboarding
         AccountLinkCreateParams linkParams = AccountLinkCreateParams.builder()
                 .setAccount(account.getId())
-                .setRefreshUrl(hostingURL+"/stripe/connect/refresh") // Update with your frontend URL
-                .setReturnUrl(hostingURL+"/stripe/connect/return") // Update with your frontend URL
+                .setRefreshUrl(hostingURL+"/stripe/connect") // Update with your frontend URL
+                .setReturnUrl(hostingURL+"/stripe/connect") // Update with your frontend URL
                 .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
                 .build();
 

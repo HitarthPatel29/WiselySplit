@@ -6,11 +6,13 @@ import api from '../../api'
 import Header from '../../components/Header.jsx'
 import SettleUpModal from '../../components/Modals/SettleUpModal.jsx'
 import { buildSettleUpPayload, formatCurrency, getSettlementMethodLabel } from '../../utils/settleUp.js'
+import { useNotification } from '../../context/NotificationContext'
 
 export default function IndividualView() {
   const navigate = useNavigate()
   const { friendId } = useParams()
   const { userId } = useAuth()
+  const { showSuccess, showError } = useNotification()
 
   const [friend, setFriend] = useState(null)
   const [expenses, setExpenses] = useState([])
@@ -64,7 +66,7 @@ export default function IndividualView() {
                 : '')
 
           const subtitle = isSettleUp
-            ? getSettlementMethodLabel(e.settlementMethod)
+            ? getSettlementMethodLabel(e.paymentId)
             : e.expenseType || ''
 
           // format date to 'Mon DD'
@@ -138,12 +140,12 @@ export default function IndividualView() {
         method: 'manual',
       })
       await api.post('/expenses', payload)
-      alert('Settlement logged successfully!')
+      showSuccess('Settlement logged successfully!', { asSnackbar: true })
       setShowSettleModal(false)
       fetchData()
     } catch (err) {
       console.error(err)
-      alert(err.response?.data?.error || 'Failed to log settlement.')
+      showError(err.response?.data?.error || 'Failed to log settlement.', { asSnackbar: true })
     } finally {
       setSettleLoading(false)
     }
@@ -174,7 +176,7 @@ export default function IndividualView() {
   const canSettle = friend.youOwe && friend.amountOwed > 0
 
   return (
-    <div className='min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100'>
+    <div className='min-h-screen text-gray-800 dark:text-gray-100'>
       <Header title='Individual View' />
 
       <section className='max-w-3xl mx-auto px-4 py-6'>

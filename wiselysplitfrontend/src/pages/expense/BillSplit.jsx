@@ -1,7 +1,9 @@
 // src/components/form/BillSplit.jsx
 import React, { useState, useMemo } from 'react'
+import { useNotification } from '../../context/NotificationContext'
 
 function BillSplit({ members, onApply, onCancel }) {
+    const { showError } = useNotification()
     const [itemPrice, setItemPrice] = useState('')
     const [taxIncluded, setTaxIncluded] = useState(true)
     const [selectedIds, setSelectedIds] = useState(
@@ -28,11 +30,11 @@ function BillSplit({ members, onApply, onCancel }) {
     const handleAddItem = () => {
         const price = parseFloat(itemPrice)
         if (isNaN(price) || price <= 0) {
-            alert('Please enter a valid item price greater than 0.')
+            showError('Please enter a valid item price greater than 0.', { asSnackbar: true })
             return
         }
         if (!selectedIds.length) {
-            alert('Please select at least one participant for this item.')
+            showError('Please select at least one participant for this item.', { asSnackbar: true })
             return
         }
 
@@ -62,7 +64,7 @@ function BillSplit({ members, onApply, onCancel }) {
             (m) => (totals[m.userId] || 0) > 0
         )
         if (!activeMembers.length) {
-            alert('Please add at least one item before finishing.')
+            showError('Please add at least one item before finishing.', { asSnackbar: true })
             return
         }
 

@@ -5,7 +5,9 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
 import Header from '../../components/Header.jsx'
 import SettleUpModal from '../../components/Modals/SettleUpModal.jsx'
+import MemberSelectModal from '../../components/Modals/MemberSelectModal.jsx'
 import { buildSettleUpPayload, formatCurrency, getSettlementMethodLabel } from '../../utils/settleUp.js'
+import { useNotification } from '../../context/NotificationContext'
 
 /* -----------------------------------------------------
    Helper: Format a date into "Nov 11"
@@ -74,6 +76,7 @@ export default function GroupView() {
   const navigate = useNavigate()
   const { id } = useParams()
   const { userId } = useAuth()
+  const { showSuccess, showError } = useNotification()
 
   const [group, setGroup] = useState(null)
   const [membersStanding, setMembersStanding] = useState([])
@@ -83,6 +86,7 @@ export default function GroupView() {
   const [message, setMessage] = useState('')
   const [participants, setParticipants] = useState([])
   const [showSettleModal, setShowSettleModal] = useState(false)
+  const [showMemberSelectModal, setShowMemberSelectModal] = useState(false)
   const [settleContext, setSettleContext] = useState(null)
   const [settleLoading, setSettleLoading] = useState(false)
 
@@ -148,7 +152,7 @@ export default function GroupView() {
           type: isSettleUp ? 'settle' : payer === me ? 'lent' : 'owe', // for ExpenseItemCard styling
           isSettleUp,
           settlementMethod: e.settlementMethod || null,
-          subtitle: isSettleUp ? getSettlementMethodLabel(e.settlementMethod) : e.expenseType || '',
+          subtitle: isSettleUp ? getSettlementMethodLabel(e.paymentId) : e.expenseType || '',
         }
       })
       console.log('normalizedExpenses: ', normalizedExpenses)
@@ -225,6 +229,16 @@ export default function GroupView() {
     setShowSettleModal(true)
   }
 
+  const handleOpenMemberSelect = () => {
+    const hasMembersToSettle = membersStanding.some((m) => m.balance < 0)
+    if (!hasMembersToSettle) return
+    setShowMemberSelectModal(true)
+  }
+
+  const handleMemberSelect = (member) => {
+    handleOpenSettle(member)
+  }
+
   const handleLogSettlement = async (amount) => {
     if (!settleContext) return
     try {
@@ -236,12 +250,12 @@ export default function GroupView() {
         method: 'manual',
       })
       await api.post('/expenses', payload)
-      alert('Settlement logged successfully!')
+      showSuccess('Settlement logged successfully!', { asSnackbar: true })
       setShowSettleModal(false)
       loadGroup()
     } catch (err) {
       console.error(err)
-      alert(err.response?.data?.error || 'Failed to log settlement.')
+      showError(err.response?.data?.error || 'Failed to log settlement.', { asSnackbar: true })
     } finally {
       setSettleLoading(false)
     }
@@ -268,8 +282,38 @@ export default function GroupView() {
   /* -----------------------------------------------------
      Render
   ----------------------------------------------------- */
-  if (loading) return <div className='p-6 text-gray-500 dark:text-gray-400'>Loading group...</div>
-  if (!group) return <div className='p-6 text-gray-500 dark:text-gray-400'>{message}</div>
+  if (loading) {
+    return (
+      <div className='min-h-screen'>
+        <Header title='Group View' />
+        <div 
+          className='p-6 text-gray-500 dark:text-gray-400'
+          role="status"
+          aria-live="polite"
+          aria-label="Loading group details"
+        >
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" aria-hidden="true"></div>
+            <p className="sr-only">Loading group...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  if (!group) {
+    return (
+      <div className='min-h-screen'>
+        <Header title='Group View' />
+        <div 
+          className='p-6 text-gray-500 dark:text-gray-400'
+          role="alert"
+          aria-live="polite"
+        >
+          {message || 'Group not found.'}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className='min-h-screen'>
@@ -277,19 +321,31 @@ export default function GroupView() {
       <Header title='Group View' />
 
       {/* ----------------- GROUP INFO ----------------- */}
-      <section className='max-w-3xl mx-auto px-4 py-6'>
+      <section 
+        className='max-w-3xl mx-auto px-4 py-6'
+        aria-labelledby="group-name-heading"
+      >
         <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
           <img
             src={group.avatar}
-            alt={group.name}
+            alt={`${group.name} group avatar`}
             className='w-24 h-24 rounded-full object-cover border'
           />
 
           <div className='flex-1 text-center sm:text-left'>
-            <h2 className='text-2xl font-semibold'>{group.name}</h2>
+            <h2 
+              id="group-name-heading"
+              className='text-2xl font-semibold'
+            >
+              {group.name}
+            </h2>
 
             {overallStanding && (
-              <p className={`mt-1 font-medium ${overallStanding.color}`}>
+              <p 
+                className={`mt-1 font-medium ${overallStanding.color}`}
+                role="status"
+                aria-live="polite"
+              >
                 {overallStanding.text}
               </p>
             )}
@@ -305,18 +361,9 @@ export default function GroupView() {
 
                 if (m.balance < 0)
                   return (
-                    <div key={m.userId} className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
-                      <p className='text-red-500'>
-                        You owe {m.name} ${Math.abs(m.balance).toFixed(2)}
-                      </p>
-                      <button
-                        type='button'
-                        onClick={() => handleOpenSettle(m)}
-                        className='w-full rounded-lg border border-emerald-400 px-3 py-1 text-sm font-semibold text-emerald-600 transition hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300 sm:w-auto'
-                      >
-                        Settle with {m.name.split(' ')[0]}
-                      </button>
-                    </div>
+                    <p key={m.userId} className='text-red-500'>
+                      You owe {m.name} ${Math.abs(m.balance).toFixed(2)}
+                    </p>
                   )
 
                 return (
@@ -330,58 +377,102 @@ export default function GroupView() {
         </div>
 
         {/* ACTION BUTTONS */}
-        <div className='flex flex-col sm:flex-row gap-3 justify-center mt-5'>
+        <div 
+          className='flex flex-col sm:flex-row gap-3 justify-center mt-5'
+          role="group"
+          aria-label="Group actions"
+        >
           <button
             onClick={() => navigate(`/groups/${id}/add-expense`, { state: { fromGroup: true } })}
-            className='sm:w-full bg-emerald-100 text-emerald-700 font-semibold rounded-xl py-3 hover:bg-emerald-200 transition dark:text-emerald-100 dark:bg-emerald-700 dark:hover:bg-emerald-600'
+            className='sm:w-full bg-emerald-100 text-emerald-700 font-semibold rounded-xl py-3 hover:bg-emerald-200 transition dark:text-emerald-100 dark:bg-emerald-700 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400'
+            aria-label="Add a new expense to this group"
           >
             + Add Expense
           </button>
 
           <button
             onClick={() => navigate(`/groups/${id}/add-participants`)}
-            className='sm:w-full bg-emerald-100 text-emerald-700 font-semibold rounded-xl py-3 hover:bg-emerald-200 transition dark:text-emerald-100 dark:bg-emerald-700 dark:hover:bg-emerald-600'
+            className='sm:w-full bg-emerald-100 text-emerald-700 font-semibold rounded-xl py-3 hover:bg-emerald-200 transition dark:text-emerald-100 dark:bg-emerald-700 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400'
+            aria-label="Add participants to this group"
           >
             + Add Participants
+          </button>
+
+          <button
+            onClick={handleOpenMemberSelect}
+            disabled={!membersStanding.some((m) => m.balance < 0)}
+            className={`sm:w-full rounded-xl py-3 font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+              membersStanding.some((m) => m.balance < 0)
+                ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                : 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500'
+            }`}
+            aria-label="Settle up with group members"
+          >
+            {membersStanding.some((m) => m.balance < 0) ? 'Settle Up' : 'All Settled'}
           </button>
 
           <button
             onClick={() =>navigate(`/groups/${id}/edit`, {state: {group, participants, membersStanding, overallStanding},
               })
             }
-            className='sm:w-24 bg-emerald-500 text-white rounded-xl py-3 hover:bg-emerald-600 flex items-center justify-center transition'
+            className='sm:w-24 bg-emerald-500 text-white rounded-xl py-3 hover:bg-emerald-600 flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-emerald-400'
+            aria-label="Edit group settings"
           >
-            ⚙
+            <span aria-hidden="true">⚙</span>
+            <span className="sr-only">Edit</span>
           </button>
         </div>
       </section>
 
       {/* ----------------- EXPENSE LIST ----------------- */}
-      <main className='max-w-3xl mx-auto px-4 pb-10'>
+      <main 
+        className='max-w-3xl mx-auto px-4 pb-10'
+        aria-label="Group expenses"
+      >
         <h3 className='text-lg font-semibold mb-4'>Expenses</h3>
 
-        <div className='flex flex-col gap-3'>
+        <div 
+          className='flex flex-col gap-3'
+          role="list"
+          aria-label="Expense list"
+        >
           {expenses.map((ex) => (
-            <ExpenseItemCard
-              key={ex.id}
-              date={ex.date}
-              title={ex.title}
-              subtitle={ex.subtitle || ex.expenseType}
-              amount={ex.userAmount}
-              type={ex.type}
-              highlight={ex.isSettleUp}
-              onClick={() =>
-                navigate(
-                  ex.isSettleUp ? `/groups/${id}/settlements/${ex.id}` : `/groups/${id}/expenses/${ex.id}`,
-                  {
-                    state: { ...ex, from: 'group' },
-                  }
-                )
-              }
-            />
+            <div key={ex.id} role="listitem">
+              <ExpenseItemCard
+                date={ex.date}
+                title={ex.title}
+                subtitle={ex.subtitle || ex.expenseType}
+                amount={ex.userAmount}
+                type={ex.type}
+                highlight={ex.isSettleUp}
+                onClick={() =>
+                  navigate(
+                    ex.isSettleUp ? `/groups/${id}/settlements/${ex.id}` : `/groups/${id}/expenses/${ex.id}`,
+                    {
+                      state: { ...ex, from: 'group' },
+                    }
+                  )
+                }
+              />
+            </div>
           ))}
+          {expenses.length === 0 && (
+            <p 
+              className='text-gray-500 dark:text-gray-400 text-center py-8'
+              role="status"
+            >
+              No expenses yet.
+            </p>
+          )}
         </div>
       </main>
+
+      <MemberSelectModal
+        open={showMemberSelectModal}
+        members={membersStanding}
+        onClose={() => setShowMemberSelectModal(false)}
+        onSelect={handleMemberSelect}
+      />
 
       <SettleUpModal
         open={showSettleModal}

@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { normalizeExpenseForFields } from '../../utils/expenseModel.js'
 import { formatCurrency, SETTLE_EXPENSE_TYPE } from '../../utils/settleUp.js'
 import SettleUpModal from '../../components/Modals/SettleUpModal.jsx'
+import { useNotification } from '../../context/NotificationContext'
 
 const formatFullDate = (raw) => {
   if (!raw) return ''
@@ -27,6 +28,7 @@ export default function SettlementDetails() {
   const location = useLocation()
   const from = location.state?.from || null
   const { userId, friendsAndGroups } = useAuth()
+  const { showSuccess, showError, showAlert } = useNotification()
 
   const initial = location.state?.isSettleUp ? location.state : null
   const [expense, setExpense] = useState(initial)
@@ -163,11 +165,11 @@ export default function SettlementDetails() {
             }
           : prev
       )
-      alert('Settlement amount updated.')
+      showSuccess('Settlement amount updated.', { asSnackbar: true })
       setShowEditModal(false)
     } catch (err) {
       console.error(err)
-      alert(err.response?.data?.error || 'Failed to update settlement.')
+      showError(err.response?.data?.error || 'Failed to update settlement.', { asSnackbar: true })
     } finally {
       setModalLoading(false)
     }
@@ -176,7 +178,7 @@ export default function SettlementDetails() {
   const handleStripeSettlementUpdate = async (nextAmount) => {
     if (!expense) return
     if (!receiverId) {
-      alert('Missing receiver information for this settlement.')
+      showError('Missing receiver information for this settlement.', { asSnackbar: true })
       return
     }
     setModalLoading(true)
@@ -204,11 +206,11 @@ export default function SettlementDetails() {
             }
           : prev
       )
-      alert('Stripe settlement recorded and locked.')
+      showSuccess('Stripe settlement recorded and locked.', { asSnackbar: true })
       setShowEditModal(false)
     } catch (err) {
       console.error(err)
-      alert(err.response?.data?.error || err.message || 'Failed to update settlement.')
+      showError(err.response?.data?.error || err.message || 'Failed to update settlement.', { asSnackbar: true })
     } finally {
       setModalLoading(false)
     }
@@ -216,11 +218,21 @@ export default function SettlementDetails() {
 
   const handleDelete = async () => {
     if (!expense || isStripe) return
-    if (!window.confirm('Are you sure you want to delete this settlement?')) return
+    
+    const confirmed = await showAlert({
+      title: 'Delete Settlement',
+      message: 'Are you sure you want to delete this settlement?',
+      type: 'warning',
+      showCancel: true,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    })
+    
+    if (!confirmed) return
 
     try {
       await api.delete(`/expenses/${expenseId}`)
-      alert('Settlement deleted')
+      showSuccess('Settlement deleted', { asSnackbar: true })
       if (from === 'personalSummary') {
         navigate(-1)
       } else if (from === 'group') {
@@ -230,7 +242,7 @@ export default function SettlementDetails() {
       }
     } catch (err) {
       console.error(err)
-      alert(err.response?.data?.error || 'Failed to delete settlement')
+      showError(err.response?.data?.error || 'Failed to delete settlement', { asSnackbar: true })
     }
   }
 

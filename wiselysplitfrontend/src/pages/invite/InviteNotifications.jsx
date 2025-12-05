@@ -59,11 +59,12 @@ export default function InviteNotifications() {
   if (loading) return <div className="p-6 text-gray-500">Loading invites...</div>
 
   return (
-    
+    <div className='min-h-screen'>
+    <Header title='Invite Notifications' />
     <div className="flex justify-center px-4 py-6">
       <div className="w-full max-w-2xl space-y-5">
         
-        <Header title='Invite Notifications' />
+        
         {message && (
           <p className="mb-4 text-center text-sm text-gray-600">{message}</p>
         )}
@@ -161,6 +162,7 @@ export default function InviteNotifications() {
           })}
         </div>
       </div>
+    </div>
     </div>
   )
 }

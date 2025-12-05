@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 
 export default function FilterModal({
@@ -8,6 +8,7 @@ export default function FilterModal({
   groups = [],
   initialFilters = {}
 }) {
+  const modalRef = useRef(null)
   const [typeFilter, setTypeFilter] = useState(initialFilters.typeFilter || [])
   const [groupFilter, setGroupFilter] = useState(initialFilters.groupFilter || '')
   const [sort, setSort] = useState(initialFilters.sort || 'newest')
@@ -27,6 +28,37 @@ export default function FilterModal({
     }
   }, [isOpen, initialFilters])
 
+  // Focus management
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      const firstElement = focusableElements[0]
+      if (firstElement) {
+        firstElement.focus()
+      }
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen, onClose])
+
   // Toggle expense type in the filter array
   const toggleTypeFilter = (item) => {
     setTypeFilter(prev => 
@@ -39,32 +71,48 @@ export default function FilterModal({
   if (!isOpen) return null
 
   return (
-    <div className='fixed inset-0 bg-black/30 z-50 flex items-center justify-center px-4'>
-
-      <div className='bg-gray-100 dark:bg-gray-800 w-full max-w-md rounded-xl p-6 shadow-2xl shadow-black relative animate-fadeIn'>
-
+    <div 
+      className='fixed inset-0 bg-black/30 z-50 flex items-center justify-center px-4'
+      onClick={onClose}
+      role="presentation"
+      aria-hidden={!isOpen}
+    >
+      <div 
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="filter-modal-title"
+        className='bg-gray-100 dark:bg-gray-800 w-full max-w-md rounded-xl p-6 shadow-2xl shadow-black relative animate-fadeIn'
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Close Button */}
         <div className='flex justify-between items-center mb-6'>
-          <h2 className='text-xl font-bold'>Filter</h2>
+          <h2 id="filter-modal-title" className='text-xl font-bold'>Filter</h2>
           <button
             onClick={onClose}
-            className='p-1 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700'
+            className='p-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400'
+            aria-label='Close filter modal'
           >
-            <XMarkIcon className='w-6 h-6' />
+            <XMarkIcon className='w-6 h-6' aria-hidden="true" />
           </button>
         </div>
 
         {/* Expense Type (multi-select) */}
-        <div className='mb-4'>
-          <p className='font-medium mb-2'>Expense Type {typeFilter.length > 0 && <span className='text-sm text-gray-500'>({typeFilter.length} selected)</span>}</p>
-          <div className='flex flex-wrap gap-2'>
-
+        <fieldset className='mb-4'>
+          <legend className='font-medium mb-2'>
+            Expense Type {typeFilter.length > 0 && (
+              <span className='text-sm text-gray-500 dark:text-gray-400'>({typeFilter.length} selected)</span>
+            )}
+          </legend>
+          <div className='flex flex-wrap gap-2' role="group" aria-label="Expense type filters">
             {['Work', 'Food', 'Travel', 'Personal', 'Utilities', 'Entertainment', 'Other'].map(item => (
               <button
                 key={item}
+                type="button"
                 onClick={() => toggleTypeFilter(item)}
+                aria-pressed={typeFilter.includes(item)}
                 className={
-                  'px-4 py-1 rounded-full border text-sm transition-colors ' +
+                  'px-4 py-1 rounded-full border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 ' +
                   (typeFilter.includes(item)
                     ? 'bg-green-500 text-white border-green-500'
                     : 'border-gray-700 dark:border-gray-300 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700')
@@ -73,21 +121,20 @@ export default function FilterModal({
                 {item}
               </button>
             ))}
-
           </div>
-        </div>
+        </fieldset>
 
         {/* Group Dropdown */}
         <div className='mb-4'>
-          <p className='font-medium mb-2'>By Group:</p>
-
+          <label htmlFor="group-filter" className='font-medium mb-2 block'>By Group:</label>
           <select
-            className='w-full border rounded-lg px-3 py-2'
+            id="group-filter"
+            className='w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400'
             value={groupFilter}
             onChange={e => setGroupFilter(e.target.value)}
+            aria-label="Filter by group"
           >
             <option value=''>All Groups</option>
-
             {groups.map(g => (
               <option key={g.groupId} value={g.groupId}>
                 {g.groupName}
@@ -97,67 +144,83 @@ export default function FilterModal({
         </div>
 
         {/* Sort By */}
-        <div className='mb-4'>
-          <p className='font-medium mb-2'>Sort By</p>
-          <div className='flex gap-3'>
+        <fieldset className='mb-4'>
+          <legend className='font-medium mb-2'>Sort By</legend>
+          <div className='flex gap-3' role="radiogroup" aria-label="Sort order">
             <button
+              type="button"
               onClick={() => setSort('newest')}
+              role="radio"
+              aria-checked={sort === 'newest'}
+              aria-label="Sort by newest first"
               className={
-                'px-4 py-2 rounded-lg border ' +
+                'px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-emerald-400 ' +
                 (sort === 'newest'
                   ? 'bg-green-500 text-white border-green-500'
-                  : 'border-gray-800 dark:border-gray-200 text-gray-800 dark:text-gray-200')
+                  : 'border-gray-800 dark:border-gray-200 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700')
               }
             >
               Newest
             </button>
 
             <button
+              type="button"
               onClick={() => setSort('oldest')}
+              role="radio"
+              aria-checked={sort === 'oldest'}
+              aria-label="Sort by oldest first"
               className={
-                'px-4 py-2 rounded-lg border ' +
+                'px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-emerald-400 ' +
                 (sort === 'oldest'
                   ? 'bg-green-500 text-white border-green-500'
-                  : 'border-gray-800 dark:border-gray-200 text-gray-800 dark:text-gray-200')
+                  : 'border-gray-800 dark:border-gray-200 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700')
               }
             >
               Oldest
             </button>
           </div>
-        </div>
+        </fieldset>
 
         {/* Date Range */}
         <div className='mb-4'>
           <p className='font-medium mb-2'>Date Range</p>
           <div className='flex gap-3'>
+            <label htmlFor="start-date" className="sr-only">Start date</label>
             <input
+              id="start-date"
               type='date'
-              className='border rounded-lg px-3 py-2 w-1/2'
+              className='border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 w-1/2 focus:outline-none focus:ring-2 focus:ring-emerald-400'
               value={startDate}
               onChange={e => {
                 setStartDate(e.target.value)
                 setMonth('') // Clear month filter when date range is manually changed
               }}
+              aria-label="Start date for filter"
             />
+            <label htmlFor="end-date" className="sr-only">End date</label>
             <input
+              id="end-date"
               type='date'
-              className='border rounded-lg px-3 py-2 w-1/2'
+              className='border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 w-1/2 focus:outline-none focus:ring-2 focus:ring-emerald-400'
               value={endDate}
               onChange={e => {
                 setEndDate(e.target.value)
                 setMonth('') // Clear month filter when date range is manually changed
               }}
+              aria-label="End date for filter"
             />
           </div>
         </div>
 
         {/* Month Filter */}
         <div className='mb-6'>
-          <p className='font-medium mb-2'>By Month</p>
+          <label htmlFor="month-filter" className='font-medium mb-2 block'>By Month</label>
           <select
-            className='w-full border rounded-lg px-3 py-2'
+            id="month-filter"
+            className='w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400'
             value={month}
             onChange={e => setMonth(e.target.value)}
+            aria-label="Filter by month"
           >
             <option value=''>Select Month</option>
             <option>January</option>
@@ -178,7 +241,8 @@ export default function FilterModal({
         {/* Action Buttons */}
         <div className='flex gap-3'>
           <button
-            className='flex-1 border border-gray-300 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors'
+            type="button"
+            className='flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400'
             onClick={() => {
               setTypeFilter([])
               setGroupFilter('')
@@ -191,7 +255,8 @@ export default function FilterModal({
             Clear All
           </button>
           <button
-            className='flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600 transition-colors'
+            type="button"
+            className='flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400'
             onClick={() =>
               onApply({
                 typeFilter,

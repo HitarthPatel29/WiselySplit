@@ -2,12 +2,14 @@
 import { useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { useNotification } from '../../context/NotificationContext'
 
 
 
 function GoogleButton() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const { showSuccess } = useNotification()
   useEffect(() => {
     /* global google */
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -41,10 +43,10 @@ function GoogleButton() {
     // Google gives us the ID token (JWT)
     const idToken = response.credential
     console.log('Google ID Token:', idToken)
-    const frontendURL = import.meta.env.VITE_FRONTEND_URL
+    const backendURL = import.meta.env.VITE_BACKEND_URL
 
     // Send token to backend
-    fetch(frontendURL + '/api/auth/google', {
+    fetch(backendURL + '/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: idToken })
@@ -54,14 +56,23 @@ function GoogleButton() {
         console.log('Backend JWT:', data)
         if (data.token) {
           login(data.token, true) // remember me
-          alert('Google login successful!')
+          showSuccess('Google login successful!', { asSnackbar: true })
           navigate('/dashboard')
         }
       })
       .catch(err => console.error('Google login failed:', err))
   }
 
-  return <div id='googleSignInDiv' className='w-full'></div>
+  return (
+    <div 
+      id='googleSignInDiv' 
+      className='w-full'
+      role="region"
+      aria-label="Google Sign In"
+    >
+      <span className="sr-only">Sign in with your Google account</span>
+    </div>
+  )
 }
 
 export default GoogleButton;

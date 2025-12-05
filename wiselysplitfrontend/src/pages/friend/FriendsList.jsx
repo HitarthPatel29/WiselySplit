@@ -49,7 +49,24 @@ export default function FriendsList() {
       (f.username || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) return <div className='p-6 text-gray-500'>Loading friends...</div>
+  if (loading) {
+    return (
+      <div className='min-h-screen'>
+        <Header title='Friends List' />
+        <div 
+          className='p-6 text-gray-500 dark:text-gray-400'
+          role="status"
+          aria-live="polite"
+          aria-label="Loading friends"
+        >
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" aria-hidden="true"></div>
+            <p className="sr-only">Loading friends...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className='min-h-screen'>
@@ -58,8 +75,12 @@ export default function FriendsList() {
       
       <div className='flex justify-center'>
         <header className='w-full max-w-2xl px-4 flex flex-col'>
-          <p className='text-gray-600 dark:text-gray-400 text-2xl font-bold mb-1'>Individual Shared Expenses</p>
-          <p className='text-gray-700 dark:text-gray-300 text-base font-bold mb-1'>
+          <h1 className='text-gray-600 dark:text-gray-400 text-2xl font-bold mb-1'>Individual Shared Expenses</h1>
+          <p 
+            className='text-gray-700 dark:text-gray-300 text-base font-bold mb-1'
+            role="status"
+            aria-live="polite"
+          >
             Overall{' '}
             {overallNet > 0 && (
               <>
@@ -91,12 +112,15 @@ export default function FriendsList() {
         <div className='flex flex-wrap items-center gap-3 w-full max-w-2xl px-4'>
 
           {/* Search Bar */}
+          <label htmlFor="friend-search" className="sr-only">Search friends</label>
           <input
+            id="friend-search"
             type='text'
             placeholder='Search friends...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className='flex-1 min-w-[55%] border border-gray-300 rounded-xl px-4 py-2 
+            aria-label="Search friends by name or username"
+            className='flex-1 min-w-[200px] border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 
                       text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 
                       focus:ring-emerald-400'
           />
@@ -105,7 +129,8 @@ export default function FriendsList() {
           <PrimaryButton
             label='Add Friend'
             onClick={() => navigate('/invite')}
-            className='min-w-[40%] sm:min-w-fit'
+            className='w-full sm:w-auto whitespace-nowrap'
+            ariaLabel="Send a friend invite"
           />
 
           {/* Add Expense — full width on mobile */}
@@ -113,7 +138,8 @@ export default function FriendsList() {
             onClick={() => navigate(`/friends/0/add-expense`)}
             className='w-full sm:w-auto bg-emerald-100 text-emerald-700 
                       dark:text-emerald-100 dark:bg-emerald-700 font-semibold 
-                      rounded-xl py-2 px-4 hover:bg-emerald-200 dark:hover:bg-emerald-600'
+                      rounded-xl py-2 px-4 hover:bg-emerald-200 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400'
+            aria-label="Add a new expense with a friend"
           >
             Add Expense
           </button>
@@ -123,25 +149,32 @@ export default function FriendsList() {
 
 
       {/* List */}
-      <div className='flex justify-center'>
-        <div className='w-full max-w-2xl px-4 space-y-3 pb-10'>
+      <main className='flex justify-center' aria-label="Friends list">
+        <div className='w-full max-w-2xl px-4 space-y-3 pb-10' role="list">
           {filteredFriends.map((f) => (
-            <ListItemCard
-              key={f.friendId || f.userId || f.id}
-              avatar={f.profilePicture || f.ProfilePicture || f.avatar}
-              name={f.name || f.friendName || ''}
-              subtitle={f.username || f.userName || ''}
-              amount={Math.abs(f.NetBalance || f.amount || f.balance || 0)}
-              status={f.status || 'neutral'}
-              onClick={() => navigate(`/friends/${f.friendId || f.userId || f.id}`)}
-            />
+            <div key={f.friendId || f.userId || f.id} role="listitem">
+              <ListItemCard
+                avatar={f.profilePicture || f.ProfilePicture || f.avatar}
+                name={f.name || f.friendName || ''}
+                subtitle={f.username || f.userName || ''}
+                amount={Math.abs(f.NetBalance || f.amount || f.balance || 0)}
+                status={f.status || 'neutral'}
+                onClick={() => navigate(`/friends/${f.friendId || f.userId || f.id}`)}
+              />
+            </div>
           ))}
 
           {filteredFriends.length === 0 && (
-            <p className='text-gray-500 dark:text-gray-400 text-center mt-10'>{message || 'No friends found.'}</p>
+            <p 
+              className='text-gray-500 dark:text-gray-400 text-center mt-10'
+              role="status"
+              aria-live="polite"
+            >
+              {message || 'No friends found.'}
+            </p>
           )}
         </div>
-      </div>
+      </main>
     </div>
   )
 }

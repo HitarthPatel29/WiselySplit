@@ -4,10 +4,12 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
 import Header from '../../components/Header.jsx'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid'
+import { useNotification } from '../../context/NotificationContext'
 
 export default function StripeConnectSetup() {
   const navigate = useNavigate()
   const { userId } = useAuth()
+  const { showSuccess } = useNotification()
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
   const [stripeAccountId, setStripeAccountId] = useState(null)
@@ -76,7 +78,7 @@ export default function StripeConnectSetup() {
       const res = await api.get(`/users/${userId}`)
       if (res.data?.stripeAccountId) {
         setStripeAccountId(res.data.stripeAccountId)
-        alert('Stripe account connected successfully!')
+        showSuccess('Stripe account connected successfully!', { asSnackbar: true })
       }
     } catch (err) {
       console.error('Failed to verify Stripe connection:', err)
