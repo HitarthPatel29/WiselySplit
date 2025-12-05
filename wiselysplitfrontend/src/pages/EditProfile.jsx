@@ -82,8 +82,8 @@ export default function EditProfile() {
       const file = files?.[0]
       if (!file) return
 
-      if (file.size > 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, profilePicture: 'Max file size is 1MB' }))
+      if (file.size > 1024 * 1024 * 5) {
+        setErrors((prev) => ({ ...prev, profilePicture: 'Max file size is 5MB' }))
         return
       }
 

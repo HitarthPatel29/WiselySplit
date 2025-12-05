@@ -1,5 +1,5 @@
 // src/pages/auth/Signup.jsx
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../components/auth/AuthLayout.jsx'
 import TextInput from '../../components/IO/TextInput.jsx'
@@ -13,6 +13,7 @@ import { useNotification } from '../../context/NotificationContext'
 export default function Signup() {
   const navigate = useNavigate()
   const { showSuccess, showError } = useNotification()
+  const fileInputRef = useRef(null)
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     name: '',
@@ -24,13 +25,100 @@ export default function Signup() {
     profilePicture: null
   })
   const [loading, setLoading] = useState(false)
+  const [usernameAvailable, setUsernameAvailable] = useState(null)
+  const [emailAvailable, setEmailAvailable] = useState(null)
+  const [errors, setErrors] = useState({})
+
+  // Validation functions
+  const validateEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+  const validateUsernameFormat = (v) =>
+    typeof v === 'string' && /^[a-zA-Z0-9._-]{3,30}$/.test(v)
 
   function update(e) {
     const { name, type, value, files } = e.target
+
+    // Clear specific field error
+    setErrors((prev) => ({ ...prev, [name]: null }))
+
+    if (type === 'file') {
+      setForm(f => ({
+        ...f,
+        [name]: files[0] || null
+      }))
+      return
+    }
+
     setForm(f => ({
       ...f,
-      [name]: type === 'file' ? files[0] : value
+      [name]: value
     }))
+
+    // Reset availability on typing
+    if (name === 'userName') {
+      setUsernameAvailable(null)
+    }
+    if (name === 'email') {
+      setEmailAvailable(null)
+    }
+  }
+
+  // Username availability check
+  const checkUsername = async () => {
+    if (!validateUsernameFormat(form.userName)) {
+      setErrors((prev) => ({
+        ...prev,
+        userName: 'Invalid username format.',
+      }))
+      setUsernameAvailable(false)
+      return
+    }
+
+    try {
+      const res = await api.get('/users/check-username', {
+        params: { username: form.userName },
+      })
+
+      if (!res.data.available) {
+        setErrors((prev) => ({
+          ...prev,
+          userName: 'Username already taken',
+        }))
+        setUsernameAvailable(false)
+      } else {
+        setUsernameAvailable(true)
+        setErrors((prev) => ({ ...prev, userName: null }))
+      }
+    } catch (err) {
+      console.error('username check failed:', err)
+    }
+  }
+
+  // Email availability check
+  const checkEmail = async () => {
+    if (!validateEmail(form.email)) {
+      setErrors((prev) => ({ ...prev, email: 'Invalid email format.' }))
+      setEmailAvailable(false)
+      return
+    }
+
+    try {
+      const res = await api.get('/users/check-email', {
+        params: { email: form.email },
+      })
+
+      if (!res.data.available) {
+        setErrors((prev) => ({
+          ...prev,
+          email: 'Email already exists',
+        }))
+        setEmailAvailable(false)
+      } else {
+        setEmailAvailable(true)
+        setErrors((prev) => ({ ...prev, email: null }))
+      }
+    } catch (err) {
+      console.error('email check failed:', err)
+    }
   }
 
   const passwordValid = {
@@ -51,6 +139,38 @@ export default function Signup() {
       showError('Password must be at least "Good" strength and match confirm field.', { asSnackbar: true })
       return
     }
+
+    // Validate username format if not already checked
+    if (!validateUsernameFormat(form.userName)) {
+      setErrors((prev) => ({
+        ...prev,
+        userName: 'Invalid username format.',
+      }))
+      showError('Please fix username errors before continuing.', { asSnackbar: true })
+      return
+    }
+
+    // Validate email format if not already checked
+    if (!validateEmail(form.email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: 'Invalid email format.',
+      }))
+      showError('Please fix email errors before continuing.', { asSnackbar: true })
+      return
+    }
+
+    // Check if username/email have been validated and are available
+    if (usernameAvailable === false || errors.userName) {
+      showError('Username is not available. Please choose a different one.', { asSnackbar: true })
+      return
+    }
+
+    if (emailAvailable === false || errors.email) {
+      showError('Email is already in use. Please use a different email.', { asSnackbar: true })
+      return
+    }
+
     setStep(2)
   }
 
@@ -96,13 +216,89 @@ export default function Signup() {
           {/* Full name + Username */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <TextInput id='name' label='Full name' placeholder='Jane Doe' autoComplete='name' value={form.name} onChange={update} required={true} />
-            <TextInput id='userName' label='Username' placeholder='janedoe' autoComplete='username' value={form.userName} onChange={update} required={true} />
+            <div className='flex flex-col gap-1'>
+              <label 
+                htmlFor='userName' 
+                className='text-sm font-medium text-gray-500 dark:text-gray-400'
+              >
+                Username
+                <span className="text-red-500 ml-1" aria-label="required">*</span>
+              </label>
+              <input
+                id='userName'
+                name='userName'
+                type='text'
+                placeholder='janedoe'
+                autoComplete='username'
+                value={form.userName}
+                onChange={update}
+                onBlur={checkUsername}
+                required={true}
+                aria-required={true}
+                aria-invalid={errors.userName ? 'true' : 'false'}
+                className={`block w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 ${
+                  errors.userName
+                    ? 'border-red-500 focus:ring-red-300 focus:border-red-500'
+                    : usernameAvailable === true
+                    ? 'border-green-500 focus:ring-green-300 focus:border-green-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-400 focus:border-emerald-400'
+                }`}
+              />
+              {errors.userName && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1" role="alert" aria-live="polite">
+                  {errors.userName}
+                </p>
+              )}
+              {!errors.userName && usernameAvailable === true && (
+                <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                  Username available ✓
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Phone + Email */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <TextInput id='phoneNum' label='Phone Number' type='tel' placeholder='+1 234 567 8901' autoComplete='tel' value={form.phoneNum} onChange={update} required={true} />
-            <TextInput id='email' label='Email' type='email' placeholder='you@example.com' autoComplete='email' value={form.email} onChange={update} required={true} />
+            <div className='flex flex-col gap-1'>
+              <label 
+                htmlFor='email' 
+                className='text-sm font-medium text-gray-500 dark:text-gray-400'
+              >
+                Email
+                <span className="text-red-500 ml-1" aria-label="required">*</span>
+              </label>
+              <input
+                id='email'
+                name='email'
+                type='email'
+                placeholder='you@example.com'
+                autoComplete='email'
+                value={form.email}
+                onChange={update}
+                onBlur={checkEmail}
+                required={true}
+                aria-required={true}
+                aria-invalid={errors.email ? 'true' : 'false'}
+                className={`block w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 ${
+                  errors.email
+                    ? 'border-red-500 focus:ring-red-300 focus:border-red-500'
+                    : emailAvailable === true
+                    ? 'border-green-500 focus:ring-green-300 focus:border-green-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-400 focus:border-emerald-400'
+                }`}
+              />
+              {errors.email && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1" role="alert" aria-live="polite">
+                  {errors.email}
+                </p>
+              )}
+              {!errors.email && emailAvailable === true && (
+                <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                  Email available ✓
+                </p>
+              )}
+            </div>
           </div>
 
           <PasswordInput id='password' name='password' label='Password' value={form.password} onChange={update} showStrength={true} autoComplete='new-password' required={true} />
@@ -181,11 +377,16 @@ export default function Signup() {
 
           <button
             type='button'
-            onClick={handleSubmit}
-            className='w-full rounded-xl py-2 bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400'
+            onClick={(e) => {
+              e.preventDefault()
+              handleSubmit(e)
+            }}
+            disabled={loading}
+            aria-busy={loading}
+            className='w-full rounded-xl py-2 bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50'
             aria-label="Skip profile picture and create account"
           >
-            Skip for now
+            {loading ? 'Creating account...' : 'Skip for now'}
           </button>
         </form>
       )}

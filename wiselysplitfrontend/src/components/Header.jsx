@@ -29,16 +29,25 @@ export default function Header({ title = '' }) {
     <div className='w-full border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300 sticky top-0 z-40'>
       {/* Top Row */}
       <div className='flex items-center justify-between px-4 py-4'>
-        {/* Left side - Back button or spacer */}
-        <div className='w-20 flex items-center'>
+        {/* Left side - Back button and Logo (non-Dashboard) or spacer */}
+        <div className='flex items-center gap-2'>
           {!isDashboard && (
-            <button
-              onClick={() => navigate(-1)}
-              className='p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400'
-              aria-label='Go back to previous page'
-            >
-              <ArrowLeftIcon className='w-6 h-6 text-gray-700 dark:text-gray-300' aria-hidden="true" />
-            </button>
+            <>
+              <button
+                onClick={() => navigate(-1)}
+                className='p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400'
+                aria-label='Go back to previous page'
+              >
+                <ArrowLeftIcon className='w-6 h-6 text-gray-700 dark:text-gray-300' aria-hidden="true" />
+              </button>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className='flex items-center hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-lg px-1 py-1'
+                aria-label='Go to Dashboard'
+              >
+                <Logo size={32} />
+              </button>
+            </>
           )}
         </div>
 

@@ -8,6 +8,7 @@ import SettleUpModal from '../../components/Modals/SettleUpModal.jsx'
 import MemberSelectModal from '../../components/Modals/MemberSelectModal.jsx'
 import { buildSettleUpPayload, formatCurrency, getSettlementMethodLabel } from '../../utils/settleUp.js'
 import { useNotification } from '../../context/NotificationContext'
+import { Cog6ToothIcon } from '@heroicons/react/24/solid'
 
 /* -----------------------------------------------------
    Helper: Format a date into "Nov 11"
@@ -418,7 +419,7 @@ export default function GroupView() {
             className='sm:w-24 bg-emerald-500 text-white rounded-xl py-3 hover:bg-emerald-600 flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-emerald-400'
             aria-label="Edit group settings"
           >
-            <span aria-hidden="true">⚙</span>
+            <Cog6ToothIcon className="w-5 h-5" aria-hidden="true" />
             <span className="sr-only">Edit</span>
           </button>
         </div>

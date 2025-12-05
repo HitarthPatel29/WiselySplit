@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import api from '../../api'
-import FilterModal from '../../components/Modals/FilterModal'
-import Header from '../../components/Header.jsx'
-import ExpenseItemCard from '../../components/ListItem/ExpenseItemCard.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
+import api from '../api'
+import FilterModal from '../components/Modals/FilterModal'
+import Header from '../components/Header.jsx'
+import ExpenseItemCard from '../components/ListItem/ExpenseItemCard.jsx'
 import { AdjustmentsHorizontalIcon} from '@heroicons/react/24/solid';
 
 // Helper to format date as Month, DD in local timezone

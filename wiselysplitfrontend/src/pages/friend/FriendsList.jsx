@@ -32,7 +32,7 @@ export default function FriendsList() {
         console.log('Calculated overall net balance:', totalNet)
         setOverallNet(totalNet)
 
-        if (!res.data || res.data.length === 0) setMessage('No friends right now.')
+        if (!res.data || res.data.length === 0) setMessage('No Expenses Shared right now.')
       } catch (err) {
         console.error(err)
         setMessage(err.response?.data?.error || 'Failed to fetch friends.')

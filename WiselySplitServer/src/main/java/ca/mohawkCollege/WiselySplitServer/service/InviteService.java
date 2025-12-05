@@ -8,6 +8,7 @@ import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.model.Invite;
 import ca.mohawkCollege.WiselySplitServer.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -26,6 +27,9 @@ public class InviteService {
     @Autowired private GroupsDAO groupsDAO;
     @Autowired private ExpensesDAO expensesDAO;
     @Autowired private ExpensesService expensesService;
+
+    @Value("${frontend.hosting_url}")
+    private String hostingURL;
 
     public String sendInvite(int senderId, String input, Integer groupId) {
         Optional<User> senderOpt = userDAO.findById(senderId);
@@ -79,11 +83,11 @@ public class InviteService {
         if (groupId != null) {
             subject = "Group Invitation from " + sender.getName();
             message = sender.getName() + " invited you to join a group on WiselySplit.\n\n" +
-                    "Sign in to accept the invite: https://wiselysplit.vercel.app/login";
+                    "Sign in to accept the invite: " + hostingURL + "/dashboard/invites";
         } else {
             subject = "You’ve been invited on WiselySplit!";
             message = sender.getName() + " invited you to share expenses together on WiselySplit.\n\n" +
-                    "Accept your invite here: https://wiselysplit.vercel.app/login";
+                    "Accept your invite here: " + hostingURL + "/dashboard/invites";
         }
 
         //  Send appropriate email based on user existence
@@ -103,7 +107,7 @@ public class InviteService {
                         input.trim(),
                         "You're invited to join WiselySplit!",
                         sender.getName() + " invited you to join WiselySplit.\n\n" +
-                                "Create your account here: https://wiselysplit.vercel.app/signup"
+                                "Create your account here: " + hostingURL + "/signup"
                 );
                 return "User Account not found. Email invitation has been sent.";
             }

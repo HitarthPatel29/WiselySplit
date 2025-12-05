@@ -18,7 +18,9 @@ export default function InviteUser() {
     const [result, setResult] = useState(null)
 
     // clear firstLogin flag (since user is already onboarding)
-    localStorage.setItem('firstLogin', 'false')
+    const [firstLogin, setFirstLogin] = useState(localStorage.getItem('firstLogin'))
+
+    
 
     const handleInvite = async (e) => {
         e.preventDefault()
@@ -50,6 +52,8 @@ export default function InviteUser() {
             setLoading(false)
         }
     }
+
+    localStorage.setItem('firstLogin', 'false')
 
     return (
         <div className='min-h-screen'>
@@ -102,7 +106,7 @@ export default function InviteUser() {
                 </div>
             )}
 
-            {localStorage.getItem('firstLogin') && (
+            {firstLogin == 'true' && (
                 <button
                     onClick={() => navigate('/dashboard')}
                     className='mt-6 w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl py-2 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400'
@@ -110,7 +114,16 @@ export default function InviteUser() {
                 >
                     Skip for now
                 </button>
-                )}
+            )}
+            {firstLogin == 'false' && (
+                <button
+                    onClick={() => navigate(-1)}
+                    className='mt-6 w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl py-2 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400'
+                    aria-label="Skip inviting friends and go to dashboard"
+                >
+                    Cancel
+                </button>
+            )}
             </AuthLayout>
         </div>
     )

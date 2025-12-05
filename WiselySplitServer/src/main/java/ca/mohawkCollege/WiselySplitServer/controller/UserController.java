@@ -106,6 +106,25 @@ public class UserController {
         }
     }
 
+    // Public endpoints for signup validation (no userId required)
+    @GetMapping("/check-username")
+    public ResponseEntity<?> checkUsernamePublic(@RequestParam("username") String userName) {
+        if (userService.checkUserNameExists(userName)) {
+            return ResponseEntity.ok(Map.of("available", false));
+        } else {
+            return ResponseEntity.ok(Map.of("available", true));
+        }
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmailPublic(@RequestParam("email") String email) {
+        if (userService.checkEmailExists(email)) {
+            return ResponseEntity.ok(Map.of("available", false));
+        } else {
+            return ResponseEntity.ok(Map.of("available", true));
+        }
+    }
+
     // Update User
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     public ResponseEntity<?> updateUser(

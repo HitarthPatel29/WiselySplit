@@ -78,7 +78,7 @@ export default function Logo({ size = 24, className = '' }) {
     <div
       className={`flex items-center ${className}`}
       style={{
-        fontSize: size * 0.6,
+        fontSize: size * 0.7,
         fontFamily: 'Inter, sans-serif',
         fontWeight: 700,
       }}
