@@ -12,10 +12,17 @@ import { useNotification } from '../../context/NotificationContext'
 export default function AddExpense() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { userId, friendsAndGroups, setFriendsAndGroups } = useAuth()
+  const { userId, friendsAndGroups, setFriendsAndGroups, fetchConnections } = useAuth()
   const { showSuccess, showError } = useNotification()
   const [saving, setSaving] = useState(false)
   const [expense, setExpense] = useState(null)
+
+  // Fetch updated friends and groups when component mounts
+  useEffect(() => {
+    if (userId) {
+      fetchConnections()
+    }
+  }, [userId, fetchConnections])
 
   // Initialize default expense object
   useEffect(() => {
@@ -32,7 +39,7 @@ export default function AddExpense() {
       )
     }
     console.log('AddExpense: userID:', userId)
-  }, [friendsAndGroups, id])
+  }, [friendsAndGroups, id, userId])
 
 
   const handleSave = async (payload) => {
