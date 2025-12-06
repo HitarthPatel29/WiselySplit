@@ -1,0 +1,751 @@
+{
+	"info": {
+		"_postman_id": "91b1a73f-ebc8-4069-ae5f-10a505d20292",
+		"name": "WiselySplit - Personal Summary & Settlements",
+		"description": "Postman collection for Personal Summary, Stripe Settlements, and Manual Settlements features. Includes automatic JWT token management.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40278249"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login (Get JWT Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login to get JWT token. Token is automatically saved to collection variable 'jwt_token'."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify OTP 000000",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.collectionVariables.set('jwt_token', jsonData.token);",
+									"        console.log('JWT token saved to collection variable');",
+									"    }",
+									"    if (jsonData.userId) {",
+									"        pm.collectionVariables.set('user_id', jsonData.userId);",
+									"        console.log('User ID saved to collection variable');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"patelhivi04@gmail.com\",\n  \"otp\": \"000000\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/verify-otp",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"verify-otp"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints"
+		},
+		{
+			"name": "Personal Summary",
+			"item": [
+				{
+					"name": "Get Personal Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/expenses/{{user_id}}/personal-summary?startDate={{start_date}}&endDate={{end_date}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expenses",
+								"{{user_id}}",
+								"personal-summary"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date in YYYY-MM-DD format"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date in YYYY-MM-DD format"
+								}
+							]
+						},
+						"description": "Get personal summary for a user within a date range. Returns summary with totalLent, totalOwed, and list of expenses."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Personal Summary - Last 30 Days",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/expenses/{{user_id}}/personal-summary?startDate={{last_30_days_start}}&endDate={{last_30_days_end}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expenses",
+								"{{user_id}}",
+								"personal-summary"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{last_30_days_start}}"
+								},
+								{
+									"key": "endDate",
+									"value": "{{last_30_days_end}}"
+								}
+							]
+						},
+						"description": "Get personal summary for the last 30 days (uses pre-calculated dates)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Personal Summary - Custom Date Range",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Set custom date range (modify these dates as needed)",
+									"var customStartDate = '2024-01-01';",
+									"var customEndDate = '2024-12-31';",
+									"pm.collectionVariables.set('custom_start_date', customStartDate);",
+									"pm.collectionVariables.set('custom_end_date', customEndDate);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/expenses/{{user_id}}/personal-summary?startDate={{custom_start_date}}&endDate={{custom_end_date}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expenses",
+								"{{user_id}}",
+								"personal-summary"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{custom_start_date}}"
+								},
+								{
+									"key": "endDate",
+									"value": "{{custom_end_date}}"
+								}
+							]
+						},
+						"description": "Get personal summary for a custom date range. Modify the pre-request script to set your dates."
+					},
+					"response": []
+				}
+			],
+			"description": "Personal Summary endpoints"
+		},
+		{
+			"name": "Stripe Settlements",
+			"item": [
+				{
+					"name": "Complete Stripe Settlement Flow",
+					"item": [
+						{
+							"name": "Step 1: Create Payment Intent",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 200) {",
+											"    var jsonData = pm.response.json();",
+											"    if (jsonData.paymentId) {",
+											"        pm.collectionVariables.set('payment_id', jsonData.paymentId);",
+											"    }",
+											"    if (jsonData.clientSecret) {",
+											"        pm.collectionVariables.set('client_secret', jsonData.clientSecret);",
+											"    }",
+											"    if (jsonData.paymentIntentId) {",
+											"        pm.collectionVariables.set('payment_intent_id', jsonData.paymentIntentId);",
+											"    }",
+											"    console.log('Payment Intent created. Payment ID: ' + jsonData.paymentId);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"amount\": {{settlement_amount}},\n  \"payerId\": {{user_id}},\n  \"receiverId\": {{receiver_id}}\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/payments/intent/create",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"payments",
+										"intent",
+										"create"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Step 2: Create Settlement Expense",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 200 || pm.response.code === 201) {",
+											"    var jsonData = pm.response.json();",
+											"    if (jsonData.expenseId) {",
+											"        pm.collectionVariables.set('last_expense_id', jsonData.expenseId);",
+											"        console.log('Stripe settlement expense created. Expense ID: ' + jsonData.expenseId);",
+											"    }",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Settle up with {{receiver_name}}\",\n  \"amount\": {{settlement_amount}},\n  \"date\": \"{{settlement_date}}\",\n  \"type\": \"SettleUp\",\n  \"payerId\": {{user_id}},\n  \"shareWithId\": {{share_with_id}},\n  \"shareWith\": \"{{share_with_name}}\",\n  \"shareWithType\": \"{{share_with_type}}\",\n  \"splitDetails\": [\n    {\n      \"userId\": {{receiver_id}},\n      \"name\": \"{{receiver_name}}\",\n      \"amount\": {{settlement_amount}},\n      \"portion\": 1,\n      \"include\": true\n    }\n  ],\n  \"isSettleUp\": true,\n  \"settlementTargetId\": {{receiver_id}},\n  \"paymentId\": {{payment_id}}\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/expenses",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"expenses"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Complete flow for creating a Stripe settlement. Run this folder to execute both steps in sequence."
+				},
+				{
+					"name": "Create Stripe Payment Intent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    if (jsonData.paymentId) {",
+									"        pm.collectionVariables.set('payment_id', jsonData.paymentId);",
+									"        console.log('Payment ID saved: ' + jsonData.paymentId);",
+									"    }",
+									"    ",
+									"    if (jsonData.clientSecret) {",
+									"        pm.collectionVariables.set('client_secret', jsonData.clientSecret);",
+									"    }",
+									"    ",
+									"    if (jsonData.paymentIntentId) {",
+									"        pm.collectionVariables.set('payment_intent_id', jsonData.paymentIntentId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": {{settlement_amount}},\n  \"payerId\": {{user_id}},\n  \"receiverId\": {{receiver_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/payments/intent/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"payments",
+								"intent",
+								"create"
+							]
+						},
+						"description": "Create a Stripe payment intent for settlement. Returns clientSecret, paymentIntentId, and paymentId. Note: Receiver must have a Stripe Connect account."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Stripe Settlement Expense",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.expenseId) {",
+									"        pm.collectionVariables.set('last_expense_id', jsonData.expenseId);",
+									"        console.log('Expense ID saved: ' + jsonData.expenseId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Settle up with {{receiver_name}}\",\n  \"amount\": {{settlement_amount}},\n  \"date\": \"{{settlement_date}}\",\n  \"type\": \"SettleUp\",\n  \"payerId\": {{user_id}},\n  \"shareWithId\": {{share_with_id}},\n  \"shareWith\": \"{{share_with_name}}\",\n  \"shareWithType\": \"{{share_with_type}}\",\n  \"splitDetails\": [\n    {\n      \"userId\": {{receiver_id}},\n      \"name\": \"{{receiver_name}}\",\n      \"amount\": {{settlement_amount}},\n      \"portion\": 1,\n      \"include\": true\n    }\n  ],\n  \"isSettleUp\": true,\n  \"settlementTargetId\": {{receiver_id}},\n  \"paymentId\": {{payment_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/expenses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expenses"
+							]
+						},
+						"description": "Create a settlement expense record after Stripe payment is successful. Requires paymentId from the payment intent creation."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/payments/{{payment_id}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"payments",
+								"{{payment_id}}",
+								"status"
+							]
+						},
+						"description": "Get the status of a payment by paymentId."
+					},
+					"response": []
+				}
+			],
+			"description": "Stripe settlement endpoints"
+		},
+		{
+			"name": "Manual Settlements",
+			"item": [
+				{
+					"name": "Create Manual Settlement",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.expenseId) {",
+									"        pm.collectionVariables.set('last_expense_id', jsonData.expenseId);",
+									"        console.log('Manual settlement created. Expense ID: ' + jsonData.expenseId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Settle up with {{receiver_name}}\",\n  \"amount\": {{settlement_amount}},\n  \"date\": \"{{settlement_date}}\",\n  \"type\": \"SettleUp\",\n  \"payerId\": {{user_id}},\n  \"shareWithId\": {{share_with_id}},\n  \"shareWith\": \"{{share_with_name}}\",\n  \"shareWithType\": \"{{share_with_type}}\",\n  \"splitDetails\": [\n    {\n      \"userId\": {{receiver_id}},\n      \"name\": \"{{receiver_name}}\",\n      \"amount\": {{settlement_amount}},\n      \"portion\": 1,\n      \"include\": true\n    }\n  ],\n  \"isSettleUp\": true,\n  \"settlementTargetId\": {{receiver_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/expenses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expenses"
+							]
+						},
+						"description": "Create a manual settlement (no paymentId). This represents a settlement that was paid outside of Stripe."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Manual Settlement",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Settle up with {{receiver_name}}\",\n  \"amount\": {{updated_settlement_amount}},\n  \"date\": \"{{settlement_date}}\",\n  \"type\": \"SettleUp\",\n  \"payerId\": {{user_id}},\n  \"shareWithId\": {{share_with_id}},\n  \"shareWith\": \"{{share_with_name}}\",\n  \"shareWithType\": \"{{share_with_type}}\",\n  \"splitDetails\": [\n    {\n      \"userId\": {{receiver_id}},\n      \"name\": \"{{receiver_name}}\",\n      \"amount\": {{updated_settlement_amount}},\n      \"portion\": 1,\n      \"include\": true\n    }\n  ],\n  \"isSettleUp\": true,\n  \"settlementTargetId\": {{receiver_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/expenses/{{last_expense_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expenses",
+								"{{last_expense_id}}"
+							]
+						},
+						"description": "Update an existing manual settlement. Note: Stripe settlements cannot be updated."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Settlement Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/expenses/{{last_expense_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"expenses",
+								"{{last_expense_id}}"
+							]
+						},
+						"description": "Get details of a specific expense/settlement by expenseId."
+					},
+					"response": []
+				}
+			],
+			"description": "Manual settlement endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					"// Calculate last 30 days dates",
+					"var now = new Date();",
+					"var endDate = now.toISOString().split('T')[0];",
+					"var startDate = new Date(now);",
+					"startDate.setDate(now.getDate() - 30);",
+					"var startDateStr = startDate.toISOString().split('T')[0];",
+					"",
+					"pm.collectionVariables.set('last_30_days_start', startDateStr);",
+					"pm.collectionVariables.set('last_30_days_end', endDate);",
+					"",
+					"// Set today's date for settlements",
+					"pm.collectionVariables.set('settlement_date', endDate);",
+					"",
+					"// Set default start and end dates (last 30 days)",
+					"if (!pm.collectionVariables.get('start_date')) {",
+					"    pm.collectionVariables.set('start_date', startDateStr);",
+					"}",
+					"if (!pm.collectionVariables.get('end_date')) {",
+					"    pm.collectionVariables.set('end_date', endDate);",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://wiselysplit.up.railway.app/api"
+		},
+		{
+			"key": "jwt_token",
+			"value": ""
+		},
+		{
+			"key": "user_id",
+			"value": "50"
+		},
+		{
+			"key": "test_email",
+			"value": "patelhivi04@gmail.com"
+		},
+		{
+			"key": "test_password",
+			"value": "Test@123"
+		},
+		{
+			"key": "start_date",
+			"value": ""
+		},
+		{
+			"key": "end_date",
+			"value": ""
+		},
+		{
+			"key": "last_30_days_start",
+			"value": ""
+		},
+		{
+			"key": "last_30_days_end",
+			"value": ""
+		},
+		{
+			"key": "settlement_date",
+			"value": ""
+		},
+		{
+			"key": "settlement_amount",
+			"value": "50.00"
+		},
+		{
+			"key": "updated_settlement_amount",
+			"value": "75.00"
+		},
+		{
+			"key": "receiver_id",
+			"value": "53"
+		},
+		{
+			"key": "receiver_name",
+			"value": "Vinod Patel"
+		},
+		{
+			"key": "share_with_id",
+			"value": "53"
+		},
+		{
+			"key": "share_with_name",
+			"value": "Vinod Patel"
+		},
+		{
+			"key": "share_with_type",
+			"value": "friend",
+			"description": {
+				"content": "Options: 'friend' or 'group'",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "expense_id",
+			"value": "1"
+		},
+		{
+			"key": "payment_id",
+			"value": ""
+		},
+		{
+			"key": "payment_intent_id",
+			"value": ""
+		},
+		{
+			"key": "client_secret",
+			"value": ""
+		},
+		{
+			"key": "last_expense_id",
+			"value": ""
+		},
+		{
+			"key": "custom_start_date",
+			"value": "2025-11-1"
+		},
+		{
+			"key": "custom_end_date",
+			"value": "2025-12-1"
+		}
+	]
+}
