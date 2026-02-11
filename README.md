@@ -80,9 +80,13 @@ The platform allows users to:
 | Milestone                | Description | Achieved? |
 |--------------------------|-------------|-----------|
 | **Milestone 1:** | Authentication, account creation, profile setup | ✅ |
-| **Milestone 2:** | Expense & group management |    |
-| **Milestone 3:** | Bill split, personal summaries, filters |    |
-| **Milestone 4:** | Stripe integration, testing, accessibility, deployment |    |
+| **Milestone 2:** | Expense & group management | ✅ |
+| **Milestone 3:** | Bill split, personal summaries, filters | ✅ |
+| **Milestone 4:** | Stripe integration, testing, accessibility | ✅ |
+| **Milestone 5:** | Automate Expense Entries with Siri Shortcut | in Progress |
+| **Milestone 6:** | Generate monthly and category wise summaries |  |
+
+
 
 ---
 
