@@ -53,7 +53,7 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOriginPatterns("http://localhost:5173", "https://wiselysplit.netlify.app")
+                        .allowedOriginPatterns("http://localhost:5173", "https://wiselysplit.netlify.app", "https://wiselysplit.xyz")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
