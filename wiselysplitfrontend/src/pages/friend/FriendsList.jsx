@@ -125,6 +125,19 @@ export default function FriendsList() {
                       focus:ring-emerald-400'
           />
 
+          
+
+          {/* Add Expense — full width on mobile */}
+          <button
+            onClick={() => navigate(`/friends/0/add-expense`)}
+            className='w-full sm:w-auto bg-emerald-200 text-emerald-700 
+                      dark:text-emerald-700 dark:bg-emerald-200 font-semibold 
+                      rounded-xl py-2 px-4 hover:bg-emerald-300 dark:hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400'
+            aria-label="Add a new expense with a friend"
+          >
+            Add Expense
+          </button>
+
           {/* Add Friend */}
           <PrimaryButton
             label='Add Friend'
@@ -132,17 +145,6 @@ export default function FriendsList() {
             className='w-full sm:w-auto whitespace-nowrap'
             ariaLabel="Send a friend invite"
           />
-
-          {/* Add Expense — full width on mobile */}
-          <button
-            onClick={() => navigate(`/friends/0/add-expense`)}
-            className='w-full sm:w-auto bg-emerald-100 text-emerald-700 
-                      dark:text-emerald-100 dark:bg-emerald-700 font-semibold 
-                      rounded-xl py-2 px-4 hover:bg-emerald-200 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400'
-            aria-label="Add a new expense with a friend"
-          >
-            Add Expense
-          </button>
           
         </div>
       </div>

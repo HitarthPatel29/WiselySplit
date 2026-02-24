@@ -156,7 +156,7 @@ export default function AlertModal({
           </div>
 
           {/* Close button */}
-          <button
+          {/* <button
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
@@ -164,7 +164,7 @@ export default function AlertModal({
             aria-label="Close modal"
           >
             <span aria-hidden="true">✕</span>
-          </button>
+          </button> */}
         </div>
       </div>
     </div>,

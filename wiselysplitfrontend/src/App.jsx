@@ -20,6 +20,7 @@ import GroupView from './pages/group/GroupView.jsx'
 import AddParticipants from './pages/group/AddParticipants.jsx'
 import EditGroup from './pages/group/EditGroup.jsx'
 import PersonalSummary from './pages/PersonalSummary.jsx'
+import PersonalExpense from './pages/PersonalExpense.jsx'
 import StripeSettleUp from './pages/settle/StripeSettleUp.jsx'
 import SettlementDetails from './pages/settle/SettlementDetails.jsx'
 import StripeConnectSetup from './pages/stripe/StripeConnectSetup.jsx'
@@ -242,6 +243,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <PersonalSummary />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/personalExpense"
+        element={
+          <PrivateRoute>
+            <PersonalExpense />
           </PrivateRoute>
         }
       />

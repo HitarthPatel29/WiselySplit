@@ -13,7 +13,7 @@ export default function AddExpense() {
   const navigate = useNavigate()
   const { id } = useParams()
   const { userId, friendsAndGroups, setFriendsAndGroups, fetchConnections } = useAuth()
-  const { showSuccess, showError } = useNotification()
+  const { showSuccess, showError, showAlert } = useNotification()
   const [saving, setSaving] = useState(false)
   const [expense, setExpense] = useState(null)
 
@@ -37,6 +37,16 @@ export default function AddExpense() {
           userId
         )
       )
+    }
+    else {
+      showAlert({
+        title: 'No Friends or Groups found',
+        message: 'No Friends or Groups found to Share Expense.',
+        type: 'error',
+        showCancel: false,
+        confirmText: 'OK',
+        onConfirm: () => navigate(-1),
+      })
     }
     console.log('AddExpense: userID:', userId)
   }, [friendsAndGroups, id, userId])

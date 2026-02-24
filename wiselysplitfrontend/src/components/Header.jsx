@@ -168,6 +168,14 @@ export default function Header({ title = '' }) {
                     Personal Summary
                   </button>
                 </li>
+                <li role="listitem">
+                  <button
+                    onClick={() => handleMenuClick('/personalExpense')}
+                    className='w-full text-left px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 font-semibold hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400'
+                  >
+                    Personal Expenses
+                  </button>
+                </li>
 
                 <li role="listitem">
                   <button

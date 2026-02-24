@@ -63,14 +63,14 @@ export default function Snackbar({
       >
         <span className="text-xl" aria-hidden="true">{styles.icon}</span>
         <p className="flex-1 text-sm font-medium">{message}</p>
-        <button
+        {/* <button
           type="button"
           onClick={onClose}
           className="text-white/80 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 rounded"
           aria-label="Close notification"
         >
           <span aria-hidden="true">✕</span>
-        </button>
+        </button> */}
       </div>
     </div>,
     document.body
