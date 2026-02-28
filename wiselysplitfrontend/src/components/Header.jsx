@@ -28,9 +28,9 @@ export default function Header({ title = '' }) {
   return (
     <div className='w-full border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300 sticky top-0 z-40'>
       {/* Top Row */}
-      <div className='flex items-center justify-between px-4 py-4'>
+      <div className='relative flex items-center justify-between px-4 py-4'>
         {/* Left side - Back button and Logo (non-Dashboard) or spacer */}
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-2 min-w-[5rem]'>
           {!isDashboard && (
             <>
               <button
@@ -40,9 +40,10 @@ export default function Header({ title = '' }) {
               >
                 <ArrowLeftIcon className='w-6 h-6 text-gray-700 dark:text-gray-300' aria-hidden="true" />
               </button>
+              {/* Logo: hidden on phone, shown on sm+ screens (Dashboard always has center logo) */}
               <button
                 onClick={() => navigate('/dashboard')}
-                className='flex items-center hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-lg px-1 py-1'
+                className='hidden sm:flex items-center hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-lg px-1 py-1'
                 aria-label='Go to Dashboard'
               >
                 <Logo size={32} />
@@ -51,25 +52,27 @@ export default function Header({ title = '' }) {
           )}
         </div>
 
-        {/* Center - Logo (Dashboard) or Title */}
-        <div className='flex items-center justify-center flex-1'>
-          {isDashboard ? (
-            <button
-              onClick={() => navigate('/dashboard')}
-              className='flex items-center gap-2 hover:opacity-80 transition-opacity rounded-lg px-1 py-1'
-              aria-label='Go to Dashboard'
-            >
-              <Logo size={48} />
-            </button>
-          ) : (
-            <h1 className='text-2xl font-bold text-center text-gray-900 dark:text-gray-100'>
-              {title}
-            </h1>
-          )}
+        {/* Center - Logo (Dashboard) or Title - absolutely centered on screen */}
+        <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none'>
+          <div className='pointer-events-auto'>
+            {isDashboard ? (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className='flex items-center gap-2 hover:opacity-80 transition-opacity rounded-lg px-1 py-1'
+                aria-label='Go to Dashboard'
+              >
+                <Logo size={48} />
+              </button>
+            ) : (
+              <h1 className='text-2xl font-bold text-center text-gray-900 dark:text-gray-100'>
+                {title}
+              </h1>
+            )}
+          </div>
         </div>
 
         {/* Right side - Menu button */}
-        <div className='w-20 flex items-center justify-end'>
+        <div className='min-w-[5rem] flex items-center justify-end'>
           <button
             onClick={() => setOpen(true)}
             className='p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400'

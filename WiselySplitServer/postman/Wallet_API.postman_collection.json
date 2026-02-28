@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "WiselySplit - Wallet API",
+    "description": "Collection for testing Wallet API endpoints. Set collection variables: baseURL, userID, token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseURL",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "userID",
+      "value": "1"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_JWT_TOKEN_HERE"
+    },
+    {
+      "key": "walletId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get All Wallets",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/api/users/{{userID}}/wallets",
+          "host": ["{{baseURL}}"],
+          "path": ["api", "users", "{{userID}}", "wallets"]
+        },
+        "description": "Returns all wallets for the authenticated user."
+      }
+    },
+    {
+      "name": "Create Wallet",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": {{userID}},\n  \"walletName\": \"My Wallet\",\n  \"walletType\": \"Checking\",\n  \"walletColor\": \"#3B82F6\"\n}"
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/users/{{userID}}/wallets",
+          "host": ["{{baseURL}}"],
+          "path": ["api", "users", "{{userID}}", "wallets"]
+        },
+        "description": "Creates a new wallet. Required: userId, walletName, walletType, walletColor. Save the returned walletId to the walletId variable for Update/Delete."
+      }
+    },
+    {
+      "name": "Update Wallet",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"walletName\": \"Updated Wallet Name\",\n  \"walletType\": \"Savings\",\n  \"walletColor\": \"#10B981\"\n}"
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/users/{{userID}}/wallets/{{walletId}}",
+          "host": ["{{baseURL}}"],
+          "path": ["api", "users", "{{userID}}", "wallets", "{{walletId}}"]
+        },
+        "description": "Updates an existing wallet. Set collection variable walletId to the wallet you want to update."
+      }
+    },
+    {
+      "name": "Delete Wallet",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/api/users/{{userID}}/wallets/{{walletId}}",
+          "host": ["{{baseURL}}"],
+          "path": ["api", "users", "{{userID}}", "wallets", "{{walletId}}"]
+        },
+        "description": "Deletes a wallet. Set collection variable walletId to the wallet you want to delete. Returns 204 No Content on success."
+      }
+    },
+    {
+      "name": "Test to Fail",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/api/users/{{userID}}/wallets",
+          "host": ["{{baseURL}}"],
+          "path": ["api", "users", "{{userID}}", "wallets"]
+        },
+        "description": "Intentional failing test to verify Postman test runner.",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status is 201 Created (wrong - GET returns 200)\", function () {",
+                "    pm.response.to.have.status(201);",
+                "});",
+                "pm.test(\"Response has walletsCount (does not exist)\", function () {",
+                "    const json = pm.response.json();",
+                "    pm.expect(json).to.have.property(\"walletsCount\");",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

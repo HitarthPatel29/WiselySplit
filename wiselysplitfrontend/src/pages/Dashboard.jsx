@@ -133,7 +133,7 @@ export default function Dashboard() {
           >
             Quick Actions
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4" role="list">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4" role="list">
             {quickActions.map((action, index) => {
               const Icon = action.icon
               return (

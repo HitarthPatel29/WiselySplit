@@ -18,7 +18,7 @@ public class ExpensesDAO {
     private JdbcTemplate jdbcTemplate;
 
     /** Insert Expense and return ExpenseID */
-    public int insertExpense(
+    public int insertSharedExpense(
             String title,
             String date,
             String type,
@@ -26,11 +26,12 @@ public class ExpensesDAO {
             int payerId,
             Integer groupId,
             boolean isSettleUp,
-            Integer paymentId
+            Integer paymentId,
+            Integer walletId
     ) {
         String sql = """
-            INSERT INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, GroupID, IsSettleUp, PaymentID)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, GroupID, IsSettleUp, PaymentID, WalletID)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -46,6 +47,37 @@ public class ExpensesDAO {
             ps.setBoolean(7, isSettleUp);
             if (paymentId != null) ps.setInt(8, paymentId);
             else ps.setNull(8, Types.INTEGER);
+            if (walletId != null) ps.setInt(9, walletId);
+            else ps.setNull(9, Types.INTEGER);
+            return ps;
+        }, keyHolder);
+        return keyHolder.getKey().intValue();
+    }
+
+    public int insertPersonalExpense(
+            String title,
+            String date,
+            String type,
+            double amount,
+            int userId,
+            Integer walletId
+    ) {
+        String sql = """
+            INSERT INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, IsPersonal, WalletID)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """;
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, title);
+            ps.setString(2, date);
+            ps.setString(3, type);
+            ps.setDouble(4, amount);
+            ps.setInt(5, userId);
+            ps.setBoolean(6, true);
+            if (walletId != null) ps.setInt(7, walletId);
+            else ps.setNull(7, Types.INTEGER);
             return ps;
         }, keyHolder);
         return keyHolder.getKey().intValue();
@@ -56,6 +88,7 @@ public class ExpensesDAO {
             double amount,
             Integer payerId,
             Integer receiverId
+//            TODO: Add payerWalletId, receiverWalletId
     ) {
         String sql = """
             INSERT INTO Payments (Amount, PayerID, ReceiverID, PaymentDate, Status)
@@ -94,6 +127,8 @@ public class ExpensesDAO {
                 e.IsSettleUp AS isSettleUp,
                 e.PaymentID AS paymentId,
                 e.GroupID AS groupId,
+                e.IsPersonal AS isPersonal,
+                e.WalletID AS payerWalletId,
                 u.Name AS payer,
                 u.UserID AS payerId
             FROM Expenses e
@@ -134,6 +169,8 @@ public class ExpensesDAO {
             g.GroupName AS groupName,
             e.IsSettleUp AS isSettleUp,
             e.PaymentID AS paymentId,
+            e.IsPersonal AS isPersonal,
+            e.WalletID AS payerWalletId,
             COALESCE(ep.Contribution, 0) AS userContribution,
             CASE WHEN e.PayerID = ? THEN 1 ELSE 0 END AS isUserPayer,
             CASE 
@@ -167,12 +204,44 @@ public class ExpensesDAO {
         jdbcTemplate.update("DELETE FROM Expenses WHERE ExpenseID = ?", expenseId);
     }
 
-    public void updateExpense(int expenseId, String title, String date, String type, double amount, int payerId, Integer groupId) {
-        String sql = "UPDATE Expenses SET ExpenseTitle=?, ExpenseDate=?, ExpenseType=?, Amount=?, PayerID=?, GroupID=? WHERE ExpenseID=?";
-        jdbcTemplate.update(sql, title, date, type, amount, payerId, groupId, expenseId);
+    public void updateExpense(int expenseId, String title, String date, String type, double amount, int payerId, Integer groupId, boolean isPersonal, Integer walletId) {
+        String sql = "UPDATE Expenses SET ExpenseTitle=?, ExpenseDate=?, ExpenseType=?, Amount=?, PayerID=?, GroupID=?, IsPersonal=?, WalletID=? WHERE ExpenseID=?";
+        jdbcTemplate.update(sql, title, date, type, amount, payerId, groupId, expenseId, isPersonal, walletId);
     }
 
     public void deleteExpenseParticipation(int expenseId) {
         jdbcTemplate.update("DELETE FROM ExpenseParticipation WHERE ExpenseID = ?", expenseId);
+    }
+
+    public List<Map<String, Object>> getExpenseForWallet(int userId, int walletId) {
+        String sql = """
+            SELECT
+                e.ExpenseID AS expenseId,
+                e.ExpenseTitle AS title,
+                e.ExpenseDate AS date,
+                e.Amount AS totalAmount,
+                e.ExpenseType AS expenseType,
+                e.IsSettleUp AS isSettleUp,
+                e.PaymentID AS paymentId,
+                e.IsPersonal AS isPersonal,
+                e.WalletID AS walletId,
+                p.Name AS paidBy,
+                p.UserID AS payerId,
+            
+                -- Determine type from the POV of current user
+                CASE WHEN e.PayerID = ? THEN 'lent' ELSE 'owe' END AS type
+            
+            FROM Expenses e
+            JOIN User p ON e.PayerID = p.UserID
+            WHERE e.walletId = ?
+            ORDER BY e.ExpenseDate DESC;
+        """;
+
+        List<Map<String,Object>> list = jdbcTemplate.queryForList(sql, userId, walletId);
+        for (Map<String,Object> expense: list) {
+            if (!(boolean) expense.get("isPersonal"))
+                expense.put("splitDetails", findExpenseParticipants((Integer) expense.get("expenseId")));
+        }
+        return list;
     }
 }

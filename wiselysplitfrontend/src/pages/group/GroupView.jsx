@@ -8,7 +8,12 @@ import SettleUpModal from '../../components/Modals/SettleUpModal.jsx'
 import MemberSelectModal from '../../components/Modals/MemberSelectModal.jsx'
 import { buildSettleUpPayload, formatCurrency, getSettlementMethodLabel } from '../../utils/settleUp.js'
 import { useNotification } from '../../context/NotificationContext'
-import { Cog6ToothIcon } from '@heroicons/react/24/solid'
+import {
+  Cog6ToothIcon,
+  PlusIcon,
+  UserPlusIcon,
+  BanknotesIcon,
+} from '@heroicons/react/24/solid'
 
 /* -----------------------------------------------------
    Helper: Format a date into "Nov 11"
@@ -322,106 +327,138 @@ export default function GroupView() {
       <Header title='Group View' />
 
       {/* ----------------- GROUP INFO ----------------- */}
-      <section 
+      <section
         className='max-w-3xl mx-auto px-4 py-6'
         aria-labelledby="group-name-heading"
       >
-        <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
-          <img
-            src={group.avatar}
-            alt={`${group.name} group avatar`}
-            className='w-24 h-24 rounded-full object-cover border'
-          />
+        <div className='relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-teal-50/50 dark:from-gray-800 dark:via-gray-800/95 dark:to-emerald-900/20 border border-emerald-100/80 dark:border-gray-700/80 shadow-lg shadow-emerald-500/5'>
+          {/* Decorative corner accent */}
+          <div className='absolute -top-12 -right-12 w-32 h-32 rounded-full bg-emerald-400/10 dark:bg-emerald-500/10' aria-hidden="true" />
+          <div className='absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-teal-400/10 dark:bg-teal-500/10' aria-hidden="true" />
 
-          <div className='flex-1 text-center sm:text-left'>
-            <h2 
-              id="group-name-heading"
-              className='text-2xl font-semibold'
+          <div className='relative px-5 py-6 sm:px-6 sm:py-7'>
+            {/* Avatar + Name row */}
+            <div className='flex flex-row items-start gap-4'>
+              <div className='relative shrink-0'>
+                {group.avatar ? (
+                  <img
+                    src={group.avatar}
+                    alt={`${group.name} group avatar`}
+                    className='w-25 h-25 sm:w-25 sm:h-25 rounded-2xl object-cover ring-2 ring-white dark:ring-gray-700 shadow-md'
+                  />
+                ) : (
+                  <div className='w-25 h-25 sm:w-25 sm:h-25 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-md'>
+                    {group.name?.slice(0, 2).toUpperCase() || 'GR'}
+                  </div>
+                )}
+              </div>
+
+              <div className='flex-1 min-w-0'>
+                <h2
+                  id="group-name-heading"
+                  className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate'
+                >
+                  {group.name}
+                </h2>
+
+                {overallStanding && (
+                  <span
+                    className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold ${overallStanding.color} bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-current/20`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {overallStanding.text}
+                  </span>
+                )}
+
+                {/* Member standings - horizontal scroll */}
+                {membersStanding.length > 0 && (
+                  <div className='mt-3 flex flex-nowrap gap-2 overflow-x-auto overflow-y-hidden pb-1 scrollbar-thin'>
+                    {membersStanding.map((m) => {
+                      if (m.balance > 0)
+                        return (
+                          <span
+                            key={m.userId}
+                            className='inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 shrink-0'
+                          >
+                            {m.name} owes ${m.balance.toFixed(2)}
+                          </span>
+                        )
+                      if (m.balance < 0)
+                        return (
+                          <span
+                            key={m.userId}
+                            className='inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 shrink-0'
+                          >
+                            You owe {m.name} ${Math.abs(m.balance).toFixed(2)}
+                          </span>
+                        )
+                      return (
+                        <span
+                          key={m.userId}
+                          className='inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 shrink-0'
+                        >
+                          {m.name} ✓
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action buttons - 2x2 grid on mobile, row on desktop */}
+            <div
+              className='mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3'
+              role="group"
+              aria-label="Group actions"
             >
-              {group.name}
-            </h2>
-
-            {overallStanding && (
-              <p 
-                className={`mt-1 font-medium ${overallStanding.color}`}
-                role="status"
-                aria-live="polite"
+              <button
+                onClick={() => navigate(`/groups/${id}/add-expense`, { state: { fromGroup: true } })}
+                className='flex items-center justify-center gap-2 bg-emerald-500 text-white font-semibold rounded-xl py-3 px-4 hover:bg-emerald-600 active:scale-[0.98] transition focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                aria-label="Add a new expense to this group"
               >
-                {overallStanding.text}
-              </p>
-            )}
+                <PlusIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                <span>Add Expense</span>
+              </button>
 
-            <div className='mt-2 text-sm space-y-1'>
-              {membersStanding.map((m) => {
-                if (m.balance > 0)
-                  return (
-                    <p key={m.userId} className='text-emerald-600'>
-                      {m.name} owes you ${m.balance.toFixed(2)}
-                    </p>
-                  )
+              <button
+                onClick={() => navigate(`/groups/${id}/add-participants`)}
+                className='flex items-center justify-center gap-2 bg-emerald-100 text-emerald-700 font-semibold rounded-xl py-3 px-4 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:hover:bg-emerald-800/50 transition active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                aria-label="Add participants to this group"
+              >
+                <UserPlusIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                <span>Add People</span>
+              </button>
 
-                if (m.balance < 0)
-                  return (
-                    <p key={m.userId} className='text-red-500'>
-                      You owe {m.name} ${Math.abs(m.balance).toFixed(2)}
-                    </p>
-                  )
+              <button
+                onClick={handleOpenMemberSelect}
+                disabled={!membersStanding.some((m) => m.balance < 0)}
+                className={`flex items-center justify-center gap-2 rounded-xl py-3 px-4 font-semibold transition active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                  membersStanding.some((m) => m.balance < 0)
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
+                }`}
+                aria-label="Settle up with group members"
+              >
+                <BanknotesIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                <span>{membersStanding.some((m) => m.balance < 0) ? 'Settle Up' : 'All Settled'}</span>
+              </button>
 
-                return (
-                  <p key={m.userId} className='text-gray-500'>
-                    {m.name} settled up
-                  </p>
-                )
-              })}
+              <button
+                onClick={() =>
+                  navigate(`/groups/${id}/edit`, {
+                    state: { group, participants, membersStanding, overallStanding },
+                  })
+                }
+                className='flex items-center justify-center gap-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 rounded-xl py-3 px-4 hover:bg-gray-200 dark:hover:bg-gray-600 transition active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                aria-label="Edit group settings"
+              >
+                <Cog6ToothIcon className="w-5 h-5" aria-hidden="true" />
+                <span>Edit</span>
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* ACTION BUTTONS */}
-        <div 
-          className='flex flex-col sm:flex-row gap-3 justify-center mt-5'
-          role="group"
-          aria-label="Group actions"
-        >
-          <button
-            onClick={() => navigate(`/groups/${id}/add-expense`, { state: { fromGroup: true } })}
-            className='sm:w-full bg-emerald-100 text-emerald-700 font-semibold rounded-xl py-3 hover:bg-emerald-200 transition dark:text-emerald-100 dark:bg-emerald-700 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400'
-            aria-label="Add a new expense to this group"
-          >
-            + Add Expense
-          </button>
-
-          <button
-            onClick={() => navigate(`/groups/${id}/add-participants`)}
-            className='sm:w-full bg-emerald-100 text-emerald-700 font-semibold rounded-xl py-3 hover:bg-emerald-200 transition dark:text-emerald-100 dark:bg-emerald-700 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400'
-            aria-label="Add participants to this group"
-          >
-            + Add Participants
-          </button>
-
-          <button
-            onClick={handleOpenMemberSelect}
-            disabled={!membersStanding.some((m) => m.balance < 0)}
-            className={`sm:w-full rounded-xl py-3 font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
-              membersStanding.some((m) => m.balance < 0)
-                ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500'
-            }`}
-            aria-label="Settle up with group members"
-          >
-            {membersStanding.some((m) => m.balance < 0) ? 'Settle Up' : 'All Settled'}
-          </button>
-
-          <button
-            onClick={() =>navigate(`/groups/${id}/edit`, {state: {group, participants, membersStanding, overallStanding},
-              })
-            }
-            className='sm:w-24 bg-emerald-500 text-white rounded-xl py-3 hover:bg-emerald-600 flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-emerald-400'
-            aria-label="Edit group settings"
-          >
-            <Cog6ToothIcon className="w-5 h-5" aria-hidden="true" />
-            <span className="sr-only">Edit</span>
-          </button>
         </div>
       </section>
 

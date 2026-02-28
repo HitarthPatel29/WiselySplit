@@ -2,9 +2,13 @@ package ca.mohawkCollege.WiselySplitServer.service;
 
 import ca.mohawkCollege.WiselySplitServer.dao.ExpensesDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.PaymentDAO;
+import ca.mohawkCollege.WiselySplitServer.dao.WalletDAO;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.ObjectError;
+
 import java.util.List;
 import java.util.Map;
 
@@ -13,13 +17,15 @@ public class ExpensesService {
 
     @Autowired
     private ExpensesDAO expensesDAO;
+    @Autowired
+    private WalletDAO walletDAO;
 
     @Autowired
     private PaymentDAO paymentDAO;
 
     /** Create expense for friend or group */
     @Transactional
-    public Map<String, Object> createExpense(Map<String, Object> payload) {
+    public Map<String, Object> createSharedExpense(Map<String, Object> payload) {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
@@ -27,19 +33,13 @@ public class ExpensesService {
             double amount = ((Number) payload.get("amount")).doubleValue();
             int payerId = ((Number) payload.get("payerId")).intValue();
             String shareWithType = (String) payload.get("shareWithType");
-
-            Integer groupId = null;
-            if ("group".equalsIgnoreCase(shareWithType) && payload.get("shareWithId") != null) {
-                groupId = ((Number) payload.get("shareWithId")).intValue();
-            }
-
+            Integer groupId = ("group".equalsIgnoreCase(shareWithType) && payload.get("shareWithId") != null) ? ((Number) payload.get("shareWithId")).intValue() : null;
             boolean isSettleUp = Boolean.TRUE.equals(payload.get("isSettleUp"));
-            Integer paymentId = payload.get("paymentId") != null
-                    ? ((Number) payload.get("paymentId")).intValue()
-                    : null;
+            Integer paymentId = payload.get("paymentId") != null ? ((Number) payload.get("paymentId")).intValue() : null;
+            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
 
             // Insert into Expenses table
-            int expenseId = expensesDAO.insertExpense(title, date, type, amount, payerId, groupId, isSettleUp, paymentId);
+            int expenseId = expensesDAO.insertSharedExpense(title, date, type, amount, payerId, groupId, isSettleUp, paymentId, walletId);
 
             // Insert participants
             List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
@@ -52,13 +52,34 @@ public class ExpensesService {
                 }
             }
 
-            return Map.of("success", true, "expenseId", expenseId, "message", "Expense created successfully");
+            return Map.of("success", true, "expenseId", expenseId, "message", "Shared Expense created successfully");
         } catch (Exception e) {
-            throw new RuntimeException("Error creating expense: " + e.getMessage());
+            throw new RuntimeException("Error creating shared expense: " + e.getMessage());
+        }
+    }
+    @Transactional
+    public Map<String, Object> createPersonalExpense(Map<String, Object> payload) {
+        try {
+            String title = (String) payload.get("title");
+            String date = (String) payload.get("date");
+            String type = (String) payload.get("type");
+            double amount = ((Number) payload.get("amount")).doubleValue();
+            int userId = ((Number) payload.get("userId")).intValue();
+            Integer walletId = ((Number) payload.get("walletId")).intValue();
+
+            // Insert into Expenses table
+            int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId);
+
+            return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating personal expense: " + e.getMessage());
         }
     }
 
-    /** Create a payment record (used by Stripe flow) */
+    /** Create a payment record (used by Stripe flow)
+     * TODO: Add payerWalletId and receiverWalletId
+     * */
+
     public Map<String, Object> createPayment(Map<String, Object> payload) {
         try {
             double amount = ((Number) payload.get("amount")).doubleValue();
@@ -111,9 +132,20 @@ public class ExpensesService {
     /**  Fetch single expense details */
     public Map<String, Object> getExpenseDetails(int expenseId) {
         Map<String, Object> expense = expensesDAO.findExpenseById(expenseId);
-        List<Map<String, Object>> participants = expensesDAO.findExpenseParticipants(expenseId);
-        expense.put("splitDetails", participants);
+        if ( ! ((boolean) expense.get("isPersonal")) ) {
+            List<Map<String, Object>> participants = expensesDAO.findExpenseParticipants(expenseId);
+            expense.put("splitDetails", participants);
+        }
         return expense;
+    }
+
+    /** Fetch Shared + Personal Expenses (Grouped by Wallet) */
+    public List<Map<String, Object>> getExpensesGroupedByWallet(int userId){
+        List<Map<String, Object>> wallets = walletDAO.getWallets(userId);
+        for (Map<String, Object> wallet : wallets){
+            wallet.put("expenses", expensesDAO.getExpenseForWallet(userId, ((Number) wallet.get("walletId")).intValue() ));
+        }
+        return wallets;
     }
 
     /**  Delete expense */
@@ -137,21 +169,25 @@ public class ExpensesService {
                 groupId = ((Number) payload.get("shareWithId")).intValue();
             }
 
-            // Update Expense
-            expensesDAO.updateExpense(expenseId, title, date, type, amount, payerId, groupId);
+            Boolean isPersonal = ((Boolean) payload.get("isPersonal")).booleanValue();
+            Integer walletId = ((Number) payload.get("walletId")).intValue();
 
-            // Delete old participation and insert new ones
-            expensesDAO.deleteExpenseParticipation(expenseId);
-            List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
-            for (Map<String, Object> m : participants) {
-                int userId = ((Number) m.get("userId")).intValue();
-                double contribution = ((Number) m.get("amount")).doubleValue();
-                double contributionPortion = ((Number) m.get("portion")).doubleValue();
-                if (contribution > 0) {
-                    expensesDAO.insertExpenseParticipation(expenseId, userId, contribution, contributionPortion);
+            // Update Expense
+            expensesDAO.updateExpense(expenseId, title, date, type, amount, payerId, groupId, isPersonal, walletId );
+
+            if (!isPersonal) {
+                // Delete old participation and insert new ones
+                expensesDAO.deleteExpenseParticipation(expenseId);
+                List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
+                for (Map<String, Object> m : participants) {
+                    int userId = ((Number) m.get("userId")).intValue();
+                    double contribution = ((Number) m.get("amount")).doubleValue();
+                    double contributionPortion = ((Number) m.get("portion")).doubleValue();
+                    if (contribution > 0) {
+                        expensesDAO.insertExpenseParticipation(expenseId, userId, contribution, contributionPortion);
+                    }
                 }
             }
-
             return Map.of("success", true, "expenseId", expenseId, "message", "Expense updated successfully");
         } catch (Exception e) {
             throw new RuntimeException("Error updating expense: " + e.getMessage());

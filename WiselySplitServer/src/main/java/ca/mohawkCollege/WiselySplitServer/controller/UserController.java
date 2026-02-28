@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -62,7 +61,6 @@ public class UserController {
                     .body("Error: " + e.getMessage());
         }
     }
-
 
     // Get User by ID
     @GetMapping("/{id}")
@@ -160,7 +158,6 @@ public class UserController {
                         ));
             }
 
-
             // Update fields
             existing.setName(name);
             existing.setUserName(userName);
@@ -207,4 +204,10 @@ public class UserController {
                     .body(java.util.Map.of("error", e.getMessage()));
         }
     }
+
+
+
+    /**
+     * TODO: Add Controller methods for post, put, delete
+     */
 }

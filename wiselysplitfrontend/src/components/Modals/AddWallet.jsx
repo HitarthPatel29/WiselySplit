@@ -3,19 +3,26 @@ import { XMarkIcon } from '@heroicons/react/24/solid'
 import InputField from '../IO/InputField'
 import { WALLET_COLORS } from '../../constants/walletColors'
 
-export default function AddWallet({ isOpen, onClose, onAdd }) {
+export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, onEdit }) {
   const modalRef = useRef(null)
+  const isEdit = !!editWallet
   const [name, setName] = useState('')
   const [balance, setBalance] = useState('')
   const [color, setColor] = useState('emerald')
 
   useEffect(() => {
     if (isOpen) {
-      setName('')
-      setBalance('')
-      setColor('emerald')
+      if (editWallet) {
+        setName(editWallet.name || '')
+        setBalance(String(editWallet.balance ?? ''))
+        setColor(editWallet.color || 'emerald')
+      } else {
+        setName('')
+        setBalance('')
+        setColor('emerald')
+      }
     }
-  }, [isOpen])
+  }, [isOpen, editWallet])
 
   useEffect(() => {
     if (isOpen && modalRef.current) {
@@ -41,14 +48,19 @@ export default function AddWallet({ isOpen, onClose, onAdd }) {
     }
   }, [isOpen, onClose])
 
-  const handleAdd = () => {
+  const handleSubmit = () => {
     const balanceNum = parseFloat(balance)
     if (!name.trim()) return
-    onAdd({
+    const data = {
       name: name.trim(),
       balance: isNaN(balanceNum) ? 0 : balanceNum,
       color,
-    })
+    }
+    if (isEdit && onEdit) {
+      onEdit(editWallet.id, data)
+    } else {
+      onAdd(data)
+    }
     onClose()
   }
 
@@ -71,7 +83,7 @@ export default function AddWallet({ isOpen, onClose, onAdd }) {
       >
         <div className="flex justify-between items-center mb-6">
           <h2 id="add-wallet-modal-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Add Wallet / Card / Account
+            {isEdit ? 'Edit Wallet' : 'Add Wallet / Card / Account'}
           </h2>
           <button
             onClick={onClose}
@@ -138,11 +150,11 @@ export default function AddWallet({ isOpen, onClose, onAdd }) {
           </button>
           <button
             type="button"
-            onClick={handleAdd}
+            onClick={handleSubmit}
             disabled={!name.trim()}
             className="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400"
           >
-            Add
+            {isEdit ? 'Save' : 'Add'}
           </button>
         </div>
       </div>

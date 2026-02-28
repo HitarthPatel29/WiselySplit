@@ -4,10 +4,12 @@ import { useAuth } from '../context/AuthContext.jsx'
 import Header from '../components/Header.jsx'
 import FilterModal from '../components/Modals/FilterModal.jsx'
 import AddWallet from '../components/Modals/AddWallet.jsx'
+import AlertModal from '../components/Modals/AlertModal.jsx'
 import ExpenseItemCard from '../components/ListItem/ExpenseItemCard.jsx'
-import { AdjustmentsHorizontalIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
+import { AdjustmentsHorizontalIcon, ChevronLeftIcon, ChevronRightIcon, EllipsisVerticalIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/solid'
 import { WALLET_COLOR_MAP } from '../constants/walletColors'
 import PrimaryButton from '../components/IO/PrimaryButton.jsx'
+import api from '../api.js'
 
 const SWIPE_THRESHOLD = 60
 
@@ -24,41 +26,51 @@ const formatDate = (raw) => {
   }
 }
 
-// Dummy data: wallets with expenses (each has a unique color from WALLET_COLOR_MAP)
-const DUMMY_WALLETS = [
-  { id: 1, name: 'Main Wallet', balance: 1250.5, color: 'emerald' },
-  { id: 2, name: 'Travel Fund', balance: 340.0, color: 'blue' },
-  { id: 3, name: 'Groceries', balance: -85.25, color: 'amber' },
-  { id: 4, name: 'Credit Card', balance: -220.0, color: 'rose' },
-]
+// Normalize wallet from group-by-wallets API response
+function mapWalletFromGroupApi(w) {
+  return {
+    id: w.walletId,
+    name: w.walletName ?? w.name,
+    balance: w.walletBalance ?? 0,
+    color: w.walletColor ?? w.color ?? 'emerald',
+  }
+}
 
-const DUMMY_EXPENSES_BY_WALLET = {
-  1: [
-    { expenseId: 101, date: '2025-02-15', title: 'Coffee at Starbucks', type: 'Food', netAmount: -12.5, isSettleUp: false },
-    { expenseId: 102, date: '2025-02-14', title: 'Uber to airport', type: 'Travel', netAmount: -45.0, isSettleUp: false },
-    { expenseId: 103, date: '2025-02-12', title: 'Split dinner with friends', type: 'Food', netAmount: 28.75, isSettleUp: false },
-    { expenseId: 104, date: '2025-02-10', title: 'Settled up with John', type: 'Other', netAmount: -50.0, isSettleUp: true },
-  ],
-  2: [
-    { expenseId: 201, date: '2025-02-16', title: 'Flight booking', type: 'Travel', netAmount: -280.0, isSettleUp: false },
-    { expenseId: 202, date: '2025-02-08', title: 'Hotel deposit', type: 'Travel', netAmount: -60.0, isSettleUp: false },
-  ],
-  3: [
-    { expenseId: 301, date: '2025-02-17', title: 'Weekly groceries', type: 'Personal', netAmount: -85.25, isSettleUp: false },
-    { expenseId: 302, date: '2025-02-09', title: 'Farmers market', type: 'Food', netAmount: -32.0, isSettleUp: false },
-  ],
-  4: [
-    { expenseId: 401, date: '2025-02-16', title: 'Amazon purchase', type: 'Personal', netAmount: -89.99, isSettleUp: false },
-    { expenseId: 402, date: '2025-02-11', title: 'Gas station', type: 'Travel', netAmount: -55.0, isSettleUp: false },
-  ],
+// Normalize expense from group-by-wallets API for list/filter (expenseType = category for filter)
+function mapExpenseFromApi(e) {
+  const amount = e.totalAmount ?? e.netAmount ?? 0
+  return {
+    expenseId: e.expenseId,
+    title: e.title,
+    date: e.date,
+    expenseType: e.expenseType ?? e.type ?? 'Other',
+    type: e.type, // 'lent' | 'owe' for display
+    totalAmount: amount,
+    netAmount: amount,
+    isSettleUp: e.isSettleUp ?? false,
+    groupId: e.groupId ?? null,
+    groupName: e.groupName ?? null,
+    walletId: e.walletId,
+    paidBy: e.paidBy,
+    payerId: e.payerId,
+    isPersonal: e.isPersonal,
+    splitDetails: e.splitDetails,
+    paymentId: e.paymentId,
+  }
 }
 
 export default function PersonalExpense() {
   const navigate = useNavigate()
   const { userId } = useAuth()
 
-  const [wallets, setWallets] = useState(DUMMY_WALLETS)
+  const [wallets, setWallets] = useState([])
+  const [walletsLoading, setWalletsLoading] = useState(true)
   const [showAddWallet, setShowAddWallet] = useState(false)
+  const [editWallet, setEditWallet] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [walletToDelete, setWalletToDelete] = useState(null)
+  const [openMenuWalletId, setOpenMenuWalletId] = useState(null)
+  const menuRef = useRef(null)
   const [activeWalletIndex, setActiveWalletIndex] = useState(0)
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
@@ -80,12 +92,56 @@ export default function PersonalExpense() {
   const [endDate, setEndDate] = useState('')
 
   const activeWallet = wallets[activeWalletIndex]
-  const rawExpenses = activeWallet ? (DUMMY_EXPENSES_BY_WALLET[activeWallet.id] || []) : []
-  const [filteredExpenses, setFilteredExpenses] = useState(rawExpenses)
+  const activeWalletId = activeWallet?.id
+  const [expensesByWalletId, setExpensesByWalletId] = useState({})
+  const [filteredExpenses, setFilteredExpenses] = useState([])
 
-  // Sync filtered expenses when wallet or raw data changes
+  const fetchWalletsWithExpenses = useCallback(async () => {
+    if (!userId) return []
+    setWalletsLoading(true)
+    try {
+      const res = await api.get(`/expenses/group-by-wallets/${userId}`)
+      const rawList = res.data || []
+      const list = rawList.map(mapWalletFromGroupApi)
+      const byWallet = {}
+      rawList.forEach((w) => {
+        const id = w.walletId
+        byWallet[id] = (w.expenses || []).map(mapExpenseFromApi)
+      })
+      setWallets(list)
+      setExpensesByWalletId(byWallet)
+      setActiveWalletIndex((i) => Math.min(i, Math.max(0, list.length - 1)))
+      return list
+    } catch (err) {
+      console.error('Failed to fetch wallets with expenses', err)
+      setWallets([])
+      setExpensesByWalletId({})
+      return []
+    } finally {
+      setWalletsLoading(false)
+    }
+  }, [userId])
+
   useEffect(() => {
-    let list = [...rawExpenses]
+    fetchWalletsWithExpenses()
+  }, [fetchWalletsWithExpenses])
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuWalletId(null)
+      }
+    }
+    if (openMenuWalletId != null) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [openMenuWalletId])
+
+  // Sync filtered expenses when wallet or raw data changes (expenses from group-by-wallets API)
+  useEffect(() => {
+    const source = activeWalletId != null ? (expensesByWalletId[activeWalletId] || []) : []
+    let list = [...source]
 
     // Only apply date filter when user has explicitly set a range (via Filter modal)
     if (displayStartDate && displayEndDate) {
@@ -95,7 +151,7 @@ export default function PersonalExpense() {
       list = list.filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
     }
     if (typeFilter.length > 0) {
-      list = list.filter((e) => typeFilter.includes(e.type))
+      list = list.filter((e) => typeFilter.includes(e.expenseType))
     }
     if (groupFilter) {
       list = list.filter((e) => String(e.groupId) === String(groupFilter))
@@ -112,7 +168,7 @@ export default function PersonalExpense() {
       sort === 'newest' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date)
     )
     setFilteredExpenses(list)
-  }, [rawExpenses, search, typeFilter, groupFilter, sort, monthFilter, displayStartDate, displayEndDate])
+  }, [activeWalletId, expensesByWalletId, search, typeFilter, groupFilter, sort, monthFilter, displayStartDate, displayEndDate])
 
   // Default date range for Filter modal (not applied to list until user clicks Apply)
   useEffect(() => {
@@ -202,6 +258,8 @@ export default function PersonalExpense() {
     }
   }, [isDragging, handleDragMove, handleDragEnd])
 
+  // Re-run when carousel is actually mounted (e.g. after loading) so touchmove attaches to the container
+  const carouselMounted = !walletsLoading && wallets.length > 0
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -211,7 +269,7 @@ export default function PersonalExpense() {
     }
     el.addEventListener('touchmove', onTouchMove, { passive: false })
     return () => el.removeEventListener('touchmove', onTouchMove)
-  }, [handleDragMove])
+  }, [handleDragMove, carouselMounted])
 
   const handleApplyFilters = (f) => {
     setTypeFilter(f.typeFilter)
@@ -228,14 +286,47 @@ export default function PersonalExpense() {
     setShowFilter(false)
   }
 
-  const handleAddWallet = (data) => {
-    const newId = Math.max(...wallets.map((w) => w.id), 0) + 1
-    setWallets((prev) => [
-      ...prev,
-      { id: newId, name: data.name, balance: data.balance, color: data.color },
-    ])
-    DUMMY_EXPENSES_BY_WALLET[newId] = []
-    setActiveWalletIndex(wallets.length)
+  const handleAddWallet = async (data) => {
+    if (!userId) return
+    try {
+      await api.post(`/users/${userId}/wallets`, {
+        walletName: data.name,
+        walletType: 'wallet',
+        walletColor: data.color,
+      })
+      const list = await fetchWalletsWithExpenses()
+      setActiveWalletIndex(Math.max(0, list.length - 1))
+    } catch (err) {
+      console.error('Failed to create wallet', err)
+    }
+  }
+
+  const handleEditWallet = async (walletId, data) => {
+    if (!userId) return
+    try {
+      await api.put(`/users/${userId}/wallets/${walletId}`, {
+        walletName: data.name,
+        walletType: 'wallet',
+        walletColor: data.color,
+      })
+      await fetchWalletsWithExpenses()
+      setEditWallet(null)
+      setShowAddWallet(false)
+    } catch (err) {
+      console.error('Failed to update wallet', err)
+    }
+  }
+
+  const handleDeleteWallet = async () => {
+    if (!userId || !walletToDelete) return
+    try {
+      await api.delete(`/users/${userId}/wallets/${walletToDelete.id}`)
+      await fetchWalletsWithExpenses()
+      setShowDeleteModal(false)
+      setWalletToDelete(null)
+    } catch (err) {
+      console.error('Failed to delete wallet', err)
+    }
   }
 
   const getWalletCardClasses = (wallet) => {
@@ -254,6 +345,15 @@ export default function PersonalExpense() {
       <main id="main-content" className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 py-4">
         {/* 1/4 - Stacked Cards Carousel (Swipeable) */}
         <section className="h-[25vh] min-h-[150px] flex-shrink-0 mb-2">
+          {walletsLoading ? (
+            <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+              Loading wallets...
+            </div>
+          ) : wallets.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-4">
+              No wallets yet. Add one using the button below.
+            </div>
+          ) : (
           <div
             ref={containerRef}
             className="relative h-full flex items-center justify-center overflow-visible touch-none select-none"
@@ -286,9 +386,55 @@ export default function PersonalExpense() {
                   onMouseDown={isActive ? handleMouseDown : undefined}
                 >
                   <div
-                    className={`rounded-2xl border-2 shadow-xl p-5 h-[130px] flex flex-col justify-between ${getWalletCardClasses(wallet)}`}
+                    className={`rounded-2xl border-2 shadow-xl p-5 h-[130px] flex flex-col justify-between relative ${getWalletCardClasses(wallet)}`}
                   >
-                    <p className="font-semibold text-white text-sm uppercase tracking-wider">
+                    <div className="absolute top-2 right-2" ref={openMenuWalletId === wallet.id ? menuRef : undefined}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
+                          setOpenMenuWalletId((prev) => (prev === wallet.id ? null : wallet.id))
+                        }}
+                        className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                        aria-label="Wallet options"
+                        aria-expanded={openMenuWalletId === wallet.id}
+                        aria-haspopup="true"
+                      >
+                        <EllipsisVerticalIcon className="w-5 h-5" />
+                      </button>
+                      {openMenuWalletId === wallet.id && (
+                        <div className="absolute right-0 top-full mt-1 py-1 min-w-[140px] rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditWallet(wallet)
+                              setShowAddWallet(true)
+                              setOpenMenuWalletId(null)
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                          >
+                            <PencilSquareIcon className="w-4 h-4" />
+                            Edit wallet
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setWalletToDelete(wallet)
+                              setShowDeleteModal(true)
+                              setOpenMenuWalletId(null)
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                            Delete wallet
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-semibold text-white text-sm uppercase tracking-wider pr-8">
                       {wallet.name}
                     </p>
                     <p className="text-2xl font-bold tracking-tight text-white">
@@ -339,32 +485,34 @@ export default function PersonalExpense() {
               </div>
             )}
           </div>
+          )}
         </section>
 
         {/* 3/4 - Search, Filter, Expense List */}
         <section className="flex-1 flex flex-col min-h-0">
-          <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3 mb-4 flex-shrink-0">
             <input
               type="text"
               placeholder="Search expenses..."
-              className="flex-1 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              className="w-full sm:flex-1 min-w-0 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <button
-              onClick={() => setShowFilter(true)}
-              className="p-2.5 rounded-xl border border-emerald-700 dark:border-gray-600 bg-emerald-200 dark:bg-emerald-200 hover:bg-emerald-300 dark:hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400"
-              aria-label="Open filters"
-            >
-              <AdjustmentsHorizontalIcon className="w-5 h-5 text-emerald-700" />
-            </button>
-            {/* Add Wallet button */}
-            <PrimaryButton
-              label='Add Wallet/Card'
-              onClick={() => setShowAddWallet(true)}
-              className='w-full sm:w-auto whitespace-nowrap'
-              ariaLabel="Add wallet, card, or account"
-            />
+            <div className="flex gap-2 sm:gap-3 sm:flex-shrink-0">
+              <button
+                onClick={() => setShowFilter(true)}
+                className="flex-1 sm:flex-none flex items-center justify-center p-2.5 rounded-xl border border-emerald-700 dark:border-gray-600 bg-emerald-200 dark:bg-emerald-200 hover:bg-emerald-300 dark:hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400"
+                aria-label="Open filters"
+              >
+                <AdjustmentsHorizontalIcon className="w-5 h-5 text-emerald-700" />
+              </button>
+              <PrimaryButton
+                label="Add Wallet/Card"
+                onClick={() => setShowAddWallet(true)}
+                className="flex-1 sm:flex-none whitespace-nowrap"
+                ariaLabel="Add wallet, card, or account"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-[120px] pb-8">
@@ -373,9 +521,9 @@ export default function PersonalExpense() {
                 key={e.expenseId}
                 date={formatDate(e.date)}
                 title={e.title}
-                subtitle={`Type: ${e.type}${e.groupId != null ? `, Group: ${e.groupName}` : ''}`}
-                amount={Math.abs(e.netAmount).toFixed(2)}
-                type={e.isSettleUp ? 'settle' : e.netAmount < 0 ? 'lent' : 'owe'}
+                subtitle={`Type: ${e.expenseType}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`}
+                amount={Math.abs(e.totalAmount ?? e.netAmount ?? 0).toFixed(2)}
+                type={e.isSettleUp ? 'settle' : (e.type === 'lent' || e.type === 'owe' ? e.type : 'lent')}
                 highlight={e.isSettleUp || !!e.highlight}
                 onClick={() =>
                   navigate(
@@ -413,8 +561,28 @@ export default function PersonalExpense() {
 
       <AddWallet
         isOpen={showAddWallet}
-        onClose={() => setShowAddWallet(false)}
+        onClose={() => {
+          setShowAddWallet(false)
+          setEditWallet(null)
+        }}
         onAdd={handleAddWallet}
+        editWallet={editWallet}
+        onEdit={handleEditWallet}
+      />
+
+      <AlertModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false)
+          setWalletToDelete(null)
+        }}
+        title="Delete Wallet"
+        message={walletToDelete ? `Are you sure you want to delete "${walletToDelete.name}"? This cannot be undone.` : ''}
+        type="warning"
+        confirmText="Confirm Delete"
+        showCancel
+        cancelText="Cancel"
+        onConfirm={handleDeleteWallet}
       />
     </div>
   )

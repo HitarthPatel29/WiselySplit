@@ -2,8 +2,12 @@ package ca.mohawkCollege.WiselySplitServer.dao;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
@@ -19,8 +23,15 @@ public class GroupsDAO {
         String sql = "INSERT INTO ExpenseGroups (GroupName, GroupType, ProfilePicture) VALUES (?, ?, ?)";
         jdbcTemplate.update(sql, name, type, profilePicture);
 
-        // Return the generated GroupID
-        return jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, name);
+            ps.setString(2, type);
+            ps.setString(3, profilePicture);
+            return ps;
+        }, keyHolder);
+        return keyHolder.getKey().intValue();
     }
 
     public void addParticipant(int groupId, int userId) {

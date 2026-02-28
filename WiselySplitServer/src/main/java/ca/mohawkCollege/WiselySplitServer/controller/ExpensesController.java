@@ -13,11 +13,24 @@ public class ExpensesController {
     @Autowired
     private ExpensesService expensesService;
 
-    /**  CREATE Expense (individual or group) */
-    @PostMapping
-    public ResponseEntity<?> createExpense(@RequestBody Map<String, Object> payload) {
+    /**  CREATE Shared Expense (Friend or group) */
+    @PostMapping("/shared")
+    public ResponseEntity<?> createSharedExpense(@RequestBody Map<String, Object> payload) {
         try {
-            Map<String, Object> result = expensesService.createExpense(payload);
+            Map<String, Object> result = expensesService.createSharedExpense(payload);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**  CREATE Personal Expense */
+    @PostMapping("/personal")
+    public ResponseEntity<?> createPersonalExpense(@RequestBody Map<String, Object> payload) {
+        try {
+            Map<String, Object> result = expensesService.createPersonalExpense(payload);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
@@ -44,6 +57,17 @@ public class ExpensesController {
     public ResponseEntity<?> getExpense(@PathVariable int expenseId) {
         try {
             return ResponseEntity.ok(expensesService.getExpenseDetails(expenseId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/group-by-wallets/{userId}")
+    public ResponseEntity<?> getExpensesGroupedByWallets(@PathVariable int userId) {
+        try {
+            return ResponseEntity.ok(expensesService.getExpensesGroupedByWallet(userId));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError()
@@ -84,6 +108,7 @@ public class ExpensesController {
         }
     }
 
+    /* UPDATE Expense */
     @PutMapping("/{expenseId}")
     public ResponseEntity<?> updateExpense(@PathVariable int expenseId, @RequestBody Map<String, Object> payload) {
         try {

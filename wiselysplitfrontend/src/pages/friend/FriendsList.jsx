@@ -73,45 +73,51 @@ export default function FriendsList() {
       {/* Header */}
       <Header title='Friends List' />
       
-      <div className='flex justify-center'>
-        <header className='w-full max-w-2xl px-4 flex flex-col'>
-          <h1 className='text-gray-600 dark:text-gray-400 text-2xl font-bold mb-1'>Individual Shared Expenses</h1>
-          <p 
-            className='text-gray-700 dark:text-gray-300 text-base font-bold mb-1'
-            role="status"
-            aria-live="polite"
-          >
-            Overall{' '}
-            {overallNet > 0 && (
-              <>
-                you are owed{' '}
-                <span className='font-semibold text-emerald-600'>
-                  ${Math.abs(overallNet)}
-                </span>
-              </>
-            )}
-
-            {overallNet < 0 && (
-              <>
-                you owe{' '}
-                <span className='font-semibold text-red-500'>
-                  ${Math.abs(overallNet)}
-                </span>
-              </>
-            )}
-
-            {overallNet === 0 && (
-              <span className='font-semibold text-gray-500'>you are settled up</span>
-            )}
+      {/* Summary Card */}
+      <div className='px-4 my-4'>
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label={`Overall balance: ${overallNet > 0 ? `you are owed $${Math.abs(overallNet)}` : overallNet < 0 ? `you owe $${Math.abs(overallNet)}` : 'you are settled up'}`}
+          className={`
+            w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl p-5 shadow-sm border
+            transition-all duration-300
+            ${overallNet > 0
+              ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border-emerald-200/60 dark:border-emerald-800/50'
+              : overallNet < 0
+                ? 'bg-gradient-to-br from-rose-50 to-orange-50 dark:from-rose-950/40 dark:to-orange-950/30 border-rose-200/60 dark:border-rose-800/50'
+                : 'bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/50 dark:to-slate-900/50 border-gray-200 dark:border-gray-700'
+            }
+          `}
+        >
+          <div
+            className={`absolute top-0 right-0 w-24 h-24 -translate-y-1/2 translate-x-1/2 rounded-full opacity-20 ${overallNet > 0 ? 'bg-emerald-400' : overallNet < 0 ? 'bg-rose-400' : 'bg-gray-400'}`}
+            aria-hidden="true"
+          />
+          <p className='text-sm font-medium text-gray-600 dark:text-gray-400 mb-0.5'>
+            {overallNet > 0 ? 'You are owed' : overallNet < 0 ? 'You owe' : 'All settled up'}
           </p>
-        </header>
+          <p
+            className={`
+              text-2xl sm:text-3xl font-bold tabular-nums
+              ${overallNet > 0
+                ? 'text-emerald-700 dark:text-emerald-300'
+                : overallNet < 0
+                  ? 'text-rose-700 dark:text-rose-300'
+                  : 'text-gray-600 dark:text-gray-300'
+              }
+            `}
+          >
+            {overallNet !== 0 ? `$${Math.abs(overallNet)}` : 'Balanced'}
+          </p>
+        </div>
       </div>
 
       {/* Search + Add Friend + Add Expense */}
       <div className='flex justify-center w-full mb-6'>
-        <div className='flex flex-wrap items-center gap-3 w-full max-w-2xl px-4'>
+        <div className='flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full max-w-2xl px-4'>
 
-          {/* Search Bar */}
+          {/* Search Bar — full width on mobile, flex-1 on larger screens */}
           <label htmlFor="friend-search" className="sr-only">Search friends</label>
           <input
             id="friend-search"
@@ -120,31 +126,30 @@ export default function FriendsList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search friends by name or username"
-            className='flex-1 min-w-[200px] border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 
+            className='w-full sm:flex-1 sm:min-w-[200px] border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 
                       text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 
                       focus:ring-emerald-400'
           />
 
-          
+          {/* Buttons row — side by side on mobile, inline on larger screens */}
+          <div className='flex gap-3 w-full sm:w-auto'>
+            <button
+              onClick={() => navigate(`/friends/0/add-expense`)}
+              className='flex-1 sm:flex-none bg-emerald-200 text-emerald-700 
+                        dark:text-emerald-700 dark:bg-emerald-200 font-semibold 
+                        rounded-xl py-2 px-4 hover:bg-emerald-300 dark:hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400'
+              aria-label="Add a new expense with a friend"
+            >
+              Add Expense
+            </button>
 
-          {/* Add Expense — full width on mobile */}
-          <button
-            onClick={() => navigate(`/friends/0/add-expense`)}
-            className='w-full sm:w-auto bg-emerald-200 text-emerald-700 
-                      dark:text-emerald-700 dark:bg-emerald-200 font-semibold 
-                      rounded-xl py-2 px-4 hover:bg-emerald-300 dark:hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400'
-            aria-label="Add a new expense with a friend"
-          >
-            Add Expense
-          </button>
-
-          {/* Add Friend */}
-          <PrimaryButton
-            label='Add Friend'
-            onClick={() => navigate('/invite')}
-            className='w-full sm:w-auto whitespace-nowrap'
-            ariaLabel="Send a friend invite"
-          />
+            <PrimaryButton
+              label='Add Friend'
+              onClick={() => navigate('/invite')}
+              className='flex-1 sm:flex-none whitespace-nowrap'
+              ariaLabel="Send a friend invite"
+            />
+          </div>
           
         </div>
       </div>

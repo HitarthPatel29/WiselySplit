@@ -141,7 +141,8 @@ public class InviteService {
                     int receiverId = ((Number) receiverObj).intValue();
                     int senderID = ((Number) senderObj).intValue();
                     System.out.println("reached here");
-                    int expenseId = expensesDAO.insertExpense("Fugazi Expense", java.time.LocalDate.now().toString(), "Fugazi", 0, senderID, null, false, null);
+                    int expenseId = expensesDAO.insertSharedExpense("Fugazi Expense", java.time.LocalDate.now().toString(), "Fugazi", 0, senderID, null, false, null, null);
+
                     // Insert participants (both sides)
                     System.out.println(expenseId);
                     expensesDAO.insertExpenseParticipation(expenseId, senderID, 0.0, 1.0);
