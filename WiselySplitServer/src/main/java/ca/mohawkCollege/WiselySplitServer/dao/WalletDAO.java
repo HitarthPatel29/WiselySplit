@@ -48,7 +48,7 @@ public class WalletDAO {
     }
 
     public void updateWallet(int userId, int walletId, String walletName, double walletBalance, String walletType, String walletColor) {
-        String sql = "UPDATE Wallets SET Name=?, walletBalance=?, Type=?, Color=? WHERE WalletID=? AND UserID=?";
+        String sql = "UPDATE Wallets SET Name=?, Balance=?, Type=?, Color=? WHERE WalletID=? AND UserID=?";
         jdbcTemplate.update(sql, walletName, walletBalance, walletType, walletColor, walletId, userId);
     }
 
