@@ -6,20 +6,23 @@ import { WALLET_COLORS } from '../../constants/walletColors'
 export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, onEdit }) {
   const modalRef = useRef(null)
   const isEdit = !!editWallet
-  const [name, setName] = useState('')
-  const [balance, setBalance] = useState('')
-  const [color, setColor] = useState('emerald')
+  const [walletName, setWalletName] = useState('')
+  const [walletType, setWalletType] = useState('')
+  const [walletBalance, setWalletBalance] = useState('')
+  const [walletColor, setWalletColor] = useState('emerald')
 
   useEffect(() => {
     if (isOpen) {
       if (editWallet) {
-        setName(editWallet.name || '')
-        setBalance(String(editWallet.balance ?? ''))
-        setColor(editWallet.color || 'emerald')
+        setWalletName(editWallet.walletName ?? editWallet.name ?? '')
+        setWalletType(editWallet.walletType ?? editWallet.type ?? '')
+        setWalletBalance(String(editWallet.walletBalance ?? editWallet.balance ?? ''))
+        setWalletColor(editWallet.walletColor ?? editWallet.color ?? 'emerald')
       } else {
-        setName('')
-        setBalance('')
-        setColor('emerald')
+        setWalletName('')
+        setWalletType('')
+        setWalletBalance('')
+        setWalletColor('emerald')
       }
     }
   }, [isOpen, editWallet])
@@ -49,15 +52,17 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
   }, [isOpen, onClose])
 
   const handleSubmit = () => {
-    const balanceNum = parseFloat(balance)
-    if (!name.trim()) return
+    const walletBalanceNum = parseFloat(walletBalance)
+    if (!walletName.trim()) return
     const data = {
-      name: name.trim(),
-      balance: isNaN(balanceNum) ? 0 : balanceNum,
-      color,
+      walletName: walletName.trim(),
+      walletType: walletType.trim(),
+      walletBalance: isNaN(walletBalanceNum) ? 0 : walletBalanceNum,
+      walletColor: walletColor
     }
     if (isEdit && onEdit) {
-      onEdit(editWallet.id, data)
+      const id = editWallet.id ?? editWallet.walletId
+      onEdit(id, data)
     } else {
       onAdd(data)
     }
@@ -97,17 +102,26 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
         <InputField
           label="Name"
           type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={walletName}
+          onChange={(e) => setWalletName(e.target.value)}
           placeholder="e.g. Main Wallet, Credit Card"
           id="wallet-name"
         />
 
         <InputField
+          label="Wallet Type"
+          type="text"
+          value={walletType}
+          onChange={(e) => setWalletType(e.target.value)}
+          placeholder="e.g. Bank, Card, Cash"
+          id="wallet-type"
+        />
+
+        <InputField
           label="Current Balance"
           type="number"
-          value={balance}
-          onChange={(e) => setBalance(e.target.value)}
+          value={walletBalance}
+          onChange={(e) => setWalletBalance(e.target.value)}
           placeholder="0.00"
           id="wallet-balance"
           step="0.01"
@@ -122,11 +136,11 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
               <button
                 key={c.id}
                 type="button"
-                onClick={() => setColor(c.id)}
-                aria-pressed={color === c.id}
+                onClick={() => setWalletColor(c.id)}
+                aria-pressed={walletColor === c.id}
                 aria-label={`Select ${c.name} color`}
                 className={`w-10 h-10 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 ${
-                  color === c.id
+                  walletColor === c.id
                     ? 'border-gray-900 dark:border-white scale-110'
                     : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
                 }`}
@@ -151,7 +165,7 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!name.trim()}
+            disabled={!walletName.trim()}
             className="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400"
           >
             {isEdit ? 'Save' : 'Add'}

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
 import Header from '../../components/Header.jsx'
 import SettleUpModal from '../../components/Modals/SettleUpModal.jsx'
-import { buildSettleUpPayload, formatCurrency, getSettlementMethodLabel } from '../../utils/settleUp.js'
+import { buildSettleUpPayload, getSettlementMethodLabel } from '../../utils/settleUp.js'
 import { useNotification } from '../../context/NotificationContext'
 import { PlusIcon, BanknotesIcon } from '@heroicons/react/24/solid'
 
@@ -25,84 +25,30 @@ export default function IndividualView() {
 
   const friendIdNumber = Number(friendId)
 
+  const formatExpenseDate = (expenseDate) => {
+    if (!expenseDate) return ''
+    try {
+      const d = new Date(expenseDate)
+      const month = d.toLocaleString('en-US', { month: 'short' })
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${month} ${day}`
+    } catch {
+      return expenseDate
+    }
+  }
+
   const fetchData = useCallback(async () => {
     if (!userId || !friendId) return
     try {
       setLoading(true)
       const res = await api.get(`/friends/${userId}/${friendId}`)
       const data = res.data || {}
+      console.log('Fetched friend data:', data)
 
-      console.log('Fetched individual friend data:', data)
-      // Normalize friend object (backend uses profilePicture, amount, userId, youOwe)
-      const backendFriend = data.friend || null
-      const cleanAmount = backendFriend ? Number(backendFriend.amount || 0) : 0
-      const normalizedFriend = backendFriend
-        ? {
-            name: backendFriend.name,
-            avatar: backendFriend.profilePicture || backendFriend.avatar || '',
-            youOwe: backendFriend.youOwe,
-            amountOwed: cleanAmount,
-            amountOwedDisplay: formatCurrency(cleanAmount),
-            userId: backendFriend.userId || backendFriend.id,
-          }
-        : null
+      setFriend(data.friend || null)
+      setExpenses(data.expenses || [])
 
-      // Normalize expenses array (backend uses expenseId, expenseTitle, expenseDate, amount, subtitle, type)
-      const backendExpenses = data.expenses || []
-      const normalizedExpenses = backendExpenses
-        .filter((e) => e.expenseType?.toLowerCase() !== 'fugazi')
-        .map((e) => {
-          const isSettleUp = !!e.isSettleUp
-          const displayAmount = isSettleUp
-            ? formatCurrency(e.amount || e.balance)
-            : formatCurrency(Math.abs(e.balance || 0))
-
-          const derivedType = isSettleUp
-            ? 'settle'
-            : e.type ||
-              (e.expenseType
-                ? e.expenseType.toLowerCase() === 'lent'
-                  ? 'lent'
-                  : 'owe'
-                : '')
-
-          const subtitle = isSettleUp
-            ? getSettlementMethodLabel(e.paymentId)
-            : e.expenseType || ''
-
-          // format date to 'Mon DD'
-          let dateStr = ''
-          if (e.expenseDate) {
-            try {
-              const d = new Date(e.expenseDate)
-              const month = d.toLocaleString('en-US', { month: 'short' })
-              const day = String(d.getDate()).padStart(2, '0')
-              dateStr = `${month} ${day}`
-            } catch (err) {
-              dateStr = e.expenseDate
-            }
-          }
-
-          return {
-            id: e.expenseId || e.id,
-            date: dateStr || e.date || '',
-            title: e.expenseTitle || e.title || '',
-            expenseType: e.expenseType || '',
-            amount: e.amount || 0,
-            balance: Math.abs(e.balance || 0),
-            displayAmount,
-            type: derivedType,
-            highlight: isSettleUp || !!e.highlight,
-            isSettleUp,
-            settlementMethod: e.settlementMethod || null,
-            subtitle,
-          }
-        })
-
-      setFriend(normalizedFriend)
-      setExpenses(normalizedExpenses)
-
-      if (!backendFriend) setMessage('No friend data found.')
+      if (!data.friend) setMessage('No friend data found.')
     } catch (err) {
       console.error(err)
       setMessage(err.response?.data?.error || 'Failed to fetch friend data.')
@@ -116,12 +62,14 @@ export default function IndividualView() {
   }, [fetchData])
 
   const handleOpenSettle = () => {
-    if (!friend || !friend.youOwe || friend.amountOwed <= 0) return
+    const netBalance = Number(friend?.netBalance ?? 0)
+    if (!friend || netBalance >= 0) return
+    const amountToSettle = Math.abs(netBalance)
     setSettleContext({
       targetUserId: friend.userId,
       targetName: friend.name,
-      maxAmount: friend.amountOwed,
-      suggestedAmount: friend.amountOwed,
+      maxAmount: amountToSettle,
+      suggestedAmount: amountToSettle,
       shareWithId: friendIdNumber,
       shareWithName: friend.name,
       shareWithType: 'friend',
@@ -205,13 +153,16 @@ export default function IndividualView() {
     )
   }
 
-  const canSettle = friend.youOwe && friend.amountOwed > 0
-  const standingText = friend.youOwe
-    ? `You owe ${friend.name} $${friend.amountOwedDisplay}`
-    : friend.amountOwed > 0
-      ? `${friend.name} owes you $${friend.amountOwedDisplay}`
-      : 'All settled up!'
-  const standingColor = friend.youOwe ? 'text-red-500' : friend.amountOwed > 0 ? 'text-emerald-600' : 'text-gray-500'
+  const netBalance = Number(friend.netBalance ?? 0)
+  const canSettle = netBalance < 0
+  const absBalance = Math.abs(netBalance)
+  const standingText =
+    netBalance < 0
+      ? `You owe ${friend.name} $${absBalance.toFixed(2)}`
+      : netBalance > 0
+        ? `${friend.name} owes you $${absBalance.toFixed(2)}`
+        : 'All settled up!'
+  const standingColor = netBalance < 0 ? 'text-red-500' : netBalance > 0 ? 'text-emerald-600' : 'text-gray-500'
 
   return (
     <div className='min-h-screen'>
@@ -231,9 +182,9 @@ export default function IndividualView() {
             {/* Avatar + Name row */}
             <div className='flex flex-row items-start gap-4'>
               <div className='relative shrink-0'>
-                {friend.avatar ? (
+                {friend.profilePicture ? (
                   <img
-                    src={friend.avatar}
+                    src={friend.profilePicture}
                     alt={`${friend.name} avatar`}
                     className='w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-white dark:ring-gray-700 shadow-md'
                   />
@@ -306,26 +257,32 @@ export default function IndividualView() {
           role="list"
           aria-label="Expense list"
         >
-          {expenses.map((ex) => (
-            <div key={ex.id} role="listitem">
-              <ExpenseItemCard
-                date={ex.date}
-                title={ex.title}
-                subtitle={ex.subtitle}
-                amount={ex.displayAmount}
-                type={ex.type}
-                highlight={ex.highlight}
-                onClick={() =>
-                  navigate(
-                    ex.isSettleUp
-                      ? `/friends/${friendId}/settlements/${ex.id}`
-                      : `/friends/${friendId}/expenses/${ex.id}`,
-                    { state: { ...ex, from: 'friend' } }
-                  )
-                }
-              />
-            </div>
-          ))}
+          {expenses.map((ex) => {
+            const userBalance = Number(ex.userBalance ?? 0)
+            const displayAmount = ex.isSettleUp ? ex.amount.toFixed(2) : Math.abs(userBalance).toFixed(2)
+            const type = ex.isSettleUp ? 'settle' : userBalance < 0 ? 'owe' : 'lent'
+            const subtitle = ex.isSettleUp ? getSettlementMethodLabel(ex.paymentId) : (ex.expenseType ?? '')
+            return (
+              <div key={ex.expenseId} role="listitem">
+                <ExpenseItemCard
+                  date={formatExpenseDate(ex.expenseDate)}
+                  title={ex.expenseTitle ?? ''}
+                  subtitle={subtitle}
+                  amount={displayAmount}
+                  type={type}
+                  highlight={ex.isSettleUp}
+                  onClick={() =>
+                    navigate(
+                      ex.isSettleUp
+                        ? `/friends/${friendId}/settlements/${ex.expenseId}`
+                        : `/friends/${friendId}/expenses/${ex.expenseId}`,
+                      { state: { ...ex, from: 'friend' } }
+                    )
+                  }
+                />
+              </div>
+            )
+          })}
           {expenses.length === 0 && (
             <p
               className='text-gray-500 dark:text-gray-400 text-center py-8'

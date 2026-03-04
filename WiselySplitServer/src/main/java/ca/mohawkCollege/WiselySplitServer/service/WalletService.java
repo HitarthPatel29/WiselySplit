@@ -17,11 +17,13 @@ public class WalletService {
     public Map<String, Object> createWallet(int userId, Map<String, Object> payload) {
         try {
             String walletName = (String) payload.get("walletName");
+            double walletBalance = ((Number) payload.get("walletBalance")).doubleValue();
             String walletType = (String) payload.get("walletType");
             String walletColor = (String) payload.get("walletColor");
 
+
             // Insert into Expenses table
-            int walletId = walletDAO.insertWallet(userId, walletName, walletType, walletColor);
+            int walletId = walletDAO.insertWallet(userId, walletName, walletBalance, walletType, walletColor);
 
             return Map.of("success", true, "walletId", walletId, "message", "New Wallet created successfully");
         } catch (Exception e) {
@@ -36,9 +38,11 @@ public class WalletService {
     public Map<String, Object> updateWallet(int userId, int walletId, Map<String, Object> payload) {
         try{
             String walletName = (String) payload.get("walletName");
+            double walletBalance = ((Number) payload.get("walletBalance")).doubleValue();
             String walletType = (String) payload.get("walletType");
             String walletColor = (String) payload.get("walletColor");
-            walletDAO.updateWallet(userId, walletId, walletName, walletType, walletColor);
+
+            walletDAO.updateWallet(userId, walletId, walletName, walletBalance, walletType, walletColor);
 
             return Map.of("success", true, "walletId", walletId, "message", "Wallet updated successfully");
         } catch (Exception e) {

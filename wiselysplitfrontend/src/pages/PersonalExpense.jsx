@@ -12,6 +12,7 @@ import PrimaryButton from '../components/IO/PrimaryButton.jsx'
 import api from '../api.js'
 
 const SWIPE_THRESHOLD = 60
+const LAYER_SPACING = 80
 
 // Helper to format date as Month, DD
 const formatDate = (raw) => {
@@ -23,39 +24,6 @@ const formatDate = (raw) => {
     return `${month} ${day}`
   } catch {
     return raw
-  }
-}
-
-// Normalize wallet from group-by-wallets API response
-function mapWalletFromGroupApi(w) {
-  return {
-    id: w.walletId,
-    name: w.walletName ?? w.name,
-    balance: w.walletBalance ?? 0,
-    color: w.walletColor ?? w.color ?? 'emerald',
-  }
-}
-
-// Normalize expense from group-by-wallets API for list/filter (expenseType = category for filter)
-function mapExpenseFromApi(e) {
-  const amount = e.totalAmount ?? e.netAmount ?? 0
-  return {
-    expenseId: e.expenseId,
-    title: e.title,
-    date: e.date,
-    expenseType: e.expenseType ?? e.type ?? 'Other',
-    type: e.type, // 'lent' | 'owe' for display
-    totalAmount: amount,
-    netAmount: amount,
-    isSettleUp: e.isSettleUp ?? false,
-    groupId: e.groupId ?? null,
-    groupName: e.groupName ?? null,
-    walletId: e.walletId,
-    paidBy: e.paidBy,
-    payerId: e.payerId,
-    isPersonal: e.isPersonal,
-    splitDetails: e.splitDetails,
-    paymentId: e.paymentId,
   }
 }
 
@@ -90,10 +58,6 @@ export default function PersonalExpense() {
   const [displayEndDate, setDisplayEndDate] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-
-  const activeWallet = wallets[activeWalletIndex]
-  const activeWalletId = activeWallet?.id
-  const [expensesByWalletId, setExpensesByWalletId] = useState({})
   const [filteredExpenses, setFilteredExpenses] = useState([])
 
   const fetchWalletsWithExpenses = useCallback(async () => {
@@ -101,21 +65,13 @@ export default function PersonalExpense() {
     setWalletsLoading(true)
     try {
       const res = await api.get(`/expenses/group-by-wallets/${userId}`)
-      const rawList = res.data || []
-      const list = rawList.map(mapWalletFromGroupApi)
-      const byWallet = {}
-      rawList.forEach((w) => {
-        const id = w.walletId
-        byWallet[id] = (w.expenses || []).map(mapExpenseFromApi)
-      })
+      const list = res.data || []
       setWallets(list)
-      setExpensesByWalletId(byWallet)
       setActiveWalletIndex((i) => Math.min(i, Math.max(0, list.length - 1)))
       return list
     } catch (err) {
       console.error('Failed to fetch wallets with expenses', err)
       setWallets([])
-      setExpensesByWalletId({})
       return []
     } finally {
       setWalletsLoading(false)
@@ -138,9 +94,10 @@ export default function PersonalExpense() {
     }
   }, [openMenuWalletId])
 
-  // Sync filtered expenses when wallet or raw data changes (expenses from group-by-wallets API)
+  // Sync filtered expenses when wallet or raw data changes (expenses come directly from API response)
   useEffect(() => {
-    const source = activeWalletId != null ? (expensesByWalletId[activeWalletId] || []) : []
+    const currentWallet = wallets[activeWalletIndex]
+    const source = currentWallet && Array.isArray(currentWallet.expenses) ? currentWallet.expenses : []
     let list = [...source]
 
     // Only apply date filter when user has explicitly set a range (via Filter modal)
@@ -168,7 +125,7 @@ export default function PersonalExpense() {
       sort === 'newest' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date)
     )
     setFilteredExpenses(list)
-  }, [activeWalletId, expensesByWalletId, search, typeFilter, groupFilter, sort, monthFilter, displayStartDate, displayEndDate])
+  }, [wallets, activeWalletIndex, search, typeFilter, groupFilter, sort, monthFilter, displayStartDate, displayEndDate])
 
   // Default date range for Filter modal (not applied to list until user clicks Apply)
   useEffect(() => {
@@ -203,13 +160,7 @@ export default function PersonalExpense() {
     return Math.max(0.55, 1 - abs * 0.12)
   }
 
-  const getOpacityForOffset = (offset) => {
-    const abs = Math.abs(offset)
-    if (abs === 0) return 1
-    return Math.max(0.6, 1 - abs * 0.12)
-  }
 
-  const LAYER_SPACING = 95
 
   const handleDragStart = useCallback((clientX) => {
     setIsDragging(true)
@@ -290,50 +241,62 @@ export default function PersonalExpense() {
     if (!userId) return
     try {
       await api.post(`/users/${userId}/wallets`, {
-        walletName: data.name,
-        walletType: 'wallet',
-        walletColor: data.color,
+        walletName: data.walletName,
+        walletType: data.walletType,
+        walletColor: data.walletColor,
+        walletBalance: data.walletBalance,
       })
       const list = await fetchWalletsWithExpenses()
       setActiveWalletIndex(Math.max(0, list.length - 1))
     } catch (err) {
       console.error('Failed to create wallet', err)
+      console.error("data: ", data)
     }
   }
 
-  const handleEditWallet = async (walletId, data) => {
+  const handleEditWallet = async (targetWalletId, data) => {
     if (!userId) return
     try {
-      await api.put(`/users/${userId}/wallets/${walletId}`, {
-        walletName: data.name,
-        walletType: 'wallet',
-        walletColor: data.color,
-      })
-      await fetchWalletsWithExpenses()
+      await api.put(`/users/${userId}/wallets/${targetWalletId}`, data)
+
+      setWallets((prev) =>
+        prev.map((wallet) => wallet.walletId === targetWalletId ? {...wallet,...data} : wallet)
+      )
       setEditWallet(null)
       setShowAddWallet(false)
     } catch (err) {
       console.error('Failed to update wallet', err)
+      console.error('targetWalletId: ', targetWalletId, 'data: ', data)
     }
   }
 
   const handleDeleteWallet = async () => {
     if (!userId || !walletToDelete) return
     try {
-      await api.delete(`/users/${userId}/wallets/${walletToDelete.id}`)
-      await fetchWalletsWithExpenses()
+      await api.delete(`/users/${userId}/wallets/${walletToDelete.walletId}`)
+
+      setWallets((prev) => {
+        const idx = prev.findIndex((w) => w.walletId === walletToDelete.walletId)
+        if (idx === -1) return prev
+        const updatedWalletList = prev.filter((w) => w.walletId !== walletToDelete.walletId)
+        return updatedWalletList
+      })
+      setActiveWalletIndex(Math.max(0, activeWalletIndex - 1))
       setShowDeleteModal(false)
       setWalletToDelete(null)
     } catch (err) {
       console.error('Failed to delete wallet', err)
+      console.error('walletToDelete: ', walletToDelete)
     }
   }
 
   const getWalletCardClasses = (wallet) => {
-    if (wallet.color && WALLET_COLOR_MAP[wallet.color]) {
-      return `bg-gradient-to-br ${WALLET_COLOR_MAP[wallet.color]} text-white shadow-emerald-900/20`
+    const colorKey = wallet.walletColor || wallet.color
+    if (colorKey && WALLET_COLOR_MAP[colorKey]) {
+      return `bg-gradient-to-br ${WALLET_COLOR_MAP[colorKey]} text-white shadow-emerald-900/20`
     }
-    return wallet.balance >= 0
+    const balance = wallet.walletBalance ?? wallet.balance ?? 0
+    return balance >= 0
       ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 border-emerald-400/40 text-white shadow-emerald-900/20'
       : 'bg-gradient-to-br from-rose-500 to-rose-700 border-rose-400/40 text-white shadow-rose-900/20'
   }
@@ -356,7 +319,7 @@ export default function PersonalExpense() {
           ) : (
           <div
             ref={containerRef}
-            className="relative h-full flex items-center justify-center overflow-visible touch-none select-none"
+            className="relative h-full flex items-center justify-center overflow-hidden touch-none select-none"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
@@ -365,21 +328,21 @@ export default function PersonalExpense() {
             {wallets.map((wallet, idx) => {
               const offset = getOffsetForWallet(idx)
               const isActive = offset === 0
-
               const scale = getScaleForOffset(offset)
-              const opacity = getOpacityForOffset(offset)
               const zIndex = 10 - Math.abs(offset)
               const translateX = offset * LAYER_SPACING + (isActive ? dragOffset : 0)
+              const walletId = wallet.walletId ?? wallet.id
+              const walletName = wallet.walletName ?? wallet.name
+              const walletBalance = wallet.walletBalance ?? wallet.balance ?? 0
 
               return (
                 <div
-                  key={wallet.id}
+                  key={walletId}
                   className="absolute left-1/2 top-1/2 origin-center"
                   style={{
-                    width: 'max(200px, min(88%, 250px))',
+                    width: '240px',
                     transform: `translate(calc(-50% + ${translateX}px), -50%) scale(${scale})`,
                     zIndex,
-                    opacity,
                     transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
                     cursor: isActive ? (isDragging ? 'grabbing' : 'grab') : 'default',
                   }}
@@ -388,22 +351,22 @@ export default function PersonalExpense() {
                   <div
                     className={`rounded-2xl border-2 shadow-xl p-5 h-[130px] flex flex-col justify-between relative ${getWalletCardClasses(wallet)}`}
                   >
-                    <div className="absolute top-2 right-2" ref={openMenuWalletId === wallet.id ? menuRef : undefined}>
+                    <div className="absolute top-2 right-2" ref={openMenuWalletId === walletId ? menuRef : undefined}>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
                           e.preventDefault()
-                          setOpenMenuWalletId((prev) => (prev === wallet.id ? null : wallet.id))
+                          setOpenMenuWalletId((prev) => (prev === walletId ? null : walletId))
                         }}
                         className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
                         aria-label="Wallet options"
-                        aria-expanded={openMenuWalletId === wallet.id}
+                        aria-expanded={openMenuWalletId === walletId}
                         aria-haspopup="true"
                       >
                         <EllipsisVerticalIcon className="w-5 h-5" />
                       </button>
-                      {openMenuWalletId === wallet.id && (
+                      {openMenuWalletId === walletId && (
                         <div className="absolute right-0 top-full mt-1 py-1 min-w-[140px] rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                           <button
                             type="button"
@@ -435,10 +398,10 @@ export default function PersonalExpense() {
                       )}
                     </div>
                     <p className="font-semibold text-white text-sm uppercase tracking-wider pr-8">
-                      {wallet.name}
+                      {walletName}
                     </p>
                     <p className="text-2xl font-bold tracking-tight text-white">
-                      ${Math.abs(wallet.balance).toFixed(2)}
+                      ${Math.abs(walletBalance).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -577,7 +540,7 @@ export default function PersonalExpense() {
           setWalletToDelete(null)
         }}
         title="Delete Wallet"
-        message={walletToDelete ? `Are you sure you want to delete "${walletToDelete.name}"? This cannot be undone.` : ''}
+        message={walletToDelete ? `Are you sure you want to delete "${walletToDelete.walletName}"? This cannot be undone.` : ''}
         type="warning"
         confirmText="Confirm Delete"
         showCancel

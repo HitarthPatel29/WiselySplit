@@ -17,16 +17,17 @@ public class WalletDAO {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public int insertWallet(Integer userId, String walletName, String walletType, String walletColor) {
-        String sql = "INSERT INTO Wallets (UserID, Name, Type, Color) VALUES (?, ?, ?, ?)";
+    public int insertWallet(Integer userId, String walletName, double walletBalance, String walletType, String walletColor) {
+        String sql = "INSERT INTO Wallets (UserID, Name, Balance, Type, Color) VALUES (?, ?, ?, ?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, userId);
             ps.setString(2, walletName);
-            ps.setString(3, walletType);
-            ps.setString(4, walletColor);
+            ps.setDouble(3, walletBalance);
+            ps.setString(4, walletType);
+            ps.setString(5, walletColor);
             return ps;
         }, keyHolder);
         return keyHolder.getKey().intValue();
@@ -46,9 +47,9 @@ public class WalletDAO {
         return jdbcTemplate.queryForList(sql, userId);
     }
 
-    public void updateWallet(int userId, int walletId, String walletName, String walletType, String walletColor) {
-        String sql = "UPDATE Wallets SET Name=?, Type=?, Color=? WHERE WalletID=? AND UserID=?";
-        jdbcTemplate.update(sql, walletName, walletType, walletColor, walletId, userId);
+    public void updateWallet(int userId, int walletId, String walletName, double walletBalance, String walletType, String walletColor) {
+        String sql = "UPDATE Wallets SET Name=?, walletBalance=?, Type=?, Color=? WHERE WalletID=? AND UserID=?";
+        jdbcTemplate.update(sql, walletName, walletBalance, walletType, walletColor, walletId, userId);
     }
 
     public void deleteWallet(int userId, int walletId) {

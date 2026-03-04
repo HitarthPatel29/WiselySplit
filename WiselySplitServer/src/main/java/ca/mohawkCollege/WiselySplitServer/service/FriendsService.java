@@ -21,11 +21,6 @@ public class FriendsService {
 
     public List<Map<String, Object>> getFriendsWithBalances(int userId) {
         List<Map<String, Object>> results = friendsDAO.findFriendsBalances(userId);
-        for (Map<String, Object> r : results) {
-            double amount = ((Number) r.get("NetBalance")).doubleValue();
-            r.put("status", amount > 0 ? "lent" : "owe");
-            r.put("amount", Math.abs(amount));
-        }
         return results;
     }
 
@@ -44,8 +39,7 @@ public class FriendsService {
 
         // 3. Handle case when no expenses exist yet
         if (expenses == null || expenses.isEmpty()) {
-            friend.put("amount", 0.0);
-            friend.put("youOwe", false);
+            friend.put("netBalance", 0.00);
 
             return Map.of(
                     "friend", friend,
@@ -56,11 +50,10 @@ public class FriendsService {
 
         // 4. Compute total balance only if expenses exist
         double balance = expenses.stream()
-                .mapToDouble(e -> ((Number) e.get("balance")).doubleValue())
+                .mapToDouble(e -> ((Number) e.get("userBalance")).doubleValue())
                 .sum();
 
-        friend.put("amount", Math.abs(balance));
-        friend.put("youOwe", balance < 0);
+        friend.put("netBalance", balance);
 
         // 5. Return combined result
         return Map.of(

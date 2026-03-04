@@ -26,7 +26,7 @@ export default function FriendsList() {
         console.log('API response data:', res.data)
 
         const totalNet = list.reduce(
-          (sum, f) => sum + Number(f.NetBalance || 0),
+          (sum, f) => sum + Number(f.netBalance || 0),
           0
         ).toFixed(2)
         console.log('Calculated overall net balance:', totalNet)
@@ -45,8 +45,8 @@ export default function FriendsList() {
 
   const filteredFriends = friends.filter(
     (f) =>
-      (f.name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (f.username || '').toLowerCase().includes(search.toLowerCase())
+      (f.friendName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (f.friendUsername || '').toLowerCase().includes(search.toLowerCase())
   )
 
   if (loading) {
@@ -159,14 +159,14 @@ export default function FriendsList() {
       <main className='flex justify-center' aria-label="Friends list">
         <div className='w-full max-w-2xl px-4 space-y-3 pb-10' role="list">
           {filteredFriends.map((f) => (
-            <div key={f.friendId || f.userId || f.id} role="listitem">
+            <div key={f.friendId} role="listitem">
               <ListItemCard
-                avatar={f.profilePicture || f.ProfilePicture || f.avatar}
-                name={f.name || f.friendName || ''}
-                subtitle={f.username || f.userName || ''}
-                amount={Math.abs(f.NetBalance || f.amount || f.balance || 0)}
-                status={f.status || 'neutral'}
-                onClick={() => navigate(`/friends/${f.friendId || f.userId || f.id}`)}
+                avatar={f.profilePicture}
+                name={f.friendName || ''}
+                subtitle={f.friendUsername || ''}
+                amount={Math.abs(f.netBalance)}
+                status={f.netBalance > 0 ? 'lent' : f.netBalance < 0 ? 'owe' : 'neutral'}
+                onClick={() => navigate(`/friends/${f.friendId}`)}
               />
             </div>
           ))}

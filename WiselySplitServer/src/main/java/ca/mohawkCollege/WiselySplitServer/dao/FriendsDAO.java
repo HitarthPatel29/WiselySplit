@@ -17,10 +17,10 @@ public class FriendsDAO {
         String sql = """
             SELECT 
                 u.UserID   AS friendId,
-                u.Name     AS name,
-                u.UserName AS username,
-                u.ProfilePicture,
-                SUM(t.balance) AS NetBalance
+                u.Name     AS friendName,
+                u.UserName AS friendUsername,
+                u.ProfilePicture AS profilePicture,
+                SUM(t.balance) AS netBalance
             FROM (
                 -- Case 1: user is the payer (others owe them)
                 SELECT 
@@ -63,33 +63,24 @@ public class FriendsDAO {
             e.Amount AS amount,
             e.IsSettleUp AS isSettleUp,
             e.PaymentID AS paymentId,
-            p.Name AS paidBy,
-            CASE
-                WHEN e.PayerID = ? THEN 'lent'
-                WHEN ep.UserID = ? THEN 'owe'
-                ELSE 'shared'
-            END AS type,
-            CASE
-                WHEN e.PayerID = ? THEN CONCAT('You lent ', f.Name)
-                WHEN ep.UserID = ? THEN CONCAT('You owe ', p.Name)
-                ELSE 'Shared Group'
-            END AS subtitle,
+            e.WalletID AS walletId,
+            p.Name AS payerName,
             CASE
                 WHEN e.PayerID = ? THEN ep.Contribution
                 WHEN ep.UserID = ? THEN -ep.Contribution
                 ELSE 0
-            END AS balance
+            END AS userBalance
         FROM Expenses e
         JOIN ExpenseParticipation ep ON e.ExpenseID = ep.ExpenseID
         JOIN User p ON e.PayerID = p.UserID
-        JOIN User f ON ep.UserID = f.UserID
-        WHERE (e.PayerID = ? AND ep.UserID = ?)
-           OR (e.PayerID = ? AND ep.UserID = ?)
+        WHERE ( (e.PayerID = ? AND ep.UserID = ?)
+           OR (e.PayerID = ? AND ep.UserID = ?) )
+           AND e.ExpenseType <> 'Fugazi'
+           AND e.IsPersonal = 0
         ORDER BY e.ExpenseDate DESC
     """;
 
-        return jdbcTemplate.queryForList(sql,
-                userId, userId, userId, userId, userId, userId,
+        return jdbcTemplate.queryForList(sql, userId, userId,
                 userId, friendId, friendId, userId);
     }
 
