@@ -1,73 +1,216 @@
-// src/pages/Expense/ExpenseDetails.jsx
-import React, { useEffect, useState } from 'react'
+// src/pages/expense/ExpenseDetails.jsx
+import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import api from '../../api'
 import { normalizeExpenseForFields } from '../../utils/expenseModel'
+import { formatCurrency, SETTLE_EXPENSE_TYPE } from '../../utils/settleUp'
 import { useAuth } from '../../context/AuthContext.jsx'
 import Header from '../../components/Header.jsx'
 import { useNotification } from '../../context/NotificationContext'
+import SettleUpModal from '../../components/Modals/SettleUpModal.jsx'
+
+const formatFullDate = (raw) => {
+  if (!raw) return ''
+  try {
+    return new Date(raw).toLocaleDateString('en-CA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  } catch {
+    return raw
+  }
+}
 
 export default function ExpenseDetails() {
   const { id, expenseId } = useParams()
-  const {userId, friendsAndGroups} = useAuth()
+  const { userId, friendsAndGroups } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { showSuccess, showError, showAlert } = useNotification()
   const from = location.state?.from || null
   const [expense, setExpense] = useState(location.state || null)
   const [loading, setLoading] = useState(!location.state)
+  const [error, setError] = useState('')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [modalContext, setModalContext] = useState(null)
+  const [modalLoading, setModalLoading] = useState(false)
+
+  // Type classification
+  const isSettlement = expense?.isSettleUp === true
+  const isPersonal = expense?.isPersonal === true && !expense?.isSettleUp
+  const isShared = !expense?.isPersonal && !expense?.isSettleUp
+
+  // Full details: for personal we only need basic fields; for shared/settlement we need splitDetails + payer
+  const hasFullDetails = expense && (
+    (expense.isPersonal && expense.title != null) ||
+    (expense.splitDetails?.length > 0 && expense.payer != null) ||
+    (expense.isSettleUp && expense.splitDetails?.length > 0 && expense.payer != null)
+  )
 
   useEffect(() => {
-    // If we already have a sufficiently-detailed expense object, skip fetching
-    const hasFullDetails = expense && (expense.splitDetails && expense.splitDetails.length > 0) && expense.payer
     if (hasFullDetails) return
-
+    let ignore = false
     const fetchExpense = async () => {
       setLoading(true)
+      setError('')
       try {
         const res = await api.get(`/expenses/${expenseId}`)
+        if (ignore) return
         const data = res.data || {}
-        console.log('Fetched expense details:', data)
-        // normalize server response to expected fields
         const normalized = normalizeExpenseForFields(data, userId, friendsAndGroups)
-        console.log("ExpenseDetails: normalized =", normalized)
         setExpense(normalized)
       } catch (err) {
         console.error(err)
+        if (!ignore) setError('Failed to load details.')
       } finally {
-        setLoading(false)
+        if (!ignore) setLoading(false)
       }
     }
-    
     fetchExpense()
-  }, [expenseId])
+    return () => { ignore = true }
+  }, [expenseId, userId, friendsAndGroups])
 
-  if (loading) return <div className='p-6 text-gray-500'>Loading expense...</div>
-  if (!expense)
-    return (
-      <div className='min-h-screen flex justify-center items-center text-gray-600'>
-        Expense not found.
-      </div>
-    )
+  // Settlement: payer/receiver labels (Who paid whom)
+  const { payerLabel, receiverLabel, receiverId, receiverName } = useMemo(() => {
+    if (!expense || !isSettlement) {
+      return { payerLabel: 'Payer', receiverLabel: 'Recipient', receiverId: null, receiverName: 'Recipient' }
+    }
+    const payerIsYou = Number(expense.payerId) === Number(userId)
+    const participants = expense.splitDetails || []
+    const receiverEntry =
+      participants.find((p) => Number(p.userId) !== Number(expense.payerId)) || participants[0]
+    const receiverIsYou = receiverEntry && Number(receiverEntry.userId) === Number(userId)
+    return {
+      payerLabel: payerIsYou ? 'You' : expense.payer || 'Unknown',
+      receiverLabel: receiverEntry
+        ? receiverIsYou ? 'You' : receiverEntry.name || expense.shareWith || 'Recipient'
+        : expense.shareWith || 'Recipient',
+      receiverId: receiverEntry?.userId || null,
+      receiverName: receiverEntry?.name || expense?.shareWith || 'Recipient',
+    }
+  }, [expense, userId, isSettlement])
+
+  const isStripe = Boolean(expense?.paymentId)
+  const settlementSubtitle = isStripe ? 'Settled via Stripe' : 'Settled Manually'
+
+  const buildSplitDetails = (nextAmount) => {
+    const targetId = receiverId || expense?.splitDetails?.[0]?.userId
+    const updated = (expense?.splitDetails || []).map((split) => {
+      const portion = split.portion || split.portions || 1
+      if (targetId && Number(split.userId) === Number(targetId)) {
+        return { ...split, amount: nextAmount, portion }
+      }
+      if (split.amount > 0 && !targetId) {
+        return { ...split, amount: nextAmount, portion }
+      }
+      return { ...split, amount: 0, portion }
+    })
+    const hasTarget = updated.some((s) => Number(s.userId) === Number(targetId) && s.amount > 0)
+    if (!hasTarget && targetId) {
+      updated.push({
+        userId: targetId,
+        name: receiverName,
+        amount: nextAmount,
+        portion: 1,
+        include: true,
+      })
+    }
+    return updated
+  }
+
+  const buildUpdatePayload = (nextAmount, paymentIdOverride = expense?.paymentId || null) => ({
+    title: expense?.title || 'Settle up',
+    date: expense?.date,
+    type: expense?.type || SETTLE_EXPENSE_TYPE,
+    amount: nextAmount,
+    payerId: expense?.payerId,
+    shareWithType: expense?.shareWithType,
+    shareWithId: expense?.shareWithId,
+    splitDetails: buildSplitDetails(nextAmount),
+    isSettleUp: true,
+    paymentId: paymentIdOverride,
+  })
+
+  const handleManualSettlementUpdate = async (nextAmount) => {
+    if (!expense) return
+    setModalLoading(true)
+    try {
+      const sanitized = Number(nextAmount.toFixed(2))
+      const payload = buildUpdatePayload(sanitized, null)
+      await api.put(`/expenses/${expenseId}`, payload)
+      setExpense((prev) =>
+        prev ? { ...prev, amount: sanitized, splitDetails: buildSplitDetails(sanitized) } : prev
+      )
+      showSuccess('Settlement amount updated.', { asSnackbar: true })
+      setShowEditModal(false)
+    } catch (err) {
+      console.error(err)
+      showError(err.response?.data?.error || 'Failed to update settlement.', { asSnackbar: true })
+    } finally {
+      setModalLoading(false)
+    }
+  }
+
+  const handleStripeSettlementUpdate = async (nextAmount) => {
+    if (!expense || !receiverId) {
+      showError('Missing receiver information for this settlement.', { asSnackbar: true })
+      return
+    }
+    setModalLoading(true)
+    try {
+      const sanitized = Number(nextAmount.toFixed(2))
+      const paymentRes = await api.post('/expenses/payments', {
+        amount: sanitized,
+        payerId: expense.payerId,
+        receiverId,
+      })
+      const paymentId = paymentRes.data?.paymentId
+      if (!paymentId) throw new Error('Stripe payment could not be created.')
+      const payload = buildUpdatePayload(sanitized, paymentId)
+      await api.put(`/expenses/${expenseId}`, payload)
+      setExpense((prev) =>
+        prev ? { ...prev, amount: sanitized, splitDetails: buildSplitDetails(sanitized), paymentId } : prev
+      )
+      showSuccess('Stripe settlement recorded and locked.', { asSnackbar: true })
+      setShowEditModal(false)
+    } catch (err) {
+      console.error(err)
+      showError(err.response?.data?.error || err.message || 'Failed to update settlement.', { asSnackbar: true })
+    } finally {
+      setModalLoading(false)
+    }
+  }
+
+  const handleOpenSettlementEditModal = () => {
+    if (!expense || isStripe) return
+    setModalContext({
+      targetName: receiverLabel === 'You' ? payerLabel : receiverLabel,
+      suggestedAmount: Number(expense.amount) || 0,
+      maxAmount: Number.MAX_SAFE_INTEGER,
+    })
+    setShowEditModal(true)
+  }
 
   const handleDelete = async () => {
+    const isSettlementDelete = isSettlement
     const confirmed = await showAlert({
-      title: 'Delete Expense',
-      message: 'Are you sure you want to delete this expense?',
+      title: isSettlementDelete ? 'Delete Settlement' : 'Delete Expense',
+      message: isSettlementDelete
+        ? 'Are you sure you want to delete this settlement?'
+        : 'Are you sure you want to delete this expense?',
       type: 'warning',
       showCancel: true,
       confirmText: 'Delete',
       cancelText: 'Cancel',
     })
-    
     if (!confirmed) return
+    if (isSettlement && isStripe) return
 
-    // Perform API delete
     try {
       await api.delete(`/expenses/${expenseId}`)
-      showSuccess('Expense deleted', { asSnackbar: true })
-      // navigate back to group or friend based on location.state?.from
-      if (from === 'personalSummary') {
+      showSuccess(isSettlementDelete ? 'Settlement deleted' : 'Expense deleted', { asSnackbar: true })
+      if (from === 'personalSummary' || from === 'personalExpense') {
         navigate(-1)
       } else if (from === 'group') {
         navigate(`/groups/${id}`)
@@ -76,66 +219,253 @@ export default function ExpenseDetails() {
       }
     } catch (err) {
       console.error(err)
-      showError(err.response?.data?.error || 'Failed to delete expense', { asSnackbar: true })
+      showError(err.response?.data?.error || 'Failed to delete', { asSnackbar: true })
     }
   }
 
+  const navigateToEdit = () => {
+    if (from === 'personalSummary' || from === 'personalExpense') {
+      navigate(`/personalSummary/expenses/${expenseId}/edit`, { state: { ...expense, from } })
+    } else if (from === 'group') {
+      navigate(`/groups/${id}/expenses/${expenseId}/edit`, { state: { ...expense, from } })
+    } else {
+      navigate(`/friends/${id}/expenses/${expenseId}/edit`, { state: { ...expense, from } })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header title="" />
+        <main className="flex-1 flex items-center justify-center px-4">
+          <p className="text-lg tracking-wide text-gray-400 dark:text-gray-500 font-medium">Loading…</p>
+        </main>
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header title="Details" />
+        <main className="flex-1 flex items-center justify-center px-4">
+          <p className="text-center text-red-600 dark:text-red-400 font-medium">{error}</p>
+        </main>
+      </div>
+    )
+  }
+  if (!expense) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header title="" />
+        <main className="flex-1 flex items-center justify-center px-4">
+          <p className="text-center text-gray-500 dark:text-gray-400 text-lg">
+            {isSettlement ? 'Settlement' : 'Expense'} not found.
+          </p>
+        </main>
+      </div>
+    )
+  }
+
+  const headerTitle = isSettlement ? 'Settlement Details' : 'Expense Details'
+
   return (
-    <div className='min-h-screen'>
-      <Header title='Expense Details' />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Header title={headerTitle} />
 
-      <main className='max-w-2xl mx-auto px-4 py-10'>
-        <div className='bg-white dark:bg-gray-800 shadow-xl rounded-xl p-6'>
-          <p className='text-xl font-semibold mb-2'>{expense.title}</p>
-          <p className='text-gray-600 dark:text-gray-400 mb-4'>{expense.type}</p>
-
-          <div className='space-y-2'>
-            <p><strong>Date:</strong> {expense.date}</p>
-            <p><strong>Amount:</strong> ${expense.amount}</p>
-            <p><strong>Paid By:</strong> {expense.payer}</p>
-
-            {/* Shared participants or who owes what */}
-            {expense.splitDetails && expense.splitDetails.length > 0 && (
-              <div className='mt-3 border-t pt-2'>
-                <p className='font-medium mb-2'>
-                  {expense.shareWithType === 'group' ? 'Split Details:' : 'Who Owes:'}
-                </p>
-                {expense.splitDetails.map((m, i) => (
-                  <div key={i} className='flex justify-between text-sm'>
-                    <span>{m.name || m.userName || m.username}</span>
-                    <span>${m.amount?.toFixed?.(2) ?? m.amount ?? 0}</span>
+      <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
+        {/* ——— Personal: warm, single-owner feel ——— */}
+        {isPersonal && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-6 sm:p-8">
+              <span className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                Personal
+              </span>
+              <h1 className="mt-1 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                {expense.title}
+              </h1>
+              <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">
+                {formatFullDate(expense.date) || expense.date}
+              </p>
+              <div className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Amount</p>
+                  <p className="mt-0.5 text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                    ${formatCurrency(expense.amount)}
+                  </p>
+                </div>
+                {expense.walletName != null && expense.walletName !== '' && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Wallet</p>
+                    <p className="mt-0.5 text-gray-900 dark:text-gray-100 font-medium">{expense.walletName}</p>
                   </div>
-                ))}
+                )}
               </div>
-            )}
+              <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={navigateToEdit}
+                  className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold rounded-xl py-3 hover:opacity-90 transition"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl py-3 hover:border-red-300 hover:text-red-600 dark:hover:border-red-800 dark:hover:text-red-400 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
+        )}
 
-          <div className='flex flex-col sm:flex-row gap-3 mt-6'>
-            <button
-              onClick={() =>{
-                if (from === 'personalSummary') {
-                  navigate(`/personalSummary/expenses/${expenseId}/edit`, {state: { ...expense, from }})
-                }
-                else if (from === 'group') {
-                  navigate(`/groups/${id}/expenses/${expenseId}/edit`, {state: { ...expense, from }})
-                }
-                else {
-                  navigate(`/friends/${id}/expenses/${expenseId}/edit`, {state: { ...expense, from }})
-                }
-              }}
-              className='flex-1 bg-emerald-500 text-white font-semibold rounded-xl py-3 hover:bg-emerald-600 transition'
-            >
-              Edit Expense
-            </button>
-            <button
-              onClick={handleDelete}
-              className='flex-1 border border-red-400 text-red-600 font-semibold rounded-xl py-3 hover:bg-red-50 transition'
-            >
-              Delete Expense
-            </button>
+        {/* ——— Shared: clear split, two-tone ——— */}
+        {isShared && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-6 sm:p-8">
+              <span className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                {expense.shareWithType === 'group' ? 'Group' : 'Friend'}
+              </span>
+              <h1 className="mt-1 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                {expense.title}
+              </h1>
+              <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">
+                {[expense.type || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
+              </p>
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Paid by</p>
+                  <p className="mt-1 text-gray-900 dark:text-gray-100 font-semibold">{expense.payer}</p>
+                </div>
+                <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Amount</p>
+                  <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                    ${formatCurrency(expense.amount)}
+                  </p>
+                </div>
+              </div>
+              {expense.splitDetails && expense.splitDetails.length > 0 && (
+                <div className="mt-6 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      {expense.shareWithType === 'group' ? 'Split' : 'Who owes'}
+                    </p>
+                  </div>
+                  <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {expense.splitDetails.map((m, i) => (
+                      <li key={i} className="flex justify-between items-center px-4 py-3">
+                        <span className="text-gray-900 dark:text-gray-100 font-medium">
+                          {m.name || m.userName || m.username}
+                        </span>
+                        <span className="text-gray-700 dark:text-gray-300 tabular-nums font-medium">
+                          ${formatCurrency(m.amount ?? 0)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={navigateToEdit}
+                  className="flex-1 bg-emerald-600 dark:bg-emerald-500 text-white font-semibold rounded-xl py-3 hover:bg-emerald-700 dark:hover:bg-emerald-600 transition"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl py-3 hover:border-red-300 hover:text-red-600 dark:hover:border-red-800 dark:hover:text-red-400 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ——— Settlement: flow (who paid whom) + badge ——— */}
+        {isSettlement && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                <span className="text-xs font-semibold uppercase tracking-widest text-violet-600 dark:text-violet-400">
+                  Settlement
+                </span>
+                <span
+                  className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                    isStripe
+                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                  }`}
+                >
+                  {settlementSubtitle}
+                </span>
+              </div>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                {expense.title}
+              </h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {[expense.type || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
+              </p>
+
+              {/* Who paid whom: visual flow */}
+              <div className="mt-8 rounded-2xl bg-gray-50 dark:bg-gray-700/50 p-6 border border-gray-100 dark:border-gray-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
+                  Who paid whom
+                </p>
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                  <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
+                    {payerLabel}
+                  </span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium">paid</span>
+                  <span className="text-xl sm:text-2xl font-bold text-violet-600 dark:text-violet-400 tabular-nums">
+                    ${formatCurrency(expense.amount)}
+                  </span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium">to</span>
+                  <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
+                    {receiverLabel}
+                  </span>
+                </div>
+              </div>
+
+              {isStripe ? (
+                <div className="mt-6 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 p-4">
+                  <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                    This settlement was completed with Stripe and cannot be edited or deleted.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={handleOpenSettlementEditModal}
+                    className="flex-1 bg-violet-600 dark:bg-violet-500 text-white font-semibold rounded-xl py-3 hover:bg-violet-700 dark:hover:bg-violet-600 transition"
+                  >
+                    Edit settlement
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    className="flex-1 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl py-3 hover:border-red-300 hover:text-red-600 dark:hover:border-red-800 dark:hover:text-red-400 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
+
+      {isSettlement && (
+        <SettleUpModal
+          open={showEditModal}
+          context={modalContext}
+          onClose={() => setShowEditModal(false)}
+          onLogSettlement={handleManualSettlementUpdate}
+          onStripeSettlement={handleStripeSettlementUpdate}
+          loading={modalLoading}
+        />
+      )}
     </div>
   )
 }

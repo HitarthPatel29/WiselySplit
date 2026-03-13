@@ -2,15 +2,16 @@ package ca.mohawkCollege.WiselySplitServer.service;
 
 import ca.mohawkCollege.WiselySplitServer.dao.ExpensesDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.PaymentDAO;
+import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.WalletDAO;
-import org.checkerframework.checker.units.qual.A;
+import ca.mohawkCollege.WiselySplitServer.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.ObjectError;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class ExpensesService {
@@ -19,9 +20,11 @@ public class ExpensesService {
     private ExpensesDAO expensesDAO;
     @Autowired
     private WalletDAO walletDAO;
-
+    @Autowired
+    private UserDAO userDAO;
     @Autowired
     private PaymentDAO paymentDAO;
+
 
     /** Create expense for friend or group */
     @Transactional
@@ -32,8 +35,10 @@ public class ExpensesService {
             String type = (String) payload.get("type");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int payerId = ((Number) payload.get("payerId")).intValue();
+
             String shareWithType = (String) payload.get("shareWithType");
             Integer groupId = ("group".equalsIgnoreCase(shareWithType) && payload.get("shareWithId") != null) ? ((Number) payload.get("shareWithId")).intValue() : null;
+
             boolean isSettleUp = Boolean.TRUE.equals(payload.get("isSettleUp"));
             Integer paymentId = payload.get("paymentId") != null ? ((Number) payload.get("paymentId")).intValue() : null;
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
@@ -66,6 +71,27 @@ public class ExpensesService {
             double amount = ((Number) payload.get("amount")).doubleValue();
             int userId = ((Number) payload.get("userId")).intValue();
             Integer walletId = ((Number) payload.get("walletId")).intValue();
+
+            // Insert into Expenses table
+            int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId);
+
+            return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating personal expense: " + e.getMessage());
+        }
+    }
+    @Transactional
+    public Map<String, Object> createPersonalExpenseWithAutomation(Map<String, Object> payload, String email) {
+        try {
+            String title = (String) payload.get("transactionTitle");
+            String date = (String) payload.get("transactionDate");
+            String type = (String) payload.get("name");
+            String walletName = (String) payload.get("CardName");
+            double amount = ((Number) payload.get("amount")).doubleValue();
+
+            int walletId = ((Number) walletDAO.getWalletId(walletName).get("walletId")).intValue();
+            Optional<User> user = userDAO.findByEmail(email);
+            int userId = user.get().getUserId();
 
             // Insert into Expenses table
             int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId);

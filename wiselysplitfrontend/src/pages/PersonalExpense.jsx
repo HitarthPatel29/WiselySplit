@@ -51,6 +51,7 @@ export default function PersonalExpense() {
 
   // Filters (same structure as PersonalSummary)
   const [typeFilter, setTypeFilter] = useState([])
+  const [categoryFilter, setCategoryFilter] = useState([])
   const [groupFilter, setGroupFilter] = useState('')
   const [sort, setSort] = useState('newest')
   const [monthFilter, setMonthFilter] = useState('')
@@ -68,6 +69,7 @@ export default function PersonalExpense() {
       const list = res.data || []
       setWallets(list)
       setActiveWalletIndex((i) => Math.min(i, Math.max(0, list.length - 1)))
+      console.log('after fetch wallets with expenses data:', list)
       return list
     } catch (err) {
       console.error('Failed to fetch wallets with expenses', err)
@@ -110,6 +112,18 @@ export default function PersonalExpense() {
     if (typeFilter.length > 0) {
       list = list.filter((e) => typeFilter.includes(e.expenseType))
     }
+    if (categoryFilter.length > 0) {
+      list = list.filter((e) => {
+        const isPersonalExpense = e.isPersonal && !e.isSettleUp
+        const isSharedExpense = !e.isPersonal && !e.isSettleUp
+        const isSettlement = !!e.isSettleUp
+        return (
+          (categoryFilter.includes('personal') && isPersonalExpense) ||
+          (categoryFilter.includes('shared') && isSharedExpense) ||
+          (categoryFilter.includes('settlements') && isSettlement)
+        )
+      })
+    }
     if (groupFilter) {
       list = list.filter((e) => String(e.groupId) === String(groupFilter))
     }
@@ -125,7 +139,7 @@ export default function PersonalExpense() {
       sort === 'newest' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date)
     )
     setFilteredExpenses(list)
-  }, [wallets, activeWalletIndex, search, typeFilter, groupFilter, sort, monthFilter, displayStartDate, displayEndDate])
+  }, [wallets, activeWalletIndex, search, typeFilter, categoryFilter, groupFilter, sort, monthFilter, displayStartDate, displayEndDate])
 
   // Default date range for Filter modal (not applied to list until user clicks Apply)
   useEffect(() => {
@@ -224,6 +238,7 @@ export default function PersonalExpense() {
 
   const handleApplyFilters = (f) => {
     setTypeFilter(f.typeFilter)
+    setCategoryFilter(f.categoryFilter || [])
     setGroupFilter(f.groupFilter)
     setSort(f.sort)
     setMonthFilter(f.month)
@@ -257,13 +272,16 @@ export default function PersonalExpense() {
   const handleEditWallet = async (targetWalletId, data) => {
     if (!userId) return
     try {
+      console.log('before API call data:', data)
       await api.put(`/users/${userId}/wallets/${targetWalletId}`, data)
-
+      
       setWallets((prev) =>
         prev.map((wallet) => wallet.walletId === targetWalletId ? {...wallet,...data} : wallet)
       )
+      
       setEditWallet(null)
       setShowAddWallet(false)
+      console.log('after update wallets data:', wallets)
     } catch (err) {
       console.error('Failed to update wallet', err)
       console.error('targetWalletId: ', targetWalletId, 'data: ', data)
@@ -470,6 +488,12 @@ export default function PersonalExpense() {
                 <AdjustmentsHorizontalIcon className="w-5 h-5 text-emerald-700" />
               </button>
               <PrimaryButton
+                label="Add Expense"
+                onClick={() => navigate('/personalExpense/add')}
+                className="flex-1 sm:flex-none whitespace-nowrap"
+                ariaLabel="Add a personal expense"
+              />
+              <PrimaryButton
                 label="Add Wallet/Card"
                 onClick={() => setShowAddWallet(true)}
                 className="flex-1 sm:flex-none whitespace-nowrap"
@@ -479,25 +503,35 @@ export default function PersonalExpense() {
           </div>
 
           <div className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-[120px] pb-8">
-            {filteredExpenses.map((e) => (
-              <ExpenseItemCard
-                key={e.expenseId}
-                date={formatDate(e.date)}
-                title={e.title}
-                subtitle={`Type: ${e.expenseType}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`}
-                amount={Math.abs(e.totalAmount ?? e.netAmount ?? 0).toFixed(2)}
-                type={e.isSettleUp ? 'settle' : (e.type === 'lent' || e.type === 'owe' ? e.type : 'lent')}
-                highlight={e.isSettleUp || !!e.highlight}
-                onClick={() =>
-                  navigate(
-                    e.isSettleUp
-                      ? `/personalSummary/settlements/${e.expenseId}`
-                      : `/personalSummary/expenses/${e.expenseId}`,
-                    { state: { ...e, from: 'personalExpense' } }
-                  )
-                }
-              />
-            ))}
+            {filteredExpenses.map((e) => {
+              const cardType = e.isSettleUp
+                ? 'settle'
+                : e.isPersonal
+                  ? 'personal'
+                  : (e.type === 'lent' || e.type === 'owe' ? e.type : 'lent')
+              const subtitle = e.isPersonal
+                ? `Type: ${e.expenseType ?? ''}`
+                : `Type: ${e.expenseType}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`
+              return (
+                <ExpenseItemCard
+                  key={e.expenseId}
+                  date={formatDate(e.date)}
+                  title={e.title}
+                  subtitle={subtitle}
+                  amount={Math.abs(e.totalAmount ?? e.netAmount ?? 0).toFixed(2)}
+                  type={cardType}
+                  highlight={e.isSettleUp || !!e.highlight}
+                  onClick={() =>
+                    navigate(
+                      e.isSettleUp
+                        ? `/personalSummary/settlements/${e.expenseId}`
+                        : `/personalSummary/expenses/${e.expenseId}`,
+                      { state: { ...e, from: 'personalExpense' } }
+                    )
+                  }
+                />
+              )
+            })}
             {filteredExpenses.length === 0 && (
               <p className="text-center text-gray-500 dark:text-gray-400 py-8">
                 No expenses found for this wallet.
@@ -514,6 +548,7 @@ export default function PersonalExpense() {
         groups={groups}
         initialFilters={{
           typeFilter,
+          categoryFilter,
           groupFilter,
           sort,
           startDate: displayStartDate || startDate,

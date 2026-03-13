@@ -26,7 +26,6 @@ public class InviteService {
     @Autowired private EmailServiceMailTrapAPI emailServiceMailTrapAPI;
     @Autowired private GroupsDAO groupsDAO;
     @Autowired private ExpensesDAO expensesDAO;
-    @Autowired private ExpensesService expensesService;
 
     @Value("${frontend.hosting_url}")
     private String hostingURL;

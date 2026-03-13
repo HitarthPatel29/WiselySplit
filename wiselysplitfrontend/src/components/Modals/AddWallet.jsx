@@ -60,6 +60,7 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
       walletBalance: isNaN(walletBalanceNum) ? 0 : walletBalanceNum,
       walletColor: walletColor
     }
+    console.log('handleSubmit data:', data)
     if (isEdit && onEdit) {
       const id = editWallet.id ?? editWallet.walletId
       onEdit(id, data)

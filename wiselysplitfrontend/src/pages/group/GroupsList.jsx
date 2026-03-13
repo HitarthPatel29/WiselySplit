@@ -40,7 +40,7 @@ export default function GroupsList() {
 
   const filtered = groups.filter(
     (g) =>
-      g.name.toLowerCase().includes(search.toLowerCase()) ||
+      g.groupName.toLowerCase().includes(search.toLowerCase()) ||
       (g.subtitle || '').toLowerCase().includes(search.toLowerCase())
   )
 

@@ -10,12 +10,16 @@ export const defaultExpense = {
   amount: 0,               // Total expense amount
   date: '',                // YYYY-MM-DD
   type: '',                // Food / Travel / Work / Personal etc.
-  payerId: null,           // Who paid (userId)
-  owes: '',                // For friend-type expenses only
-  shareWithId: null,       // FriendID or GroupID
-  shareWith: '',           // Friend or Group name
-  shareWithType: 'friend', // 'friend' | 'group'
-  splitDetails: [],        // Group split details [{ userId, name, amount, portion, include }]
+  payerId: null,           // Who paid (userId) — shared only
+  owes: '',                // For friend-type expenses only — shared only
+  shareWithId: null,       // FriendID or GroupID — shared only
+  shareWith: '',           // Friend or Group name — shared only
+  shareWithType: 'friend', // 'friend' | 'group' — shared only
+  splitDetails: [],        // Group split details [{ userId, name, amount, portion, include }] — shared only
+  userId: null,            // For personal expenses
+  walletId: null,          // Wallet to record expense against (shared when payer is user, required for personal if user has wallets)
+  paymentId: null,         // Optional payment reference — shared
+  isSettleUp: false,       // Shared only
 }
 
 /**
@@ -54,14 +58,46 @@ export const createNewExpense = (shareWithId, shareWith, type = 'friend', member
 }
 
 /**
- * Helper: Validate fields before submission
+ * Helper: Generate a new personal expense draft
+ * @param {number} currentUserId - Logged-in user's ID
  */
-export const validateExpense = (expense, currentUserId, billSplitApplied) => {
-  console.log('ExpenseModel: Validating expense')
-  if (!expense.shareWith) return 'Please select who to share expense with.'
+export const createNewPersonalExpense = (currentUserId) => {
+  return {
+    ...defaultExpense,
+    userId: currentUserId || null,
+    walletId: null,
+    title: '',
+    amount: 0,
+    date: '',
+    type: '',
+  }
+}
+
+/**
+ * Helper: Validate fields before submission
+ * @param {object} expense - Form expense state
+ * @param {number} currentUserId - Logged-in user ID
+ * @param {boolean} billSplitApplied - Whether bill split was used (shared only)
+ * @param {'shared'|'personal'} mode - Expense mode
+ * @param {Array} [wallets=[]] - User wallets (for personal: wallet required if length > 0)
+ */
+export const validateExpense = (expense, currentUserId, billSplitApplied, mode = 'shared', wallets = []) => {
+  console.log('ExpenseModel: Validating expense', { mode })
   if (!expense.title) return 'Expense title is required.'
   if (!expense.date) return 'Date is required.'
   if (!expense.amount || expense.amount <= 0) return 'Enter a valid amount.'
+  if (!expense.type) return 'Please select an expense type.'
+
+  if (mode === 'personal') {
+    if (!expense.userId) return 'User is required for personal expense.'
+    if (Array.isArray(wallets) && wallets.length > 0 && (expense.walletId == null || expense.walletId === '')) {
+      return 'Please select a wallet for this personal expense.'
+    }
+    return null
+  }
+
+  // --- Shared expense validation ---
+  if (!expense.shareWith) return 'Please select who to share expense with.'
   if (!expense.payerId) return 'Please select who paid.'
 
   // Friend-level rule
@@ -103,29 +139,45 @@ export const validateExpense = (expense, currentUserId, billSplitApplied) => {
 
 /**
  * Normalize expense object for API submission.
- * checks all amount value to be number not string.
+ * Returns payload shape for either shared or personal endpoint.
  *
  * @param {object} expense - The expense data from the form.
- * @param {number} currentUserId - Logged-in user's ID (used only for 'friend' owes translation).
+ * @param {number} currentUserId - Logged-in user's ID (used for friend owes translation and personal userId).
+ * @param {boolean} billSplitApplied - Whether bill split was used (shared only).
+ * @param {'shared'|'personal'} mode - Expense mode.
  */
-export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied) => {
+export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied, mode = 'shared') => {
+  const amount = parseFloat(expense.amount) || 0
+
+  if (mode === 'personal') {
+    return {
+      title: expense.title || '',
+      amount,
+      date: expense.date || '',
+      type: expense.type || '',
+      userId: expense.userId ?? currentUserId,
+      walletId: expense.walletId ?? null,
+      isPersonal: true,
+    }
+  }
+
+  // --- Shared expense payload ---
   const clean = { ...expense }
-
-  console.log('Normalizing expense for API')
-  clean.amount = parseFloat(expense.amount)
-
+  clean.amount = amount
+  clean.splitDetails = clean.splitDetails || []
+  clean.isPersonal = false
   // --- GROUP EXPENSE ---
   if (billSplitApplied || clean.shareWithType === 'group') {
     clean.splitDetails = (expense.splitDetails || []).map((m) => ({
       ...m,
       amount: parseFloat(m.amount) || 0,
       portion: parseInt(m.portion || 1),
+      include: m.include !== false,
     }))
   }
 
   // --- FRIEND EXPENSE ---
   if (!billSplitApplied && clean.shareWithType === 'friend') {
-    // Translate 'owes' into splitDetails
     const total = parseFloat(clean.amount) || 0
     const half = parseFloat((total / 2).toFixed(2))
     const friendId = clean.shareWithId
@@ -133,30 +185,39 @@ export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied)
 
     if (clean.owes === `You and ${friendName} split equally`) {
       clean.splitDetails = [
-        { userId: currentUserId, name: 'You', amount: half, portion: 1 },
-        { userId: friendId, name: friendName, amount: half, portion: 1},
+        { userId: currentUserId, amount: half, portion: 1, include: true },
+        { userId: friendId, amount: half, portion: 1, include: true },
       ]
     } else if (clean.owes === 'You owe full amount') {
       clean.splitDetails = [
-        { userId: currentUserId, name: 'You', amount: total, portion: 1 },
+        { userId: currentUserId, amount: total, portion: 1, include: true },
       ]
     } else if (clean.owes === `${friendName} owes full amount`) {
       clean.splitDetails = [
-        { userId: friendId, name: friendName, amount: total, portion: 1 },
+        { userId: friendId, amount: total, portion: 1, include: true },
       ]
     } else {
-      // Fallback: evenly split
       clean.splitDetails = [
-        { userId: currentUserId, name: 'You', amount: half, portion: 1 },
-        { userId: friendId, name: friendName, amount: half, portion: 1 },
+        { userId: currentUserId, amount: half, portion: 1, include: true },
+        { userId: friendId, amount: half, portion: 1, include: true },
       ]
     }
   }
-  console.log('Normalized expense for API')
 
-  // Cleanup
-  delete clean.owes
-  return clean
+  const payload = {
+    title: clean.title || '',
+    amount: clean.amount,
+    date: clean.date || '',
+    type: clean.type || '',
+    payerId: clean.payerId ?? currentUserId,
+    shareWithId: clean.shareWithId,
+    shareWithType: clean.shareWithType || 'friend',
+    splitDetails: clean.splitDetails,
+    isSettleUp: !!clean.isSettleUp,
+    paymentId: clean.paymentId ?? null,
+    walletId: clean.walletId ?? null,
+  }
+  return payload
 }
 /**
  * Normalize expense object for API submission.
@@ -190,6 +251,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
       include: true,
     })),
     isSettleUp: !!data.isSettleUp,
+    isPersonal: !!data.isPersonal,
     // settlementMethod: data.settlementMethod || data.paymentMethod || null,
     paymentId: data.paymentId || data.stripePaymentId || null,
   }

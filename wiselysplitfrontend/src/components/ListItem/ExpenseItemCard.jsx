@@ -6,16 +6,19 @@ export default function ExpenseItemCard({
   title,
   subtitle,
   amount,
-  type, // 'lent' | 'owe' | 'settle'
+  type, // 'lent' | 'owe' | 'settle' | 'personal'
   highlight = false,
   onClick,
 }) {
   const isSettle = type === 'settle'
+  const isPersonal = type === 'personal'
   const wrapperStyles = isSettle
     ? 'bg-emerald-50/80 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800'
-    : highlight
-        ? 'bg-emerald-50 hover:bg-emerald-100 border-gray-300 dark:border-gray-700'
-        : 'bg-white dark:bg-gray-800 hover:shadow-sm border-gray-300 dark:border-gray-700'
+    : isPersonal
+        ? 'bg-indigo-50/80 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-700 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/30'
+        : highlight
+            ? 'bg-emerald-50 hover:bg-emerald-100 border-gray-300 dark:border-gray-700'
+            : 'bg-white dark:bg-gray-800 hover:shadow-sm border-gray-300 dark:border-gray-700'
 
   const amountLabel =
     type === 'lent'
@@ -24,7 +27,9 @@ export default function ExpenseItemCard({
         ? `you owe $${amount}`
         : type === 'settle'
           ? `settled $${amount}`
-          : `$${amount}`
+          : type === 'personal'
+            ? `$${amount}`
+            : `$${amount}`
 
   const amountColor =
     type === 'lent'
@@ -33,7 +38,9 @@ export default function ExpenseItemCard({
         ? 'text-red-500'
         : type === 'settle'
           ? 'text-emerald-700 dark:text-emerald-300'
-          : 'text-gray-500 dark:text-gray-400'
+          : type === 'personal'
+            ? 'text-indigo-700 dark:text-indigo-300'
+            : 'text-gray-500 dark:text-gray-400'
 
   return (
     <button
@@ -52,8 +59,8 @@ export default function ExpenseItemCard({
         )}
 
         {/* Title + Subtitle */}
-        <div className="text-left flex-1">
-          <p className='font-medium text-gray-900 dark:text-gray-100'>{title}</p>
+        <div className="text-left flex-1 min-w-0">
+          <p className='font-medium text-gray-900 dark:text-gray-100 truncate'>{title}</p>
           {subtitle && (
             <p className='text-sm text-gray-500 dark:text-gray-400'>{subtitle}</p>
           )}

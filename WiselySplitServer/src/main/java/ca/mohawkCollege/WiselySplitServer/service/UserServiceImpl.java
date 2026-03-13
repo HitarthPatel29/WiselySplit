@@ -143,6 +143,7 @@ public class UserServiceImpl implements UserService {
             Map<String, Object> formatted = Map.of(
                     "id", groupId,
                     "name", g.get("GroupName"),
+                    "profilePicture", g.get("profilePicture"),
                     "type", "group",
                     "members", members.stream()
                             .map(m -> Map.of("userId", m.get("UserID"), "name", m.get("name")))
@@ -156,6 +157,7 @@ public class UserServiceImpl implements UserService {
                 .map(f -> Map.of(
                         "id", f.get("UserID"),
                         "name", f.get("Name"),
+                        "profilePicture", f.get("profilePicture"),
                         "type", "friend"
                 ))
                 .collect(Collectors.toList());

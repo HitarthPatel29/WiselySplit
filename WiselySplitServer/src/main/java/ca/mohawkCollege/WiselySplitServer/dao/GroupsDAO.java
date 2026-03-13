@@ -43,8 +43,8 @@ public class GroupsDAO {
         String sql = """
             SELECT 
                 g.GroupID AS groupId,
-                g.GroupName AS name,
-                g.GroupType AS type,
+                g.GroupName AS groupName,
+                g.GroupType AS groupType,
                 g.ProfilePicture AS profilePicture,
                 COALESCE(SUM(
                     CASE
@@ -52,7 +52,7 @@ public class GroupsDAO {
                         WHEN ep.UserID = ? AND e.PayerID <> ? THEN -ep.Contribution
                         ELSE 0
                     END
-                ), 0) AS NetBalance
+                ), 0) AS netBalance
             FROM ExpenseGroups g
             JOIN GroupParticipants gp ON g.GroupID = gp.GroupID
             LEFT JOIN Expenses e ON e.GroupID = g.GroupID
@@ -64,31 +64,33 @@ public class GroupsDAO {
         return jdbcTemplate.queryForList(sql, userId, userId, userId, userId, userId);
     }
     public Map<String, Object> findGroupInfo(int groupId) {
-        String sql = "SELECT GroupID AS groupId, GroupName AS name, GroupType AS type, ProfilePicture AS photo FROM ExpenseGroups WHERE GroupID = ?";
+        String sql = "SELECT GroupID AS groupId, GroupName AS groupName, GroupType AS groupType, ProfilePicture AS profilePicture FROM ExpenseGroups WHERE GroupID = ?";
         return jdbcTemplate.queryForMap(sql, groupId);
     }
 
     public List<Map<String, Object>> findGroupExpenses(int groupId, int userId) {
         String sql = """
-            SELECT
-                e.ExpenseID AS expenseId,
-                e.ExpenseTitle AS title,
-                e.ExpenseDate AS date,
-                e.Amount AS totalAmount,
-                e.ExpenseType AS expenseType,
-                e.IsSettleUp AS isSettleUp,
-                e.PaymentID AS paymentId,
-                p.Name AS paidBy,
-                p.UserID AS payerId,
-            
-                -- Determine type from the POV of current user
-                CASE WHEN e.PayerID = ? THEN 'lent' ELSE 'owe' END AS type
-            
-            FROM Expenses e
-            JOIN User p ON e.PayerID = p.UserID
-            WHERE e.GroupID = ?
-            ORDER BY e.ExpenseDate DESC;
-        """;
+                SELECT
+                    e.ExpenseID AS expenseId,
+                    e.ExpenseTitle AS expenseTitle,
+                    e.ExpenseDate AS expenseDate,
+                    e.ExpenseType AS expenseType,
+                    e.Amount AS amount,
+                    e.IsSettleUp AS isSettleUp,
+                    e.PaymentID AS paymentId,
+                    e.WalletId AS walletId,
+                    p.Name AS payerName,
+                
+                    -- Determine type from the POV of current user
+                    CASE WHEN e.PayerID = ? THEN 'lent' ELSE 'owe' END AS type
+                
+                FROM Expenses e
+                JOIN User p ON e.PayerID = p.UserID
+                WHERE e.GroupID = ?
+                    AND e.ExpenseType <> 'Fugazi'
+                    AND e.IsPersonal = 0
+                ORDER BY e.ExpenseDate DESC;
+                """;
 
         List<Map<String,Object>> list = jdbcTemplate.queryForList(sql, userId, groupId);
         for (Map<String,Object> expense: list) {
@@ -110,51 +112,30 @@ public class GroupsDAO {
     }
     public List<Map<String, Object>> findGroupParticipantsWithBalances(int groupId, int currentUserId) {
         String sql = """
-        SELECT
-            u.UserID AS userId,
-            u.Name AS name,
-            u.Username AS username,
-            u.ProfilePicture AS avatarUrl,
-            COALESCE((
-                SELECT SUM(
-                    CASE
-                        WHEN e.PayerID = ? AND ep.UserID = u.UserID THEN ep.Contribution
-                        WHEN e.PayerID = u.UserID AND ep.UserID = ? THEN -ep.Contribution
-                        ELSE 0
-                    END
-                )
-                FROM Expenses e
-                JOIN ExpenseParticipation ep ON ep.ExpenseID = e.ExpenseID
-                WHERE e.GroupID = ?
-            ), 0) AS netAmount
-        FROM GroupParticipants gp
-        JOIN User u ON gp.UserID = u.UserID
-        WHERE gp.GroupID = ?
-          AND u.UserID <> ?
-        ORDER BY u.Name ASC
-    """;
-
-        List<Map<String, Object>> list = jdbcTemplate.queryForList(
-                sql, currentUserId, currentUserId, groupId, groupId, currentUserId
-        );
-
-        for (Map<String, Object> row : list) {
-            double net = ((Number) row.get("netAmount")).doubleValue();
-            row.put("amount", Math.abs(net));
-            String status;
-            if (net > 0) {
-                status = "lent";        // They owe you
-            } else if (net < 0) {
-                status = "owe";         // You owe them
-            } else {
-                status = "";
-            }
-            row.put("status", status);
-            // Optional: remove internal field
-            row.remove("netAmount");
-        }
-
-        return list;
+            SELECT
+                u.UserID AS userId,
+                u.Name AS name,
+                u.Username AS username,
+                u.ProfilePicture AS profilePicture,
+                COALESCE((
+                    SELECT SUM(
+                        CASE
+                            WHEN e.PayerID = ? AND ep.UserID = u.UserID THEN ep.Contribution
+                            WHEN e.PayerID = u.UserID AND ep.UserID = ? THEN -ep.Contribution
+                            ELSE 0
+                        END
+                    )
+                    FROM Expenses e
+                    JOIN ExpenseParticipation ep ON ep.ExpenseID = e.ExpenseID
+                    WHERE e.GroupID = ?
+                ), 0) AS userBalance
+            FROM GroupParticipants gp
+            JOIN User u ON gp.UserID = u.UserID
+            WHERE gp.GroupID = ?
+              AND u.UserID <> ?
+            ORDER BY u.Name ASC
+        """;
+        return jdbcTemplate.queryForList( sql, currentUserId, currentUserId, groupId, groupId, currentUserId);
     }
     public boolean isUserInGroup(int groupId, int userId) {
         String sql = "SELECT COUNT(*) FROM GroupParticipants WHERE GroupID = ? AND UserID = ?";

@@ -10,6 +10,7 @@ export default function FilterModal({
 }) {
   const modalRef = useRef(null)
   const [typeFilter, setTypeFilter] = useState(initialFilters.typeFilter || [])
+  const [categoryFilter, setCategoryFilter] = useState(initialFilters.categoryFilter || [])
   const [groupFilter, setGroupFilter] = useState(initialFilters.groupFilter || '')
   const [sort, setSort] = useState(initialFilters.sort || 'newest')
   const [startDate, setStartDate] = useState(initialFilters.startDate || '')
@@ -20,6 +21,7 @@ export default function FilterModal({
   useEffect(() => {
     if (isOpen) {
       setTypeFilter(initialFilters.typeFilter || [])
+      setCategoryFilter(initialFilters.categoryFilter || [])
       setGroupFilter(initialFilters.groupFilter || '')
       setSort(initialFilters.sort || 'newest')
       setStartDate(initialFilters.startDate || '')
@@ -61,9 +63,18 @@ export default function FilterModal({
 
   // Toggle expense type in the filter array
   const toggleTypeFilter = (item) => {
-    setTypeFilter(prev => 
-      prev.includes(item) 
-        ? prev.filter(t => t !== item) 
+    setTypeFilter(prev =>
+      prev.includes(item)
+        ? prev.filter(t => t !== item)
+        : [...prev, item]
+    )
+  }
+
+  // Toggle category (Personal / Shared / Settlements) in the filter array
+  const toggleCategoryFilter = (item) => {
+    setCategoryFilter(prev =>
+      prev.includes(item)
+        ? prev.filter(c => c !== item)
         : [...prev, item]
     )
   }
@@ -119,6 +130,37 @@ export default function FilterModal({
                 }
               >
                 {item}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        {/* Personal / Shared / Settlements */}
+        <fieldset className='mb-4'>
+          <legend className='font-medium mb-2'>
+            Show {categoryFilter.length > 0 && (
+              <span className='text-sm text-gray-500 dark:text-gray-400'>({categoryFilter.length} selected)</span>
+            )}
+          </legend>
+          <div className='flex flex-wrap gap-2' role="group" aria-label="Expense category filters">
+            {[
+              { value: 'personal', label: 'Personal' },
+              { value: 'shared', label: 'Shared' },
+              { value: 'settlements', label: 'Settlements' },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => toggleCategoryFilter(value)}
+                aria-pressed={categoryFilter.includes(value)}
+                className={
+                  'px-4 py-1 rounded-full border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 ' +
+                  (categoryFilter.includes(value)
+                    ? 'bg-green-500 text-white border-green-500'
+                    : 'border-gray-700 dark:border-gray-300 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700')
+                }
+              >
+                {label}
               </button>
             ))}
           </div>
@@ -245,6 +287,7 @@ export default function FilterModal({
             className='flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400'
             onClick={() => {
               setTypeFilter([])
+              setCategoryFilter([])
               setGroupFilter('')
               setSort('newest')
               setStartDate('')
@@ -260,6 +303,7 @@ export default function FilterModal({
             onClick={() =>
               onApply({
                 typeFilter,
+                categoryFilter,
                 groupFilter,
                 sort,
                 startDate,

@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [userId, setUserId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [friendsAndGroups, setFriendsAndGroups] = useState([])
+  const [wallets, setWallets] = useState([])
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token') || sessionStorage.getItem('token')
@@ -45,9 +46,26 @@ export const AuthProvider = ({ children }) => {
     }
   }, [userId])
 
+  // Fetch wallets method
+  const fetchWallets = useCallback(async () => {
+    if (!userId) return
+
+    try {
+      const res = await api.get(`/users/${userId}/wallets`)
+      setWallets(res.data || [])
+      console.log('Fetched wallets:', res.data)
+    } catch (err) {
+      console.error('Failed to fetch wallets:', err)
+    }
+  }, [userId])
+
   useEffect(() => {
     fetchConnections()
   }, [fetchConnections]) // runs when userId changes
+
+  useEffect(() => {
+    fetchWallets()
+  }, [fetchWallets])
 
   // Login (store token + remember me)
   const login = (jwt, remember = false) => {
@@ -80,7 +98,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ token, userId, login, logout, loading, friendsAndGroups, setFriendsAndGroups, fetchConnections }}>
+    <AuthContext.Provider value={{ token, userId, login, logout, loading, friendsAndGroups, setFriendsAndGroups, fetchConnections, wallets, setWallets, fetchWallets }}>
       {children}
     </AuthContext.Provider>
   )

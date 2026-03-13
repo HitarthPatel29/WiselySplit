@@ -88,7 +88,7 @@ export default function IndividualView() {
         currentUserId: userId,
         method: 'manual',
       })
-      await api.post('/expenses', payload)
+      await api.post('/expenses/shared', payload)
       showSuccess('Settlement logged successfully!', { asSnackbar: true })
       setShowSettleModal(false)
       fetchData()

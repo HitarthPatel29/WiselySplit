@@ -6,7 +6,7 @@ import api from '../../api'
 import Header from '../../components/Header.jsx'
 import SettleUpModal from '../../components/Modals/SettleUpModal.jsx'
 import MemberSelectModal from '../../components/Modals/MemberSelectModal.jsx'
-import { buildSettleUpPayload, formatCurrency, getSettlementMethodLabel } from '../../utils/settleUp.js'
+import { buildSettleUpPayload, getSettlementMethodLabel } from '../../utils/settleUp.js'
 import { useNotification } from '../../context/NotificationContext'
 import {
   Cog6ToothIcon,
@@ -28,54 +28,6 @@ const formatDate = (raw) => {
   } catch {
     return raw
   }
-}
-
-/* -----------------------------------------------------
-   Compute balances using splitDetails
-   standing[userId] = +X → they owe me X
-                      -Y → I owe them Y
------------------------------------------------------ */
-const computeMemberStanding = (expenses, currentUserId) => {
-  const standing = {}
-
-  expenses.forEach((ex) => {
-    const payer = Number(ex.payerId)
-    const targetSplit = ex.splitDetails?.[0]
-
-    if (ex.isSettleUp && targetSplit) {
-      const amount = Number(targetSplit.amount) || 0
-      if (!amount) return
-
-      if (payer === currentUserId) {
-        standing[targetSplit.userId] = (standing[targetSplit.userId] || 0) - amount
-      } else if (Number(targetSplit.userId) === currentUserId) {
-        standing[payer] = (standing[payer] || 0) + amount
-      }
-      return
-    }
-
-    ex.splitDetails.forEach((p) => {
-      const uid = Number(p.userId)
-      const amt = Number(p.amount)
-
-      if (payer === currentUserId) {
-        // Current user paid → others owe current user
-        if (uid !== currentUserId) {
-          standing[uid] = (standing[uid] || 0) + amt
-        }
-      } else {
-        // Someone else paid → current user owes payer
-        if (uid === currentUserId) {
-          standing[payer] = (standing[payer] || 0) - amt
-        }
-      }
-    })
-  })
-
-  return Object.entries(standing).map(([uid, balance]) => ({
-    userId: Number(uid),
-    balance,
-  }))
 }
 
 export default function GroupView() {
@@ -110,75 +62,21 @@ export default function GroupView() {
       console.log('Fetched group details:', data)
 
       /* ---------------------- GROUP INFO ---------------------- */
-      const g = data.group || {}
-      setGroup({
-        id: g.groupId,
-        name: g.name || g.groupName || '',
-        avatar: g.photo || g.ProfilePicture || g.profilePicture || '',
-        type: g.type || '',
-      })
-
-      const p = data.participants || []
-      setParticipants(p)
+      setGroup(data.group || {})
+      setParticipants(data.participants || [])
 
       /* ---------------------- EXPENSES ------------------------ */
-      const normalizedExpenses = (data.expenses || []).map((e) => {
-        const payer = Number(e.payerId)
-        const splits = e.splitDetails || []
-        const me = Number(userId)
-        const isSettleUp = !!e.isSettleUp
+      setExpenses(data.expenses || [])
 
-        let userAmount = 0
-
-        if (isSettleUp) {
-          userAmount = formatCurrency(e.amount || e.totalAmount || 0)
-        } else if (payer === me) {
-          // I paid → others owe me
-          userAmount = formatCurrency(
-            splits
-              .filter((p) => Number(p.userId) !== me)
-              .reduce((sum, p) => sum + Number(p.amount), 0)
-          )
-        } else {
-          // Another user paid → I owe them
-          const mySplit = splits.find((p) => Number(p.userId) === me)
-          userAmount = formatCurrency(mySplit ? Number(mySplit.amount) : 0)
-        }
-
-        return {
-          id: e.expenseId,
-          title: e.title || e.expenseTitle || '',
-          date: formatDate(e.date || e.expenseDate),
-          payerId: payer,
-          paidBy: e.paidBy || '',
-          expenseType: e.expenseType || '',
-          totalAmount: Number(e.totalAmount || 0),
-          splitDetails: splits,
-          userAmount,
-          type: isSettleUp ? 'settle' : payer === me ? 'lent' : 'owe', // for ExpenseItemCard styling
-          isSettleUp,
-          settlementMethod: e.settlementMethod || null,
-          subtitle: isSettleUp ? getSettlementMethodLabel(e.paymentId) : e.expenseType || '',
-        }
-      })
-      console.log('normalizedExpenses: ', normalizedExpenses)
-      setExpenses(normalizedExpenses)
-
-      /* ------------------ MEMBER STANDING --------------------- */
-      const standingList = computeMemberStanding(normalizedExpenses, Number(userId))
-
-      // Fetch member names from splitDetails (guaranteed present)
-      const memberNames = {}
-      normalizedExpenses.forEach((ex) => {
-        ex.splitDetails.forEach((p) => {
-          memberNames[p.userId] = p.name || ''
-        })
-      })
-
-      const finalStanding = standingList.map((m) => ({
-        ...m,
-        name: memberNames[m.userId] || 'User',
-      }))
+      /* ------------------ MEMBER STANDING (from participants) --------------------- */
+      const me = Number(userId)
+      const finalStanding = (data.participants || [])
+        .filter((p) => Number(p.userId) !== me)
+        .map((p) => ({
+          userId: p.userId,
+          name: p.name,
+          balance: Number(p.userBalance) || 0,
+        }))
 
       console.log('Computed member standing:', finalStanding)
 
@@ -206,7 +104,6 @@ export default function GroupView() {
           color: 'text-gray-500',
         })
       }
-      console.log('Computed overall standing:', net)
     } catch (err) {
       console.error(err)
       setMessage('Failed to fetch group details.')
@@ -228,7 +125,7 @@ export default function GroupView() {
       maxAmount: owed,
       suggestedAmount: owed,
       shareWithId: groupIdNumber,
-      shareWithName: group.name,
+      shareWithName: group.groupName,
       shareWithType: 'group',
       settlementTargetId: member.userId,
     })
@@ -255,7 +152,7 @@ export default function GroupView() {
         currentUserId: userId,
         method: 'manual',
       })
-      await api.post('/expenses', payload)
+      await api.post('/expenses/shared', payload)
       showSuccess('Settlement logged successfully!', { asSnackbar: true })
       setShowSettleModal(false)
       loadGroup()
@@ -279,7 +176,7 @@ export default function GroupView() {
     navigate('/settle/stripe-checkout', {
       state: {
         payload,
-        summary: { targetName: settleContext.targetName, shareLabel: group?.name },
+        summary: { targetName: settleContext.targetName, shareLabel: group?.groupName },
         returnTo: `/groups/${id}`,
       },
     })
@@ -340,15 +237,15 @@ export default function GroupView() {
             {/* Avatar + Name row */}
             <div className='flex flex-row items-start gap-4'>
               <div className='relative shrink-0'>
-                {group.avatar ? (
+                {group.profilePicture ? (
                   <img
-                    src={group.avatar}
-                    alt={`${group.name} group avatar`}
+                    src={group.profilePicture}
+                    alt={`${group.groupName} group avatar`}
                     className='w-25 h-25 sm:w-25 sm:h-25 rounded-2xl object-cover ring-2 ring-white dark:ring-gray-700 shadow-md'
                   />
                 ) : (
                   <div className='w-25 h-25 sm:w-25 sm:h-25 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-md'>
-                    {group.name?.slice(0, 2).toUpperCase() || 'GR'}
+                    {group.groupName?.slice(0, 2).toUpperCase() || 'GR'}
                   </div>
                 )}
               </div>
@@ -358,7 +255,7 @@ export default function GroupView() {
                   id="group-name-heading"
                   className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate'
                 >
-                  {group.name}
+                  {group.groupName}
                 </h2>
 
                 {overallStanding && (
@@ -474,26 +371,33 @@ export default function GroupView() {
           role="list"
           aria-label="Expense list"
         >
-          {expenses.map((ex) => (
-            <div key={ex.id} role="listitem">
-              <ExpenseItemCard
-                date={ex.date}
-                title={ex.title}
-                subtitle={ex.subtitle || ex.expenseType}
-                amount={ex.userAmount}
-                type={ex.type}
-                highlight={ex.isSettleUp}
-                onClick={() =>
-                  navigate(
-                    ex.isSettleUp ? `/groups/${id}/settlements/${ex.id}` : `/groups/${id}/expenses/${ex.id}`,
-                    {
-                      state: { ...ex, from: 'group' },
-                    }
-                  )
-                }
-              />
-            </div>
-          ))}
+          {expenses.map((ex) => {
+            const displayAmount = ex.isSettleUp
+              ? Number(ex.amount) || 0
+              : (ex.splitDetails?.find((s) => Number(s.userId) === Number(userId))?.amount ?? 0)
+            const cardType = ex.isSettleUp ? 'settle' : ex.type
+            const subtitle = ex.isSettleUp ? getSettlementMethodLabel(ex.paymentId) : ex.expenseType
+            return (
+              <div key={ex.expenseId} role="listitem">
+                <ExpenseItemCard
+                  date={formatDate(ex.expenseDate)}
+                  title={ex.expenseTitle}
+                  subtitle={subtitle}
+                  amount={Number(displayAmount).toFixed(2)}
+                  type={cardType}
+                  highlight={ex.isSettleUp}
+                  onClick={() =>
+                    navigate(
+                      ex.isSettleUp ? `/groups/${id}/settlements/${ex.expenseId}` : `/groups/${id}/expenses/${ex.expenseId}`,
+                      {
+                        state: { ...ex, from: 'group' },
+                      }
+                    )
+                  }
+                />
+              </div>
+            )
+          })}
           {expenses.length === 0 && (
             <p 
               className='text-gray-500 dark:text-gray-400 text-center py-8'

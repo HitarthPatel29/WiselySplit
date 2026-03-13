@@ -22,7 +22,6 @@ import EditGroup from './pages/group/EditGroup.jsx'
 import PersonalSummary from './pages/PersonalSummary.jsx'
 import PersonalExpense from './pages/PersonalExpense.jsx'
 import StripeSettleUp from './pages/settle/StripeSettleUp.jsx'
-import SettlementDetails from './pages/settle/SettlementDetails.jsx'
 import StripeConnectSetup from './pages/stripe/StripeConnectSetup.jsx'
 
 function PrivateRoute({ children }) {
@@ -162,7 +161,7 @@ export default function App() {
         path="/groups/:id/settlements/:expenseId"
         element={
           <PrivateRoute>
-            <SettlementDetails />
+            <ExpenseDetails />
           </PrivateRoute>
         }
       />
@@ -226,7 +225,7 @@ export default function App() {
         path="/friends/:id/settlements/:expenseId"
         element={
           <PrivateRoute>
-            <SettlementDetails />
+            <ExpenseDetails />
           </PrivateRoute>
         }
       />
@@ -255,6 +254,14 @@ export default function App() {
         }
       />
       <Route
+        path="/personalExpense/add"
+        element={
+          <PrivateRoute>
+            <AddExpense />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/personalSummary/expenses/:expenseId"
         element={
           <PrivateRoute>
@@ -266,7 +273,7 @@ export default function App() {
         path="/personalSummary/settlements/:expenseId"
         element={
           <PrivateRoute>
-            <SettlementDetails />
+            <ExpenseDetails />
           </PrivateRoute>
         }
       />

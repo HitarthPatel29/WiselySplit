@@ -13,7 +13,7 @@ export default function EditExpense() {
   const navigate = useNavigate()
   const location = useLocation()
   const { id, expenseId } = useParams() // id = friendId or groupId
-  const { userId, friendsAndGroups } = useAuth()
+  const { userId, friendsAndGroups, wallets = [] } = useAuth()
   const { showSuccess, showError } = useNotification()
   const [expense, setExpense] = useState(location.state || null)
   const [loading, setLoading] = useState(!location.state)
@@ -40,16 +40,15 @@ export default function EditExpense() {
     fetchExpense()
   }, [expenseId, id, userId])
 
-  const handleUpdate = async (payload) => {
+  const handleUpdate = async (payload, _mode) => {
     try {
       setSaving(true)
-      console.log('payload:', payload)
-
-      const res = await api.put(`/expenses/${expenseId}`, payload)
+      await api.put(`/expenses/${expenseId}`, payload)
       showSuccess('Expense updated successfully!', { asSnackbar: true })
 
       if (payload.shareWithType === 'group') navigate(`/groups/${payload.shareWithId}`)
-      else navigate(`/friends/${payload.shareWithId}`)
+      else if (payload.shareWithId != null) navigate(`/friends/${payload.shareWithId}`)
+      else navigate(-1)
     } catch (err) {
       console.error('❌ Failed to save expense:', err)
       showError(err.response?.data?.error || 'Failed to save expense.', { asSnackbar: true })
@@ -67,11 +66,14 @@ export default function EditExpense() {
 
       <main className='max-w-2xl mx-auto px-4 py-10'>
         <ExpenseForm
-          mode='edit'
+          mode="edit"
           initialData={expense}
           onSubmit={handleUpdate}
           currentUserId={userId}
           friendsAndGroups={friendsAndGroups}
+          wallets={wallets}
+          defaultMode={expense?.shareWithType != null ? 'shared' : 'personal'}
+          entryContext={expense?.shareWithType != null ? 'shared' : 'personal'}
         />
         {saving && (
           <p className='mt-3 text-sm text-gray-600 dark:text-gray-400 italic'>Saving changes...</p>

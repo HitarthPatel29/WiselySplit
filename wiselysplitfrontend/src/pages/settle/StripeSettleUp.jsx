@@ -177,7 +177,7 @@ export default function StripeSettleUp() {
         paymentId: typeof finalPaymentId === 'string' ? parseInt(finalPaymentId, 10) : finalPaymentId,
       }
 
-      await api.post('/expenses', expensePayload)
+      await api.post('/expenses/shared', expensePayload)
       showSuccess('Payment successful! Settlement recorded.', { asSnackbar: true })
       navigate(returnTo || '/dashboard', { replace: true })
     } catch (err) {

@@ -84,7 +84,7 @@ public class UserDAO {
 
     public List<Map<String, Object>> findFriendsForUser(int userId) {
         String sql = """
-            SELECT DISTINCT u.UserID, u.Name
+            SELECT DISTINCT u.UserID AS userId, u.Name AS name, u.ProfilePicture AS profilePicture
             FROM User u
             WHERE u.UserID IN (
                 SELECT DISTINCT ep.UserID
@@ -106,7 +106,7 @@ public class UserDAO {
     /** All groups user participates in */
     public List<Map<String, Object>> findGroupsForUser(int userId) {
         String sql = """
-            SELECT g.GroupID, g.GroupName
+            SELECT g.GroupID AS groupId, g.GroupName AS groupName, g.ProfilePicture AS profilePicture
             FROM ExpenseGroups g
             JOIN GroupParticipants gp ON gp.GroupID = g.GroupID
             WHERE gp.UserID = ?

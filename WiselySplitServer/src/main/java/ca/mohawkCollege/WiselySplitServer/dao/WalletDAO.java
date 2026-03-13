@@ -47,6 +47,16 @@ public class WalletDAO {
         return jdbcTemplate.queryForList(sql, userId);
     }
 
+    public Map<String, Object> getWalletId(String walletName){
+        String sql = """
+                SELECT
+                    w.WalletID AS walletId
+                FROM Wallets w
+                WHERE w.Name = ?
+            """;
+        return jdbcTemplate.queryForMap(sql, walletName);
+    }
+
     public void updateWallet(int userId, int walletId, String walletName, double walletBalance, String walletType, String walletColor) {
         String sql = "UPDATE Wallets SET Name=?, Balance=?, Type=?, Color=? WHERE WalletID=? AND UserID=?";
         jdbcTemplate.update(sql, walletName, walletBalance, walletType, walletColor, walletId, userId);

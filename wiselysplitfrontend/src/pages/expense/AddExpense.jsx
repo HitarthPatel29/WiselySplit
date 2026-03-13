@@ -1,9 +1,8 @@
 // src/pages/Expense/AddExpense.jsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import BackButton from '../../components/IO/BackButton.jsx'
 import ExpenseForm from '../../components/form/ExpenseForm'
-import { createNewExpense, validateExpense, normalizeExpenseForAPI } from '../../utils/expenseModel'
+import { createNewExpense } from '../../utils/expenseModel'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
 import Header from '../../components/Header.jsx'
@@ -12,22 +11,21 @@ import { useNotification } from '../../context/NotificationContext'
 export default function AddExpense() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { userId, friendsAndGroups, setFriendsAndGroups, fetchConnections } = useAuth()
+  const { userId, friendsAndGroups, fetchConnections, wallets = [], fetchWallets } = useAuth()
   const { showSuccess, showError, showAlert } = useNotification()
   const [saving, setSaving] = useState(false)
   const [expense, setExpense] = useState(null)
 
-  // Fetch updated friends and groups when component mounts
   useEffect(() => {
     if (userId) {
       fetchConnections()
+      fetchWallets()
     }
-  }, [userId, fetchConnections])
+  }, [userId, fetchConnections, fetchWallets])
 
-  // Initialize default expense object
   useEffect(() => {
     if (friendsAndGroups.length > 0) {
-      const current = friendsAndGroups.find((f) => f.id === parseInt(id)) || friendsAndGroups[0]
+      const current = friendsAndGroups.find((f) => f.id === parseInt(id, 10)) || friendsAndGroups[0]
       setExpense(
         createNewExpense(
           current.id,
@@ -37,8 +35,7 @@ export default function AddExpense() {
           userId
         )
       )
-    }
-    else {
+    } else {
       showAlert({
         title: 'No Friends or Groups found',
         message: 'No Friends or Groups found to Share Expense.',
@@ -48,22 +45,23 @@ export default function AddExpense() {
         onConfirm: () => navigate(-1),
       })
     }
-    console.log('AddExpense: userID:', userId)
-  }, [friendsAndGroups, id, userId])
+  }, [friendsAndGroups, id, userId, showAlert, navigate])
 
-
-  const handleSave = async (payload) => {
+  const handleSave = async (payload, mode) => {
     try {
       setSaving(true)
-      console.log('payload:', payload)
-
-      const res = await api.post('/expenses', payload)
+      if (mode === 'personal') {
+        await api.post('/expenses/personal', payload)
+        showSuccess('Personal expense added successfully!', { asSnackbar: true })
+        navigate('/personalExpense')
+        return
+      }
+      await api.post('/expenses/shared', payload)
       showSuccess('Expense added successfully!', { asSnackbar: true })
-
       if (payload.shareWithType === 'group') navigate(`/groups/${payload.shareWithId}`)
       else navigate(`/friends/${payload.shareWithId}`)
     } catch (err) {
-      console.error('❌ Failed to save expense:', err)
+      console.error('Failed to save expense:', err)
       showError(err.response?.data?.error || 'Failed to save expense.', { asSnackbar: true })
     } finally {
       setSaving(false)
@@ -94,15 +92,18 @@ export default function AddExpense() {
       <Header title='Add Expense' />
       <main 
         id="main-content"
-        className='max-w-2xl mx-auto px-4 py-10'
+        className='max-w-2xl mx-auto px-4 py-4'
         role="main"
       >
         <ExpenseForm
-          mode='create'
+          mode="create"
           initialData={expense}
           onSubmit={handleSave}
           currentUserId={userId}
           friendsAndGroups={friendsAndGroups}
+          wallets={wallets}
+          defaultMode="shared"
+          entryContext="shared"
         />
         {saving && (
           <div 

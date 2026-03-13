@@ -2,7 +2,13 @@ package ca.mohawkCollege.WiselySplitServer.controller;
 
 import ca.mohawkCollege.WiselySplitServer.service.ExpensesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
@@ -12,6 +18,8 @@ public class ExpensesController {
 
     @Autowired
     private ExpensesService expensesService;
+    @Autowired
+    private AuthenticationManager authManager;
 
     /**  CREATE Shared Expense (Friend or group) */
     @PostMapping("/shared")
@@ -38,6 +46,38 @@ public class ExpensesController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
+
+    /**  CREATE Personal Expense for Automation */
+    @PostMapping("/personal/Automation")
+    public ResponseEntity<?> createPersonalExpenseWithAutomation(@RequestBody Map<String, Object> payload) {
+        try {
+            String email = (String) payload.get("userEmail");
+            String password = (String) payload.get("Password");
+
+            if (email == null || password == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Email and password are required"));
+            }
+
+            try {
+                Authentication auth = authManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(email, password));
+                UserDetails principal = (UserDetails) auth.getPrincipal();
+
+                Map<String, Object> result = expensesService.createPersonalExpenseWithAutomation(payload, email);
+                return ResponseEntity.ok(result);
+
+            } catch (BadCredentialsException e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid credentials"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
 
     /** CREATE Payment (returns PaymentID) */
     @PostMapping("/payments")
