@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users/check-username").permitAll() // username availability check
                         .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll() // email availability check
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll() // Stripe webhook
+                        .requestMatchers(HttpMethod.POST, "/api/expenses/personal/automation").permitAll() // Expenses Entry Automation API
                         .anyRequest().authenticated()                  // everything else needs JWT
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

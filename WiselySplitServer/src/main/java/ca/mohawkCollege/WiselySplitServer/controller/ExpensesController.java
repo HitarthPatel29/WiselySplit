@@ -48,7 +48,7 @@ public class ExpensesController {
     }
 
     /**  CREATE Personal Expense for Automation */
-    @PostMapping("/personal/Automation")
+    @PostMapping("/personal/automation")
     public ResponseEntity<?> createPersonalExpenseWithAutomation(@RequestBody Map<String, Object> payload) {
         try {
             String email = (String) payload.get("userEmail");

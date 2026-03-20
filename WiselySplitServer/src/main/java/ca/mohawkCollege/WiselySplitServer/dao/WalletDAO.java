@@ -47,14 +47,14 @@ public class WalletDAO {
         return jdbcTemplate.queryForList(sql, userId);
     }
 
-    public Map<String, Object> getWalletId(String walletName){
+    public Map<String, Object> getWalletId(String walletName, int userId){
         String sql = """
                 SELECT
                     w.WalletID AS walletId
                 FROM Wallets w
-                WHERE w.Name = ?
+                WHERE w.Name = ? AND w.UserID = ?
             """;
-        return jdbcTemplate.queryForMap(sql, walletName);
+        return jdbcTemplate.queryForMap(sql, walletName, userId);
     }
 
     public void updateWallet(int userId, int walletId, String walletName, double walletBalance, String walletType, String walletColor) {

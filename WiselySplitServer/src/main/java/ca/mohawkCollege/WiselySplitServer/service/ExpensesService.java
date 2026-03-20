@@ -81,17 +81,38 @@ public class ExpensesService {
         }
     }
     @Transactional
-    public Map<String, Object> createPersonalExpenseWithAutomation(Map<String, Object> payload, String email) {
+    public Map<String, Object> createPersonalExpenseWithAutomation(Map<String, Object> payload, String userEmail) {
         try {
             String title = (String) payload.get("transactionTitle");
             String date = (String) payload.get("transactionDate");
             String type = (String) payload.get("name");
-            String walletName = (String) payload.get("CardName");
+            String walletName = (String) payload.get("cardName");
             double amount = ((Number) payload.get("amount")).doubleValue();
 
-            int walletId = ((Number) walletDAO.getWalletId(walletName).get("walletId")).intValue();
-            Optional<User> user = userDAO.findByEmail(email);
-            int userId = user.get().getUserId();
+            System.out.println(title);
+            System.out.println(date);
+            System.out.println(type);
+            System.out.println(walletName);
+            System.out.println(amount);
+
+            int userId = -1;
+            try {
+                Optional<User> user = userDAO.findByEmail(userEmail);
+                userId = user.get().getUserId();
+            }catch(Exception e){
+                System.out.println(e.getMessage());
+            }finally {
+                System.out.println("userId: " + userId);
+            }
+
+            int walletId = -1;
+            try {
+                walletId = ((Number) walletDAO.getWalletId(walletName, userId).get("walletId")).intValue();
+            }catch (Exception e){
+                System.out.println(e.getMessage());
+            }finally {
+                System.out.println("walletId: " + walletId);
+            }
 
             // Insert into Expenses table
             int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId);
