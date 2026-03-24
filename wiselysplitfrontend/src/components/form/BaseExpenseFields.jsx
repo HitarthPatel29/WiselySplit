@@ -26,7 +26,6 @@ export default function BaseExpenseFields({ expense, onChange, errors = {} }) {
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden shadow-sm">
-
       <div className="p-4 flex flex-col gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

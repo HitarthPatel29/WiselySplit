@@ -1,26 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/solid'
+import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
 import InputField from '../IO/InputField'
 import { WALLET_COLORS } from '../../constants/walletColors'
 
 export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, onEdit }) {
   const modalRef = useRef(null)
   const isEdit = !!editWallet
+  const [showCardNameTooltip, setShowCardNameTooltip] = useState(false)
   const [walletName, setWalletName] = useState('')
-  const [walletType, setWalletType] = useState('')
+  const [cardName, setCardName] = useState('')
   const [walletBalance, setWalletBalance] = useState('')
   const [walletColor, setWalletColor] = useState('emerald')
 
   useEffect(() => {
     if (isOpen) {
       if (editWallet) {
-        setWalletName(editWallet.walletName ?? editWallet.name ?? '')
-        setWalletType(editWallet.walletType ?? editWallet.type ?? '')
+        setWalletName(editWallet.walletName ?? '')
+        setCardName(editWallet.cardName ?? '')
         setWalletBalance(String(editWallet.walletBalance ?? editWallet.balance ?? ''))
         setWalletColor(editWallet.walletColor ?? editWallet.color ?? 'emerald')
       } else {
         setWalletName('')
-        setWalletType('')
+        setCardName('')
         setWalletBalance('')
         setWalletColor('emerald')
       }
@@ -56,7 +57,7 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
     if (!walletName.trim()) return
     const data = {
       walletName: walletName.trim(),
-      walletType: walletType.trim(),
+      cardName: cardName.trim(),
       walletBalance: isNaN(walletBalanceNum) ? 0 : walletBalanceNum,
       walletColor: walletColor
     }
@@ -110,12 +111,32 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
         />
 
         <InputField
-          label="Wallet Type"
+          label={
+            <span className="inline-flex items-center gap-1">
+              Card Name <span className="text-xs font-normal text-gray-400">(for Apple Automation)</span>
+              <span className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowCardNameTooltip((v) => !v)}
+                  onBlur={() => setShowCardNameTooltip(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+                  aria-label="Card name info"
+                >
+                  <InformationCircleIcon className="w-5 h-5" />
+                </button>
+                {showCardNameTooltip && (
+                  <span className="absolute left-1/2 -translate-x-1/2 top-6 z-50 w-64 rounded-lg bg-gray-900 dark:bg-gray-700 text-white text-xs font-normal p-3 shadow-lg leading-relaxed">
+                    The Card Name is used for Apple Automation. Check the Card Name from your Apple Automation App and enter the exact text.
+                  </span>
+                )}
+              </span>
+            </span>
+          }
           type="text"
-          value={walletType}
-          onChange={(e) => setWalletType(e.target.value)}
-          placeholder="e.g. Bank, Card, Cash"
-          id="wallet-type"
+          value={cardName}
+          onChange={(e) => setCardName(e.target.value)}
+          placeholder="e.g. Royal Bank Cashback Master Card"
+          id="card-name"
         />
 
         <InputField

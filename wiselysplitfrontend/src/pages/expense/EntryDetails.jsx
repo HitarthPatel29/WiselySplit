@@ -1,4 +1,4 @@
-// src/pages/expense/ExpenseDetails.jsx
+// src/pages/expense/EntryDetails.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import api from '../../api'
@@ -22,9 +22,9 @@ const formatFullDate = (raw) => {
   }
 }
 
-export default function ExpenseDetails() {
+export default function EntryDetails() {
   const { id, expenseId } = useParams()
-  const { userId, friendsAndGroups } = useAuth()
+  const { userId, friendsAndGroups, wallets = [] } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { showSuccess, showError, showAlert } = useNotification()
@@ -36,13 +36,16 @@ export default function ExpenseDetails() {
   const [modalContext, setModalContext] = useState(null)
   const [modalLoading, setModalLoading] = useState(false)
 
-  // Type classification
+  const entryKind = expense?.entryKind || 'expense'
   const isSettlement = expense?.isSettleUp === true
-  const isPersonal = expense?.isPersonal === true && !expense?.isSettleUp
-  const isShared = !expense?.isPersonal && !expense?.isSettleUp
+  const isIncome = entryKind === 'income' && !isSettlement
+  const isTransfer = entryKind === 'transfer' && !isSettlement
+  const isPersonal = entryKind === 'expense' && expense?.isPersonal === true && !isSettlement
+  const isShared = entryKind === 'expense' && !expense?.isPersonal && !isSettlement
 
-  // Full details: for personal we only need basic fields; for shared/settlement we need splitDetails + payer
   const hasFullDetails = expense && (
+    (isIncome && expense.title != null) ||
+    (isTransfer && expense.title != null) ||
     (expense.isPersonal && expense.title != null) ||
     (expense.splitDetails?.length > 0 && expense.payer != null) ||
     (expense.isSettleUp && expense.splitDetails?.length > 0 && expense.payer != null)
@@ -55,7 +58,15 @@ export default function ExpenseDetails() {
       setLoading(true)
       setError('')
       try {
-        const res = await api.get(`/expenses/${expenseId}`)
+        let res
+        if (entryKind === 'income') {
+          res = await api.get(`/income/${expenseId}`)
+        } else if (entryKind === 'transfer') {
+          res = await api.get(`/transfer/${expenseId}`)
+        } else {
+          res = await api.get(`/expenses/${expenseId}`)
+        }
+        console.log(res)
         if (ignore) return
         const data = res.data || {}
         const normalized = normalizeExpenseForFields(data, userId, friendsAndGroups)
@@ -71,7 +82,19 @@ export default function ExpenseDetails() {
     return () => { ignore = true }
   }, [expenseId, userId, friendsAndGroups])
 
-  // Settlement: payer/receiver labels (Who paid whom)
+  const walletNameLookup = useMemo(() => {
+    const map = {}
+    for (const w of wallets) {
+      const wId = w.walletId ?? w.id
+      map[wId] = w.walletName ?? w.name ?? `Wallet ${wId}`
+    }
+    return map
+  }, [wallets])
+
+  const fromWalletName = expense?.walletId ? (walletNameLookup[expense.walletId] || expense.walletName || 'Unknown') : null
+  const toWalletName = expense?.toWalletId ? (walletNameLookup[expense.toWalletId] || 'Unknown') : null
+
+  // Settlement: payer/receiver labels
   const { payerLabel, receiverLabel, receiverId, receiverName } = useMemo(() => {
     if (!expense || !isSettlement) {
       return { payerLabel: 'Payer', receiverLabel: 'Recipient', receiverId: null, receiverName: 'Recipient' }
@@ -192,13 +215,16 @@ export default function ExpenseDetails() {
     setShowEditModal(true)
   }
 
+  const entryLabel =
+    isIncome ? 'Income'
+    : isTransfer ? 'Transfer'
+    : isSettlement ? 'Settlement'
+    : 'Expense'
+
   const handleDelete = async () => {
-    const isSettlementDelete = isSettlement
     const confirmed = await showAlert({
-      title: isSettlementDelete ? 'Delete Settlement' : 'Delete Expense',
-      message: isSettlementDelete
-        ? 'Are you sure you want to delete this settlement?'
-        : 'Are you sure you want to delete this expense?',
+      title: `Delete ${entryLabel}`,
+      message: `Are you sure you want to delete this ${entryLabel.toLowerCase()}?`,
       type: 'warning',
       showCancel: true,
       confirmText: 'Delete',
@@ -209,7 +235,7 @@ export default function ExpenseDetails() {
 
     try {
       await api.delete(`/expenses/${expenseId}`)
-      showSuccess(isSettlementDelete ? 'Settlement deleted' : 'Expense deleted', { asSnackbar: true })
+      showSuccess(`${entryLabel} deleted`, { asSnackbar: true })
       if (from === 'personalSummary' || from === 'personalExpense') {
         navigate(-1)
       } else if (from === 'group') {
@@ -259,21 +285,118 @@ export default function ExpenseDetails() {
         <Header title="" />
         <main className="flex-1 flex items-center justify-center px-4">
           <p className="text-center text-gray-500 dark:text-gray-400 text-lg">
-            {isSettlement ? 'Settlement' : 'Expense'} not found.
+            {entryLabel} not found.
           </p>
         </main>
       </div>
     )
   }
 
-  const headerTitle = isSettlement ? 'Settlement Details' : 'Expense Details'
+  const headerTitle =
+    isIncome ? 'Income Details'
+    : isTransfer ? 'Transfer Details'
+    : isSettlement ? 'Settlement Details'
+    : 'Expense Details'
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header title={headerTitle} />
 
       <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
-        {/* ——— Personal: warm, single-owner feel ——— */}
+        {/* ——— Income: green accent ——— */}
+        {isIncome && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-6 sm:p-8">
+              <span className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                Income
+              </span>
+              <h1 className="mt-1 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                {expense.title}
+              </h1>
+              <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">
+                {[expense.type || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
+              </p>
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Amount</p>
+                  <p className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    +${formatCurrency(expense.totalAmount)}
+                  </p>
+                </div>
+                {fromWalletName && (
+                  <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Wallet</p>
+                    <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100 font-medium">{fromWalletName}</p>
+                  </div>
+                )}
+              </div>
+              <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={navigateToEdit}
+                  className="flex-1 bg-emerald-600 dark:bg-emerald-500 text-white font-semibold rounded-xl py-3 hover:bg-emerald-700 dark:hover:bg-emerald-600 transition"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl py-3 hover:border-red-300 hover:text-red-600 dark:hover:border-red-800 dark:hover:text-red-400 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ——— Transfer: amber accent with flow visual ——— */}
+        {isTransfer && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-6 sm:p-8">
+              <span className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                Transfer
+              </span>
+              <h1 className="mt-1 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                {expense.title}
+              </h1>
+              <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">
+                {formatFullDate(expense.date) || expense.date}
+              </p>
+
+              <div className="mt-8 rounded-2xl bg-gray-50 dark:bg-gray-700/50 p-6 border border-gray-100 dark:border-gray-700">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                  <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
+                    {fromWalletName || 'Source'}
+                  </span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium">&rarr;</span>
+                  <span className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                    ${formatCurrency(expense.totalAmount)}
+                  </span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium">&rarr;</span>
+                  <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
+                    {toWalletName || 'Destination'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={navigateToEdit}
+                  className="flex-1 bg-amber-500 dark:bg-amber-500 text-white font-semibold rounded-xl py-3 hover:bg-amber-600 dark:hover:bg-amber-600 transition"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl py-3 hover:border-red-300 hover:text-red-600 dark:hover:border-red-800 dark:hover:text-red-400 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ——— Personal expense: warm, single-owner feel ——— */}
         {isPersonal && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
             <div className="p-6 sm:p-8">
@@ -286,19 +409,19 @@ export default function ExpenseDetails() {
               <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">
                 {formatFullDate(expense.date) || expense.date}
               </p>
-              <div className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
-                <div>
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {fromWalletName && (
+                    <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Wallet</p>
+                      <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100 font-semibold">{fromWalletName}</p>
+                    </div>
+                )}
+                <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Amount</p>
-                  <p className="mt-0.5 text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
-                    ${formatCurrency(expense.amount)}
+                  <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                    ${formatCurrency(expense.totalAmount)}
                   </p>
                 </div>
-                {expense.walletName != null && expense.walletName !== '' && (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Wallet</p>
-                    <p className="mt-0.5 text-gray-900 dark:text-gray-100 font-medium">{expense.walletName}</p>
-                  </div>
-                )}
               </div>
               <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
                 <button
@@ -334,7 +457,7 @@ export default function ExpenseDetails() {
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Paid by</p>
-                  <p className="mt-1 text-gray-900 dark:text-gray-100 font-semibold">{expense.payer}</p>
+                  <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100 font-semibold">{expense.payer}</p>
                 </div>
                 <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Amount</p>
@@ -407,7 +530,6 @@ export default function ExpenseDetails() {
                 {[expense.type || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
               </p>
 
-              {/* Who paid whom: visual flow */}
               <div className="mt-8 rounded-2xl bg-gray-50 dark:bg-gray-700/50 p-6 border border-gray-100 dark:border-gray-700">
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
                   Who paid whom

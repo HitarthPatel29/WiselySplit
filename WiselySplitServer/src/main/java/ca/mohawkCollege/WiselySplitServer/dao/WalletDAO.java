@@ -39,7 +39,7 @@ public class WalletDAO {
                 w.WalletID AS walletId,
                 w.Name AS walletName,
                 w.Balance AS walletBalance,
-                w.Type AS walletType,
+                w.CardName AS cardName,
                 w.Color AS walletColor
             FROM Wallets w
             WHERE w.UserID = ?
@@ -52,7 +52,7 @@ public class WalletDAO {
                 SELECT
                     w.WalletID AS walletId
                 FROM Wallets w
-                WHERE w.Name = ? AND w.UserID = ?
+                WHERE w.CardName = ? AND w.UserID = ?
             """;
         return jdbcTemplate.queryForMap(sql, walletName, userId);
     }

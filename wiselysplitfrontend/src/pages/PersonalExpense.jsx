@@ -114,13 +114,18 @@ export default function PersonalExpense() {
     }
     if (categoryFilter.length > 0) {
       list = list.filter((e) => {
-        const isPersonalExpense = e.isPersonal && !e.isSettleUp
+        const kind = e.entryKind || 'expense'
+        const isIncome = kind === 'income'
+        const isTransfer = kind === 'transfer'
+        const isPersonalExpense = e.isPersonal && !e.isSettleUp && !isIncome && !isTransfer
         const isSharedExpense = !e.isPersonal && !e.isSettleUp
         const isSettlement = !!e.isSettleUp
         return (
           (categoryFilter.includes('personal') && isPersonalExpense) ||
           (categoryFilter.includes('shared') && isSharedExpense) ||
-          (categoryFilter.includes('settlements') && isSettlement)
+          (categoryFilter.includes('settlements') && isSettlement) ||
+          (categoryFilter.includes('income') && isIncome) ||
+          (categoryFilter.includes('transfer') && isTransfer)
         )
       })
     }
@@ -308,6 +313,20 @@ export default function PersonalExpense() {
     }
   }
 
+  const computeNetBalance = (wallet) => {
+    const initial = wallet.walletBalance ?? wallet.balance ?? 0
+    let net = initial
+    for (const e of (wallet.expenses || [])) {
+      const amt = e.totalAmount ?? 0
+      if (e.type === 'income' || e.type === 'transfer_in') {
+        net += amt
+      } else {
+        net -= amt
+      }
+    }
+    return net
+  }
+
   const getWalletCardClasses = (wallet) => {
     const colorKey = wallet.walletColor || wallet.color
     if (colorKey && WALLET_COLOR_MAP[colorKey]) {
@@ -351,7 +370,7 @@ export default function PersonalExpense() {
               const translateX = offset * LAYER_SPACING + (isActive ? dragOffset : 0)
               const walletId = wallet.walletId ?? wallet.id
               const walletName = wallet.walletName ?? wallet.name
-              const walletBalance = wallet.walletBalance ?? wallet.balance ?? 0
+              const netBalance = computeNetBalance(wallet)
 
               return (
                 <div
@@ -419,7 +438,7 @@ export default function PersonalExpense() {
                       {walletName}
                     </p>
                     <p className="text-2xl font-bold tracking-tight text-white">
-                      ${Math.abs(walletBalance).toFixed(2)}
+                      ${Math.abs(netBalance).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -474,7 +493,7 @@ export default function PersonalExpense() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3 mb-4 flex-shrink-0">
             <input
               type="text"
-              placeholder="Search expenses..."
+              placeholder="Search entries..."
               className="w-full sm:flex-1 min-w-0 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -488,10 +507,10 @@ export default function PersonalExpense() {
                 <AdjustmentsHorizontalIcon className="w-5 h-5 text-emerald-700" />
               </button>
               <PrimaryButton
-                label="Add Expense"
+                label="Add Entry"
                 onClick={() => navigate('/personalExpense/add')}
                 className="flex-1 sm:flex-none whitespace-nowrap"
-                ariaLabel="Add a personal expense"
+                ariaLabel="Add a new entry"
               />
               <PrimaryButton
                 label="Add Wallet/Card"
@@ -504,21 +523,38 @@ export default function PersonalExpense() {
 
           <div className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-[120px] pb-8">
             {filteredExpenses.map((e) => {
-              const cardType = e.isSettleUp
-                ? 'settle'
-                : e.isPersonal
-                  ? 'personal'
-                  : (e.type === 'lent' || e.type === 'owe' ? e.type : 'lent')
-              const subtitle = e.isPersonal
-                ? `Type: ${e.expenseType ?? ''}`
-                : `Type: ${e.expenseType}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`
+              const entryKind = e.entryKind || 'expense'
+              let cardType
+              if (entryKind === 'income') cardType = 'income'
+              else if (entryKind === 'transfer' || e.type === 'transfer_in' || e.type === 'transfer_out') cardType = 'transfer'
+              else if (e.isSettleUp) cardType = 'settle'
+              else if (e.isPersonal) cardType = 'personal'
+              else cardType = 'group'
+
+              const userShare = cardType === 'group'
+                ? (e.splitDetails?.find(s => Number(s.userId) === Number(userId))?.amount ?? 0)
+                : 0
+              const lentAmount = cardType === 'group'
+                ? Math.abs((e.totalAmount ?? 0) - userShare)
+                : 0
+
+              let subtitle
+              if (entryKind === 'income') subtitle = `Income · ${e.expenseType ?? ''}`
+              else if (entryKind === 'transfer') subtitle = e.type === 'transfer_in' ? 'Transfer In' : 'Transfer Out'
+              else if (e.isPersonal) subtitle = `Type: ${e.expenseType ?? ''}`
+              else subtitle = `Type: ${e.expenseType}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`
+
               return (
                 <ExpenseItemCard
                   key={e.expenseId}
                   date={formatDate(e.date)}
                   title={e.title}
                   subtitle={subtitle}
-                  amount={Math.abs(e.totalAmount ?? e.netAmount ?? 0).toFixed(2)}
+                  amount={Math.abs(e.totalAmount ?? 0).toFixed(2)}
+                  lentAmount={cardType === 'group'
+                    ? lentAmount.toFixed(2)
+                    : undefined
+                  }
                   type={cardType}
                   highlight={e.isSettleUp || !!e.highlight}
                   onClick={() =>
@@ -534,7 +570,7 @@ export default function PersonalExpense() {
             })}
             {filteredExpenses.length === 0 && (
               <p className="text-center text-gray-500 dark:text-gray-400 py-8">
-                No expenses found for this wallet.
+                No entries found for this wallet.
               </p>
             )}
           </div>

@@ -10,9 +10,9 @@ import InviteUser from './pages/invite/InviteUser'
 import InviteNotifications from './pages/invite/InviteNotifications'
 import FriendsList from './pages/friend/FriendsList.jsx'
 import IndividualView from './pages/friend/IndividualView.jsx'
-import AddExpense from './pages/expense/AddExpense.jsx'
-import ExpenseDetails from './pages/expense/ExpenseDetails.jsx'
-import EditExpense from './pages/expense/EditExpense.jsx'
+import AddEntry from './pages/entry/AddEntry.jsx'
+import EntryDetails from './pages/expense/EntryDetails.jsx'
+import EditEntry from './pages/expense/EditEntry.jsx'
 import GroupsList from './pages/group/GroupsList.jsx'
 import EditProfile from './pages/EditProfile'
 import CreateGroup from './pages/group/CreateGroup.jsx'
@@ -145,7 +145,7 @@ export default function App() {
         path="/groups/:id/add-expense"
         element={
           <PrivateRoute>
-            <AddExpense />
+            <AddEntry />
           </PrivateRoute>
         }
       />
@@ -153,7 +153,7 @@ export default function App() {
         path="/groups/:id/expenses/:expenseId"
         element={
           <PrivateRoute>
-            <ExpenseDetails />
+            <EntryDetails />
           </PrivateRoute>
         }
       />
@@ -161,7 +161,7 @@ export default function App() {
         path="/groups/:id/settlements/:expenseId"
         element={
           <PrivateRoute>
-            <ExpenseDetails />
+            <EntryDetails />
           </PrivateRoute>
         }
       />
@@ -169,7 +169,7 @@ export default function App() {
         path="/groups/:id/expenses/:expenseId/edit"
         element={
           <PrivateRoute>
-            <EditExpense />
+            <EditEntry />
           </PrivateRoute>
         }
       />
@@ -209,7 +209,7 @@ export default function App() {
         path="/friends/:id/add-expense"
         element={
           <PrivateRoute>
-            <AddExpense />
+            <AddEntry />
           </PrivateRoute>
         }
       />
@@ -217,7 +217,7 @@ export default function App() {
         path="/friends/:id/expenses/:expenseId"
         element={
           <PrivateRoute>
-            <ExpenseDetails />
+            <EntryDetails />
           </PrivateRoute>
         }
       />
@@ -225,7 +225,7 @@ export default function App() {
         path="/friends/:id/settlements/:expenseId"
         element={
           <PrivateRoute>
-            <ExpenseDetails />
+            <EntryDetails />
           </PrivateRoute>
         }
       />
@@ -233,7 +233,7 @@ export default function App() {
         path="/friends/:id/expenses/:expenseId/edit"
         element={
           <PrivateRoute>
-            <EditExpense />
+            <EditEntry />
           </PrivateRoute>
         }
       />
@@ -257,7 +257,7 @@ export default function App() {
         path="/personalExpense/add"
         element={
           <PrivateRoute>
-            <AddExpense />
+            <AddEntry />
           </PrivateRoute>
         }
       />
@@ -265,7 +265,7 @@ export default function App() {
         path="/personalSummary/expenses/:expenseId"
         element={
           <PrivateRoute>
-            <ExpenseDetails />
+            <EntryDetails />
           </PrivateRoute>
         }
       />
@@ -273,7 +273,7 @@ export default function App() {
         path="/personalSummary/settlements/:expenseId"
         element={
           <PrivateRoute>
-            <ExpenseDetails />
+            <EntryDetails />
           </PrivateRoute>
         }
       />
@@ -281,7 +281,7 @@ export default function App() {
         path="/personalSummary/expenses/:expenseId/edit"
         element={
           <PrivateRoute>
-            <EditExpense />
+            <EditEntry />
           </PrivateRoute>
         }
       />

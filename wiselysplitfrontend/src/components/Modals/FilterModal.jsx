@@ -147,6 +147,8 @@ export default function FilterModal({
               { value: 'personal', label: 'Personal' },
               { value: 'shared', label: 'Shared' },
               { value: 'settlements', label: 'Settlements' },
+              { value: 'income', label: 'Income' },
+              { value: 'transfer', label: 'Transfers' },
             ].map(({ value, label }) => (
               <button
                 key={value}

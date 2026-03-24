@@ -18,8 +18,11 @@ export const defaultExpense = {
   splitDetails: [],        // Group split details [{ userId, name, amount, portion, include }] — shared only
   userId: null,            // For personal expenses
   walletId: null,          // Wallet to record expense against (shared when payer is user, required for personal if user has wallets)
+  toWalletId: null,        // Destination wallet for transfers — personal only
   paymentId: null,         // Optional payment reference — shared
   isSettleUp: false,       // Shared only
+  entryKind: 'expense',   // 'expense' | 'income' | 'transfer' — personal only
+
 }
 
 /**
@@ -60,12 +63,15 @@ export const createNewExpense = (shareWithId, shareWith, type = 'friend', member
 /**
  * Helper: Generate a new personal expense draft
  * @param {number} currentUserId - Logged-in user's ID
+ * @param {string} [entryKind='expense'] - 'expense' | 'income' | 'transfer'
  */
-export const createNewPersonalExpense = (currentUserId) => {
+export const createNewPersonalExpense = (currentUserId, entryKind = 'expense') => {
   return {
     ...defaultExpense,
     userId: currentUserId || null,
     walletId: null,
+    toWalletId: null,
+    entryKind,
     title: '',
     amount: 0,
     date: '',
@@ -91,7 +97,15 @@ export const validateExpense = (expense, currentUserId, billSplitApplied, mode =
   if (mode === 'personal') {
     if (!expense.userId) return 'User is required for personal expense.'
     if (Array.isArray(wallets) && wallets.length > 0 && (expense.walletId == null || expense.walletId === '')) {
-      return 'Please select a wallet for this personal expense.'
+      return 'Please select a wallet for this entry.'
+    }
+    if (expense.entryKind === 'transfer') {
+      if (expense.toWalletId == null || expense.toWalletId === '') {
+        return 'Please select a destination wallet for the transfer.'
+      }
+      if (String(expense.walletId) === String(expense.toWalletId)) {
+        return 'Source and destination wallets must be different.'
+      }
     }
     return null
   }
@@ -157,7 +171,9 @@ export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied,
       type: expense.type || '',
       userId: expense.userId ?? currentUserId,
       walletId: expense.walletId ?? null,
+      toWalletId: expense.entryKind === 'transfer' ? (expense.toWalletId ?? null) : null,
       isPersonal: true,
+      entryKind: expense.entryKind || 'expense',
     }
   }
 
@@ -216,6 +232,7 @@ export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied,
     isSettleUp: !!clean.isSettleUp,
     paymentId: clean.paymentId ?? null,
     walletId: clean.walletId ?? null,
+    isPersonal: clean.isPersonal ?? false,
   }
   return payload
 }
@@ -252,8 +269,10 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
     })),
     isSettleUp: !!data.isSettleUp,
     isPersonal: !!data.isPersonal,
-    // settlementMethod: data.settlementMethod || data.paymentMethod || null,
+    walletId: data.walletId ?? data.payerWalletId ?? null,
     paymentId: data.paymentId || data.stripePaymentId || null,
+    entryKind: data.entryKind || 'expense',
+    toWalletId: data.toWalletId ?? null,
   }
 
   //Fill missing group members in splitDetails

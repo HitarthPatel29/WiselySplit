@@ -70,12 +70,13 @@ public class ExpensesService {
             String type = (String) payload.get("type");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int userId = ((Number) payload.get("userId")).intValue();
-            Integer walletId = ((Number) payload.get("walletId")).intValue();
+            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
+            String entryKind = payload.get("entryKind") != null ? (String) payload.get("entryKind") : "expense";
+            Integer toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).intValue() : null;
 
-            // Insert into Expenses table
-            int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId);
+            int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, entryKind, toWalletId);
 
-            return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
+            return Map.of("success", true, "expenseId", expenseId, "message", "Personal entry created successfully");
         } catch (Exception e) {
             throw new RuntimeException("Error creating personal expense: " + e.getMessage());
         }
@@ -89,33 +90,12 @@ public class ExpensesService {
             String walletName = (String) payload.get("cardName");
             double amount = ((Number) payload.get("amount")).doubleValue();
 
-            System.out.println(title);
-            System.out.println(date);
-            System.out.println(type);
-            System.out.println(walletName);
-            System.out.println(amount);
+            Optional<User> user = userDAO.findByEmail(userEmail);
+            int userId = user.get().getUserId();
 
-            int userId = -1;
-            try {
-                Optional<User> user = userDAO.findByEmail(userEmail);
-                userId = user.get().getUserId();
-            }catch(Exception e){
-                System.out.println(e.getMessage());
-            }finally {
-                System.out.println("userId: " + userId);
-            }
+            int walletId = ((Number) walletDAO.getWalletId(walletName, userId).get("walletId")).intValue();
 
-            int walletId = -1;
-            try {
-                walletId = ((Number) walletDAO.getWalletId(walletName, userId).get("walletId")).intValue();
-            }catch (Exception e){
-                System.out.println(e.getMessage());
-            }finally {
-                System.out.println("walletId: " + walletId);
-            }
-
-            // Insert into Expenses table
-            int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId);
+            int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "expense", null);
 
             return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
         } catch (Exception e) {
@@ -203,7 +183,6 @@ public class ExpensesService {
     @Transactional
     public Map<String, Object> updateExpense(int expenseId, Map<String, Object> payload) {
         try {
-            // Parse data
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
             String type = (String) payload.get("type");
@@ -217,10 +196,11 @@ public class ExpensesService {
             }
 
             Boolean isPersonal = ((Boolean) payload.get("isPersonal")).booleanValue();
-            Integer walletId = ((Number) payload.get("walletId")).intValue();
+            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
+            String entryKind = payload.get("entryKind") != null ? (String) payload.get("entryKind") : "expense";
+            Integer toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).intValue() : null;
 
-            // Update Expense
-            expensesDAO.updateExpense(expenseId, title, date, type, amount, payerId, groupId, isPersonal, walletId );
+            expensesDAO.updateExpense(expenseId, title, date, type, amount, payerId, groupId, isPersonal, walletId, entryKind, toWalletId);
 
             if (!isPersonal) {
                 // Delete old participation and insert new ones
