@@ -39,10 +39,10 @@ public class WalletService {
         try{
             String walletName = (String) payload.get("walletName");
             double walletBalance = ((Number) payload.get("walletBalance")).doubleValue();
-            String walletType = (String) payload.get("walletType");
+            String cardName = (String) payload.get("cardName");
             String walletColor = (String) payload.get("walletColor");
 
-            walletDAO.updateWallet(userId, walletId, walletName, walletBalance, walletType, walletColor);
+            walletDAO.updateWallet(userId, walletId, walletName, walletBalance, cardName, walletColor);
 
             return Map.of("success", true, "walletId", walletId, "message", "Wallet updated successfully");
         } catch (Exception e) {

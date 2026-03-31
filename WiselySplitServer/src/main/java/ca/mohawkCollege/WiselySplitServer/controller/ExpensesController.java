@@ -52,7 +52,7 @@ public class ExpensesController {
     public ResponseEntity<?> createPersonalExpenseWithAutomation(@RequestBody Map<String, Object> payload) {
         try {
             String email = (String) payload.get("userEmail");
-            String password = (String) payload.get("Password");
+            String password = (String) payload.get("password");
 
             if (email == null || password == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)

@@ -57,9 +57,9 @@ public class WalletDAO {
         return jdbcTemplate.queryForMap(sql, walletName, userId);
     }
 
-    public void updateWallet(int userId, int walletId, String walletName, double walletBalance, String walletType, String walletColor) {
-        String sql = "UPDATE Wallets SET Name=?, Balance=?, Type=?, Color=? WHERE WalletID=? AND UserID=?";
-        jdbcTemplate.update(sql, walletName, walletBalance, walletType, walletColor, walletId, userId);
+    public void updateWallet(int userId, int walletId, String walletName, double walletBalance, String cardName, String walletColor) {
+        String sql = "UPDATE Wallets SET Name=?, Balance=?, CardName=?, Color=? WHERE WalletID=? AND UserID=?";
+        jdbcTemplate.update(sql, walletName, walletBalance, cardName, walletColor, walletId, userId);
     }
 
     public void deleteWallet(int userId, int walletId) {

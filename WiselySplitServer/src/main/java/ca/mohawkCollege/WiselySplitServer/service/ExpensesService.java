@@ -6,9 +6,12 @@ import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.WalletDAO;
 import ca.mohawkCollege.WiselySplitServer.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.web.util.ThrowableCauseExtractor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.management.RuntimeMBeanException;
+import java.awt.event.FocusEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -89,11 +92,14 @@ public class ExpensesService {
             String type = (String) payload.get("name");
             String walletName = (String) payload.get("cardName");
             double amount = ((Number) payload.get("amount")).doubleValue();
+            if (amount == 0) throw new IllegalArgumentException("Invalid Amount: " + amount);
 
             Optional<User> user = userDAO.findByEmail(userEmail);
-            int userId = user.get().getUserId();
+            int userId = (user.orElseThrow(()-> new RuntimeException("User not found")).getUserId());
 
-            int walletId = ((Number) walletDAO.getWalletId(walletName, userId).get("walletId")).intValue();
+            Map<String, Object> walletMap = walletDAO.getWalletId(walletName, userId);
+            if (walletMap.isEmpty()) throw new NullPointerException("Error finding wallet name: " + walletName);
+            int walletId = ((Number) walletMap.get("walletId")).intValue();
 
             int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "expense", null);
 
