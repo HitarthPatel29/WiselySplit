@@ -75,8 +75,8 @@ export default function GroupsList() {
           aria-live="polite"
           aria-label={`Overall balance: ${overallNet > 0 ? `you are owed $${Math.abs(overallNet)}` : overallNet < 0 ? `you owe $${Math.abs(overallNet)}` : 'you are settled up'}`}
           className={`
-            w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl p-5 shadow-sm border
-            transition-all duration-300
+            w-full max-w-3xl mx-auto relative overflow-hidden rounded-2xl p-5 shadow-sm border
+            transition-all duration-300 
             ${overallNet > 0
               ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border-emerald-200/60 dark:border-emerald-800/50'
               : overallNet < 0
@@ -110,7 +110,7 @@ export default function GroupsList() {
 
       {/* Search + Add Expense + Create Group */}
       <div className='flex justify-center w-full mb-6'>
-        <div className='flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full max-w-2xl px-4'>
+        <div className='flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full max-w-3xl px-4'>
 
           <label htmlFor="group-search" className="sr-only">Search groups</label>
           <input
@@ -144,12 +144,12 @@ export default function GroupsList() {
 
       {/* List */}
       <main className='flex justify-center' aria-label="Groups list">
-        <div className='w-full max-w-2xl px-4 space-y-3 pb-10' role="list">
+        <div className='w-full max-w-3xl px-4 space-y-3 pb-10' role="list">
           {filtered.map((g) => (
             <div key={g.groupId} role="listitem">
               <ListItemCard
                 avatar={g.ProfilePicture || g.profilePicture || g.avatar}
-                name={g.name}
+                name={g.groupName}
                 subtitle={ g.type || g.groupType || ''}
                 amount={g.amount || 0}
                 status={g.status || 'neutral'}

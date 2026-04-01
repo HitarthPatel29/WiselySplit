@@ -80,7 +80,7 @@ export default function FriendsList() {
           aria-live="polite"
           aria-label={`Overall balance: ${overallNet > 0 ? `you are owed $${Math.abs(overallNet)}` : overallNet < 0 ? `you owe $${Math.abs(overallNet)}` : 'you are settled up'}`}
           className={`
-            w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl p-5 shadow-sm border
+            w-full max-w-3xl mx-auto relative overflow-hidden rounded-2xl p-5 shadow-sm border
             transition-all duration-300
             ${overallNet > 0
               ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border-emerald-200/60 dark:border-emerald-800/50'
@@ -115,7 +115,7 @@ export default function FriendsList() {
 
       {/* Search + Add Friend + Add Expense */}
       <div className='flex justify-center w-full mb-6'>
-        <div className='flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full max-w-2xl px-4'>
+        <div className='flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full max-w-3xl px-4'>
 
           {/* Search Bar — full width on mobile, flex-1 on larger screens */}
           <label htmlFor="friend-search" className="sr-only">Search friends</label>
@@ -157,7 +157,7 @@ export default function FriendsList() {
 
       {/* List */}
       <main className='flex justify-center' aria-label="Friends list">
-        <div className='w-full max-w-2xl px-4 space-y-3 pb-10' role="list">
+        <div className='w-full max-w-3xl px-4 space-y-3 pb-10' role="list">
           {filteredFriends.map((f) => (
             <div key={f.friendId} role="listitem">
               <ListItemCard
