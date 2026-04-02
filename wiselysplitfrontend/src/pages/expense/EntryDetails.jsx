@@ -155,12 +155,13 @@ export default function EntryDetails() {
     paymentId: paymentIdOverride,
   })
 
-  const handleManualSettlementUpdate = async (nextAmount) => {
+  const handleManualSettlementUpdate = async (nextAmount, walletId) => {
     if (!expense) return
     setModalLoading(true)
     try {
       const sanitized = Number(nextAmount.toFixed(2))
       const payload = buildUpdatePayload(sanitized, null)
+      if (walletId != null) payload.walletId = walletId
       await api.put(`/expenses/${expenseId}`, payload)
       setExpense((prev) =>
         prev ? { ...prev, amount: sanitized, splitDetails: buildSplitDetails(sanitized) } : prev

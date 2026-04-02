@@ -48,12 +48,34 @@ public class FriendsService {
             );
         }
 
-        // 4. Compute total balance only if expenses exist
-        double balance = expenses.stream()
-                .mapToDouble(e -> ((Number) e.get("userBalance")).doubleValue())
-                .sum();
+        /*
+        Compute net balance by
+        -> Adding friend's share (when user paid) : user lent to friend
+        -> Subtracting user's share (when friend paid) : user owe to friend
+         */
+        double netBalance = expenses.stream()
+                .mapToDouble(e -> {
+                    List<Map<String, Object>> splitDetails = (List<Map<String, Object>>) e.get("splitDetails");
 
-        friend.put("netBalance", balance);
+                    // when user paid
+                    if (((Number) e.get("payerId")).intValue() == userId)
+                        /* gets friend's share by filtering SplitDetails with friendId, if not found returns 0.00 */
+                         return splitDetails.stream()
+                                .filter(sd -> ((Number) sd.get("userId")).intValue() == friendId)
+                                .map(sd -> ((Number) sd.get("amount")).doubleValue())
+                                .findFirst()
+                                .orElse(0.0);
+                    // when friend paid
+                    else
+                        /* gets user's share by filtering SplitDetails with userId, if not found returns 0.00 */
+                        return -splitDetails.stream()
+                                .filter(sd -> ((Number) sd.get("userId")).intValue() == userId)
+                                .map(sd -> ((Number) sd.get("amount")).doubleValue())
+                                .findFirst()
+                                .orElse(0.0);
+                }).sum();
+
+        friend.put("netBalance", netBalance);
 
         // 5. Return combined result
         return Map.of(

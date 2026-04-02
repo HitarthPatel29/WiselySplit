@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import ExpenseItemCard from '../../components/ListItem/ExpenseItemCard.jsx'
+import ExpensesGroupByDate from '../../components/ListItem/ExpensesGroupByDate.jsx'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
 import Header from '../../components/Header.jsx'
@@ -12,7 +12,7 @@ import { PlusIcon, BanknotesIcon } from '@heroicons/react/24/solid'
 export default function IndividualView() {
   const navigate = useNavigate()
   const { friendId } = useParams()
-  const { userId } = useAuth()
+  const { userId, friendsAndGroups } = useAuth()
   const { showSuccess, showError } = useNotification()
 
   const [friend, setFriend] = useState(null)
@@ -25,15 +25,13 @@ export default function IndividualView() {
 
   const friendIdNumber = Number(friendId)
 
-  const formatExpenseDate = (expenseDate) => {
-    if (!expenseDate) return ''
+  const toDateKey = (raw) => {
+    if (!raw) return 'unknown'
     try {
-      const d = new Date(expenseDate)
-      const month = d.toLocaleString('en-US', { month: 'short' })
-      const day = String(d.getDate()).padStart(2, '0')
-      return `${month} ${day}`
+      const d = new Date(raw)
+      return d.toLocaleDateString('en-CA')
     } catch {
-      return expenseDate
+      return 'unknown'
     }
   }
 
@@ -78,7 +76,7 @@ export default function IndividualView() {
     setShowSettleModal(true)
   }
 
-  const handleLogSettlement = async (amount) => {
+  const handleLogSettlement = async (amount, walletId) => {
     if (!settleContext) return
     try {
       setSettleLoading(true)
@@ -87,6 +85,7 @@ export default function IndividualView() {
         amount,
         currentUserId: userId,
         method: 'manual',
+        walletId,
       })
       await api.post('/expenses/shared', payload)
       showSuccess('Settlement logged successfully!', { asSnackbar: true })
@@ -253,44 +252,64 @@ export default function IndividualView() {
       >
         <h3 className='text-lg font-semibold mb-4'>Expenses</h3>
         <div
-          className='flex flex-col gap-3'
-          role="list"
+          className='flex flex-col gap-5'
           aria-label="Expense list"
         >
-          {expenses.map((ex) => {
-            const userBalance = Number(ex.userBalance ?? 0)
-            const displayAmount = ex.isSettleUp ? ex.amount.toFixed(2) : Math.abs(userBalance).toFixed(2)
-            const type = ex.isSettleUp ? 'settle' : userBalance < 0 ? 'owe' : 'lent'
-            const subtitle = ex.isSettleUp ? getSettlementMethodLabel(ex.paymentId) : (ex.expenseType ?? '')
-            return (
-              <div key={ex.expenseId} role="listitem">
-                <ExpenseItemCard
-                  date={formatExpenseDate(ex.expenseDate)}
-                  title={ex.expenseTitle ?? ''}
-                  subtitle={subtitle}
-                  amount={displayAmount}
-                  type={type}
-                  highlight={ex.isSettleUp}
-                  onClick={() =>
-                    navigate(
-                      ex.isSettleUp
-                        ? `/friends/${friendId}/settlements/${ex.expenseId}`
-                        : `/friends/${friendId}/expenses/${ex.expenseId}`,
-                      { state: { ...ex, from: 'friend' } }
-                    )
-                  }
-                />
-              </div>
-            )
-          })}
-          {expenses.length === 0 && (
-            <p
-              className='text-gray-500 dark:text-gray-400 text-center py-8'
-              role="status"
-            >
-              No expenses yet.
-            </p>
-          )}
+          {(() => {
+            const grouped = expenses.reduce((acc, ex) => {
+              const dateKey = toDateKey(ex.expenseDate)
+              if (!acc[dateKey]) acc[dateKey] = []
+              const isPayer = Number(ex.payerId) === Number(userId)
+              const friendShare = ex.splitDetails?.find(s => Number(s.userId) === friendIdNumber)?.amount ?? 0
+              const userShare = ex.splitDetails?.find(s => Number(s.userId) === Number(userId))?.amount ?? 0
+              const userBalance = isPayer ? friendShare : -userShare
+
+              const type = ex.isSettleUp ? 'settle' : 'shared'
+
+              const groupName = ex.groupId
+                ? friendsAndGroups.find(g => g.type === 'group' && g.id === ex.groupId)?.name ?? ''
+                : ''
+              const subtitle = ex.isSettleUp
+                ? getSettlementMethodLabel(ex.paymentId)
+                : ex.groupId != null ? [ex.expenseType, `Shared with ${groupName}`].filter(Boolean).join(' · ') : ex.expenseType
+
+              acc[dateKey].push({
+                expenseId: ex.expenseId,
+                title: ex.expenseTitle,
+                subtitle,
+                amount: ex.amount,
+                userBalance: userBalance.toFixed(2),
+                cardType: type,
+                highlight: ex.isSettleUp,
+                onClick: () =>
+                  navigate(
+                    ex.isSettleUp
+                      ? `/friends/${friendId}/settlements/${ex.expenseId}`
+                      : `/friends/${friendId}/expenses/${ex.expenseId}`,
+                    { state: { ...ex, from: 'friend' } }
+                  ),
+              })
+              return acc
+            }, {})
+
+            const dateKeys = Object.keys(grouped)
+
+            if (dateKeys.length === 0) {
+              return (
+                <p className='text-gray-500 dark:text-gray-400 text-center py-8' role="status">
+                  No expenses yet.
+                </p>
+              )
+            }
+
+            return dateKeys.map((dateKey) => (
+              <ExpensesGroupByDate
+                key={dateKey}
+                date={dateKey}
+                expenses={grouped[dateKey]}
+              />
+            ))
+          })()}
         </div>
       </main>
 

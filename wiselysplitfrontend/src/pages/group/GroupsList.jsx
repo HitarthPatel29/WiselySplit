@@ -23,7 +23,7 @@ export default function GroupsList() {
         setGroups(list)
         console.log('Fetched groups:', res.data)
 
-        const totalNet = list.reduce((sum, g) => sum + Number(g.NetBalance ?? 0), 0)
+        const totalNet = list.reduce((sum, g) => sum + Number(g.netBalance ?? 0), 0)
         setOverallNet(Number(totalNet.toFixed(2)))
 
         if (!res.data || res.data.length === 0)

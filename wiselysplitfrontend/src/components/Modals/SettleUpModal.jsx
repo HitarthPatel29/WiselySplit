@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { formatCurrency } from '../../utils/settleUp.js'
+import { useAuth } from '../../context/AuthContext'
 
 export default function SettleUpModal({
   open,
@@ -10,11 +12,14 @@ export default function SettleUpModal({
   onStripeSettlement,
   loading = false,
 }) {
+  const { wallets } = useAuth()
   const [amount, setAmount] = useState('')
+  const [selectedWalletId, setSelectedWalletId] = useState('')
 
   useEffect(() => {
     if (open && context) {
       setAmount(formatCurrency(context.suggestedAmount || context.maxAmount || 0))
+      setSelectedWalletId('')
     }
   }, [open, context])
 
@@ -35,7 +40,8 @@ export default function SettleUpModal({
 
   const handleLog = () => {
     if (disableActions) return
-    onLogSettlement?.(Number(numericAmount.toFixed(2)))
+    const walletId = selectedWalletId === '' ? null : (Number(selectedWalletId) || selectedWalletId)
+    onLogSettlement?.(Number(numericAmount.toFixed(2)), walletId)
   }
 
   const handleStripe = () => {
@@ -120,6 +126,40 @@ export default function SettleUpModal({
             </p>
           )}
         </div>
+
+        {wallets.length > 0 && (
+          <div className='mt-4'>
+            <label
+              htmlFor="settle-wallet"
+              className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
+            >
+              Deduct from Wallet
+            </label>
+            <div className='relative'>
+              <select
+                id="settle-wallet"
+                value={selectedWalletId}
+                onChange={(e) => setSelectedWalletId(e.target.value)}
+                className='w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 pr-9 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 appearance-none cursor-pointer'
+              >
+                <option value="">None</option>
+                {wallets.map((w) => {
+                  const id = w.walletId ?? w.id
+                  const name = w.walletName ?? w.name ?? `Wallet ${id}`
+                  return (
+                    <option key={id} value={id}>
+                      {name} — ${formatCurrency(w.walletBalance ?? w.balance ?? 0)}
+                    </option>
+                  )
+                })}
+              </select>
+              <ChevronDownIcon
+                className='absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none'
+                aria-hidden
+              />
+            </div>
+          </div>
+        )}
 
         <div className='mt-6 space-y-3'>
           <button

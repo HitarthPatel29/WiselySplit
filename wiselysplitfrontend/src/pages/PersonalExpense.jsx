@@ -5,7 +5,7 @@ import Header from '../components/Header.jsx'
 import FilterModal from '../components/Modals/FilterModal.jsx'
 import AddWallet from '../components/Modals/AddWallet.jsx'
 import AlertModal from '../components/Modals/AlertModal.jsx'
-import ExpenseItemCard from '../components/ListItem/ExpenseItemCard.jsx'
+import ExpensesGroupByDate from '../components/ListItem/ExpensesGroupByDate.jsx'
 import { AdjustmentsHorizontalIcon, ChevronLeftIcon, ChevronRightIcon, EllipsisVerticalIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/solid'
 import { WALLET_COLOR_MAP } from '../constants/walletColors'
 import PrimaryButton from '../components/IO/PrimaryButton.jsx'
@@ -13,19 +13,6 @@ import api from '../api.js'
 
 const SWIPE_THRESHOLD = 60
 const LAYER_SPACING = 80
-
-// Helper to format date as Month, DD
-const formatDate = (raw) => {
-  if (!raw) return ''
-  try {
-    const d = new Date(raw + 'T00:00:00')
-    const month = d.toLocaleString('en-CA', { month: 'short' })
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${month} ${day}`
-  } catch {
-    return raw
-  }
-}
 
 export default function PersonalExpense() {
   const navigate = useNavigate()
@@ -521,58 +508,70 @@ export default function PersonalExpense() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-[120px] pb-8">
-            {filteredExpenses.map((e) => {
-              const entryKind = e.entryKind || 'expense'
-              let cardType
-              if (entryKind === 'income') cardType = 'income'
-              else if (entryKind === 'transfer' || e.type === 'transfer_in' || e.type === 'transfer_out') cardType = 'transfer'
-              else if (e.isSettleUp) cardType = 'settle'
-              else if (e.isPersonal) cardType = 'personal'
-              else cardType = 'group'
+          <div className="flex flex-col gap-5 overflow-y-auto flex-1 min-h-[120px] pb-8">
+            {(() => {
+              const grouped = filteredExpenses.reduce((acc, e) => {
+                const dateKey = e.date || 'unknown'
+                if (!acc[dateKey]) acc[dateKey] = []
 
-              const userShare = cardType === 'group'
-                ? (e.splitDetails?.find(s => Number(s.userId) === Number(userId))?.amount ?? 0)
-                : 0
-              const lentAmount = cardType === 'group'
-                ? Math.abs((e.totalAmount ?? 0) - userShare)
-                : 0
+                const entryKind = e.entryKind || 'expense'
+                let cardType
+                if (entryKind === 'income') cardType = 'income'
+                else if (entryKind === 'transfer' || e.type === 'transfer_in' || e.type === 'transfer_out') cardType = 'transfer'
+                else if (e.isSettleUp) cardType = 'settle'
+                else if (e.isPersonal) cardType = 'personal'
+                else cardType = 'shared'
 
-              let subtitle
-              if (entryKind === 'income') subtitle = `Income · ${e.expenseType ?? ''}`
-              else if (entryKind === 'transfer') subtitle = e.type === 'transfer_in' ? 'Transfer In' : 'Transfer Out'
-              else if (e.isPersonal) subtitle = `Type: ${e.expenseType ?? ''}`
-              else subtitle = `Type: ${e.expenseType}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`
+                const userShare = cardType === 'shared'
+                  ? (e.splitDetails?.find(s => Number(s.userId) === Number(userId))?.amount ?? 0)
+                  : 0
+                const userBalance = cardType === 'shared'
+                  ? Math.abs((e.totalAmount ?? 0) - userShare)
+                  : 0
 
-              return (
-                <ExpenseItemCard
-                  key={e.expenseId}
-                  date={formatDate(e.date)}
-                  title={e.title}
-                  subtitle={subtitle}
-                  amount={Math.abs(e.totalAmount ?? 0).toFixed(2)}
-                  lentAmount={cardType === 'group'
-                    ? lentAmount.toFixed(2)
-                    : undefined
-                  }
-                  type={cardType}
-                  highlight={e.isSettleUp || !!e.highlight}
-                  onClick={() =>
+                let subtitle
+                if (entryKind === 'income') subtitle = `Income · ${e.expenseType ?? ''}`
+                else if (entryKind === 'transfer') subtitle = e.type === 'transfer_in' ? 'Transfer In' : 'Transfer Out'
+                else if (e.isPersonal) subtitle = `Type: ${e.expenseType ?? ''}`
+                else subtitle = `Type: ${e.expenseType}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`
+
+                acc[dateKey].push({
+                  expenseId: e.expenseId,
+                  title: e.title,
+                  subtitle,
+                  amount: Math.abs(e.totalAmount ?? 0).toFixed(2),
+                  userBalance: cardType === 'shared' ? userBalance.toFixed(2) : undefined,
+                  cardType,
+                  highlight: e.isSettleUp || !!e.highlight,
+                  onClick: () =>
                     navigate(
                       e.isSettleUp
                         ? `/personalSummary/settlements/${e.expenseId}`
                         : `/personalSummary/expenses/${e.expenseId}`,
                       { state: { ...e, from: 'personalExpense' } }
-                    )
-                  }
+                    ),
+                })
+                return acc
+              }, {})
+
+              const dateKeys = Object.keys(grouped)
+
+              if (dateKeys.length === 0) {
+                return (
+                  <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                    No entries found for this wallet.
+                  </p>
+                )
+              }
+
+              return dateKeys.map((dateKey) => (
+                <ExpensesGroupByDate
+                  key={dateKey}
+                  date={dateKey}
+                  expenses={grouped[dateKey]}
                 />
-              )
-            })}
-            {filteredExpenses.length === 0 && (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-8">
-                No entries found for this wallet.
-              </p>
-            )}
+              ))
+            })()}
           </div>
         </section>
       </main>

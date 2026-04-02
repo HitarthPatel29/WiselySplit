@@ -78,12 +78,9 @@ public class GroupsDAO {
                     e.Amount AS amount,
                     e.IsSettleUp AS isSettleUp,
                     e.PaymentID AS paymentId,
-                    e.WalletId AS walletId,
-                    p.Name AS payerName,
-                
-                    -- Determine type from the POV of current user
-                    CASE WHEN e.PayerID = ? THEN 'lent' ELSE 'owe' END AS type
-                
+                    e.WalletID AS walletId,
+                    e.PayerID AS payerId,
+                    p.Name AS payerName
                 FROM Expenses e
                 JOIN User p ON e.PayerID = p.UserID
                 WHERE e.GroupID = ?
@@ -92,7 +89,7 @@ public class GroupsDAO {
                 ORDER BY e.ExpenseDate DESC;
                 """;
 
-        List<Map<String,Object>> list = jdbcTemplate.queryForList(sql, userId, groupId);
+        List<Map<String,Object>> list = jdbcTemplate.queryForList(sql, groupId);
         for (Map<String,Object> expense: list) {
             expense.put("splitDetails", expensesDAO.findExpenseParticipants((Integer) expense.get("expenseId")));
         }

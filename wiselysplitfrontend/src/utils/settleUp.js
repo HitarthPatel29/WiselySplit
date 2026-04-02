@@ -25,6 +25,7 @@ export const buildSettleUpPayload = ({
   shareWithType = 'friend',
   settlementTargetId,
   paymentId = null,
+  walletId = null,
 }) => {
   const sanitized = toCurrencyNumber(amount)
   if (!sanitized || sanitized <= 0) {
@@ -54,6 +55,7 @@ export const buildSettleUpPayload = ({
 
   if (settlementTargetId) payload.settlementTargetId = settlementTargetId
   if (paymentId) payload.paymentId = paymentId
+  if (walletId != null) payload.walletId = walletId
   return payload
 }
 

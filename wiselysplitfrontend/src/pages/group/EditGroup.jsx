@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { CameraIcon } from '@heroicons/react/24/solid'
 import BackButton from '../../components/IO/BackButton.jsx'
 import api from '../../api'
@@ -11,8 +11,11 @@ import { useNotification } from '../../context/NotificationContext'
 export default function EditGroup() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const location = useLocation()
   const { userId } = useAuth()
   const { showSuccess, showError, showAlert } = useNotification()
+
+  const passedState = location.state || {}
 
   const [group, setGroup] = useState({
     name: '',
@@ -25,8 +28,22 @@ export default function EditGroup() {
   const [photoFile, setPhotoFile] = useState(null)
   const [canLeave, setCanLeave] = useState(true)
 
-  /* Fetch group details from backend */
   useEffect(() => {
+    if (passedState.group && passedState.participants) {
+      const g = passedState.group
+      setGroup({
+        name: g.groupName || g.name || '',
+        type: g.groupType || g.type || 'Work',
+        photo: g.profilePicture || g.photo || g.ProfilePicture || '',
+      })
+
+      setParticipants(passedState.participants)
+
+      const bad = (passedState.participants).some((m) => m.userBalance !== 0)
+      setCanLeave(!bad)
+      return
+    }
+
     const load = async () => {
       try {
         const res = await api.get(`/groups/${id}/details`, {
@@ -34,7 +51,6 @@ export default function EditGroup() {
         })
         const data = res.data || {}
 
-        // Backend: { group, participants }
         const g = data.group || {}
 
         setGroup({
@@ -43,11 +59,9 @@ export default function EditGroup() {
           photo: g.photo || g.ProfilePicture || '',
         })
 
-        // Participants with balance
         const p = data.participants || []
         setParticipants(p)
 
-        // Compute if user can leave the group
         const bad = p.some((m) => m.amount !== 0)
         setCanLeave(!bad)
       } catch (err) {
@@ -55,7 +69,7 @@ export default function EditGroup() {
       }
     }
     load()
-  }, [id, userId])
+  }, [id, userId, passedState])
 
   /* Change handlers */
   const handleChange = (e) => {
@@ -235,14 +249,15 @@ export default function EditGroup() {
 
               <div className='space-y-2'>
                 {participants.map((p) => {
+                  console.log('p', p)
                   return (
                     <ListItemCard
                       key={p.userId || p.id}
                       avatar={p.avatarUrl}
                       name={p.name}
                       groupType={`@${p.username}`}
-                      amount={p.amount}
-                      status={p.status || 'neutral'}
+                      amount={Math.abs(p.userBalance)}
+                      status={p.userBalance > 0 ? 'lent' : 'owe'}
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
