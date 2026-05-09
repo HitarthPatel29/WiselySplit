@@ -91,21 +91,38 @@ public class ExpensesService {
             String date = (String) payload.get("transactionDate");
             String type = (String) payload.get("name");
             String walletName = (String) payload.get("cardName");
-            double amount = ((Number) payload.get("amount")).doubleValue();
+
+            double amount = sanitizeAmount(payload.get("amount"));
+ 
+            // If amount is 0, throw an error
             if (amount == 0) throw new IllegalArgumentException("Invalid Amount: " + amount);
 
+            // Find user by email. If user not found, throw an error
             Optional<User> user = userDAO.findByEmail(userEmail);
             int userId = (user.orElseThrow(()-> new RuntimeException("User not found")).getUserId());
 
+            // Find wallet by name. If wallet not found, throw an error
             Map<String, Object> walletMap = walletDAO.getWalletId(walletName, userId);
             if (walletMap.isEmpty()) throw new NullPointerException("Error finding wallet name: " + walletName);
             int walletId = ((Number) walletMap.get("walletId")).intValue();
 
+            // Insert personal expense
             int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "expense", null);
 
             return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
         } catch (Exception e) {
             throw new RuntimeException("Error creating personal expense: " + e.getMessage());
+        }
+    }
+
+    /** Sanitize amount remove all characters except digits, decimals and '-' at front.*/
+    private double sanitizeAmount(Object amountObj) {
+        if (amountObj instanceof Number) {
+            return ((Number) amountObj).doubleValue();
+        } else if (amountObj instanceof String) {
+            return Double.parseDouble(((String) amountObj).replaceAll("[^\\d.\\-]", ""));
+        } else {
+            throw new IllegalArgumentException("Amount must be a number or string: " + amountObj);
         }
     }
 

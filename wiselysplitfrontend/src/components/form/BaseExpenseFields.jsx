@@ -59,7 +59,12 @@ export default function BaseExpenseFields({ expense, onChange, errors = {} }) {
               <input
                 type="number"
                 name="amount"
-                value={expense.amount === 0 || expense.amount === '' ? '' : expense.amount}
+                value={
+                  (expense.amount === undefined || expense.amount === null)
+                    ? (expense.totalAmount === 0 || expense.totalAmount === '' ? '' : expense.totalAmount)
+                    : (expense.amount === 0 || expense.amount === '' ? '' : expense.amount)
+                }
+           
                 onChange={onChange}
                 step="0.01"
                 min="0"

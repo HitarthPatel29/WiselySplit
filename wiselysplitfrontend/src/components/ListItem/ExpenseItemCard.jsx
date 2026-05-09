@@ -20,11 +20,11 @@ export default function ExpenseItemCard({
   const isShared = type === 'shared'
 
   const bgStyles = isSettle
-    ? 'bg-orange-100/80 dark:bg-orange-800/30 hover:bg-orange-200/80 dark:hover:bg-orange-800/40'
+    ? 'bg-cyan-50/80 dark:bg-cyan-900/30 hover:bg-cyan-100/80 dark:hover:bg-cyan-800/40'
     : isIncome
       ? 'bg-green-50/80 dark:bg-green-900/30 hover:bg-green-100/80 dark:hover:bg-green-800/40'
       : isTransfer
-        ? 'bg-amber-50/80 dark:bg-amber-900/30 hover:bg-amber-100/80 dark:hover:bg-amber-800/40'
+        ? 'bg-white dark:bg-gray-800 hover:bg-gray-50/80 dark:hover:bg-gray-700/40'
         : isPersonal
           ? 'bg-indigo-50/50 dark:bg-indigo-900/30 hover:bg-indigo-100/80 dark:hover:bg-indigo-800/40'
           : isShared
@@ -34,7 +34,7 @@ export default function ExpenseItemCard({
               : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50'
 
   const borderStyles = isSettle
-    ? 'border-orange-200 dark:border-orange-800'
+    ? 'border-cyan-200 dark:border-cyan-700'
     : isIncome
       ? 'border-green-200 dark:border-green-700'
       : isTransfer
@@ -56,9 +56,9 @@ export default function ExpenseItemCard({
     bottomColor = 'text-red-500'
   } else if (type === 'settle') {
     topLabel = 'Settled'
-    topColor = 'text-orange-500 dark:text-orange-300'
+    topColor = 'text-cyan-600 dark:text-cyan-400'
     bottomLabel = `$${amount}`
-    bottomColor = 'text-orange-500 dark:text-orange-300'
+    bottomColor = 'text-cyan-600 dark:text-cyan-400'
   } else if (type === 'income') {
     topLabel = 'Income'
     topColor = 'text-green-600 dark:text-green-400'
@@ -66,9 +66,9 @@ export default function ExpenseItemCard({
     bottomColor = 'text-green-600 dark:text-green-400'
   } else if (type === 'transfer') {
     topLabel = 'Transfer'
-    topColor = 'text-amber-600 dark:text-amber-400'
+    topColor = 'text-gray-600 dark:text-gray-400'
     bottomLabel = `$${amount}`
-    bottomColor = 'text-amber-600 dark:text-amber-400'
+    bottomColor = 'text-gray-600 dark:text-gray-400'
   } else if (type === 'personal') {
     topLabel = 'Spent'
     topColor = 'text-indigo-600 dark:text-indigo-400'

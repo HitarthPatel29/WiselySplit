@@ -37,6 +37,7 @@ export default function EditEntry() {
       }
     }
     fetchExpense()
+    console.log('EditEntry: expense:', expense)
   }, [expenseId, id, userId])
 
   const handleExpenseUpdate = async (payload, _mode) => {
