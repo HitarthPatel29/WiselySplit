@@ -97,7 +97,7 @@ export default function PersonalExpense() {
       list = list.filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
     }
     if (typeFilter.length > 0) {
-      list = list.filter((e) => typeFilter.includes(e.expenseType))
+      list = list.filter((e) => typeFilter.includes(e.category ?? e.expenseType ?? ''))
     }
     if (categoryFilter.length > 0) {
       list = list.filter((e) => {
@@ -530,10 +530,10 @@ export default function PersonalExpense() {
                   : 0
 
                 let subtitle
-                if (entryKind === 'income') subtitle = `Income · ${e.expenseType ?? ''}`
+                if (entryKind === 'income') subtitle = `Income · ${e.category ?? ''}`
                 else if (entryKind === 'transfer') subtitle = e.type === 'transfer_in' ? 'Transfer In' : 'Transfer Out'
-                else if (e.isPersonal) subtitle = `Type: ${e.expenseType ?? ''}`
-                else subtitle = `Type: ${e.expenseType}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`
+                else if (e.isPersonal) subtitle = `Category: ${e.category ?? ''}`
+                else subtitle = `Category: ${e.category ?? ''}${e.groupId != null && e.groupName ? `, Group: ${e.groupName}` : ''}`
 
                 acc[dateKey].push({
                   expenseId: e.expenseId,

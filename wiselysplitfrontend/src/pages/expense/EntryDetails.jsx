@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import api from '../../api'
 import { normalizeExpenseForFields } from '../../utils/expenseModel'
-import { formatCurrency, SETTLE_EXPENSE_TYPE } from '../../utils/settleUp'
+import { formatCurrency, SETTLE_EXPENSE_CATEGORY } from '../../utils/settleUp'
 import { useAuth } from '../../context/AuthContext.jsx'
 import Header from '../../components/Header.jsx'
 import { useNotification } from '../../context/NotificationContext'
@@ -145,7 +145,7 @@ export default function EntryDetails() {
   const buildUpdatePayload = (nextAmount, paymentIdOverride = expense?.paymentId || null) => ({
     title: expense?.title || 'Settle up',
     date: expense?.date,
-    type: expense?.type || SETTLE_EXPENSE_TYPE,
+    category: expense?.category || SETTLE_EXPENSE_CATEGORY,
     amount: nextAmount,
     payerId: expense?.payerId,
     shareWithType: expense?.shareWithType,
@@ -315,7 +315,7 @@ export default function EntryDetails() {
                 {expense.title}
               </h1>
               <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">
-                {[expense.type || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
+                {[expense.category || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
               </p>
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
@@ -453,7 +453,7 @@ export default function EntryDetails() {
                 {expense.title}
               </h1>
               <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">
-                {[expense.type || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
+                {[expense.category || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
               </p>
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
@@ -528,7 +528,7 @@ export default function EntryDetails() {
                 {expense.title}
               </h1>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {[expense.type || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
+                {[expense.category || '', formatFullDate(expense.date) || expense.date].filter(Boolean).join(' · ')}
               </p>
 
               <div className="mt-8 rounded-2xl bg-gray-50 dark:bg-gray-700/50 p-6 border border-gray-100 dark:border-gray-700">

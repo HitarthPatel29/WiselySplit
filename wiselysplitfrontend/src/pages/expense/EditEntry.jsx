@@ -24,7 +24,11 @@ export default function EditEntry() {
 
   useEffect(() => {
     const fetchExpense = async () => {
-      if (expense && expense.splitDetails?.length > 0) return
+      if (expense && expense.splitDetails?.length > 0) {
+        const normalized = normalizeExpenseForFields(expense, userId, friendsAndGroups)
+        setExpense(normalized)
+        return
+      }
       try {
         const res = await api.get(`/expenses/${expenseId}`)
         const normalized = normalizeExpenseForFields(res.data, userId, friendsAndGroups)
@@ -37,7 +41,7 @@ export default function EditEntry() {
       }
     }
     fetchExpense()
-    console.log('EditEntry: expense:', expense)
+    console.log('EditEntry: normalized expense:', expense)
   }, [expenseId, id, userId])
 
   const handleExpenseUpdate = async (payload, _mode) => {
@@ -64,7 +68,7 @@ export default function EditEntry() {
         title: payload.title,
         amount: payload.amount,
         date: payload.date,
-        type: payload.type,
+        category: payload.category,
         userId: userId,
         walletId: payload.walletId ?? null,
       })
@@ -86,7 +90,7 @@ export default function EditEntry() {
         title: payload.title,
         amount: payload.amount,
         date: payload.date,
-        type: 'Transfer',
+        category: 'Transfer',
         userId: userId,
         walletId: payload.fromWalletId ?? null,
         toWalletId: payload.toWalletId ?? null,

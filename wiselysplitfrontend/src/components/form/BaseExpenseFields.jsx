@@ -4,7 +4,7 @@
 import React from 'react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 
-const EXPENSE_TYPES = [
+const EXPENSE_CATEGORIES = [
   { value: '', label: 'Select a type' },
   { value: 'Work', label: 'Work' },
   { value: 'Food', label: 'Food' },
@@ -98,18 +98,18 @@ export default function BaseExpenseFields({ expense, onChange, errors = {} }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Expense type
+            Expense Category
           </label>
           <div className="relative">
             <select
-              name="type"
-              value={expense.type ?? ''}
+              name="category"
+              value={expense.category ?? expense.expenseType ?? ''}
               onChange={onChange}
               required
               className={selectClass}
-              aria-invalid={!!errors.type}
+              aria-invalid={!!errors.category}
             >
-              {EXPENSE_TYPES.map((opt) => (
+              {EXPENSE_CATEGORIES.map((opt) => (
                 <option key={opt.value || 'empty'} value={opt.value}>
                   {opt.label}
                 </option>
@@ -120,8 +120,8 @@ export default function BaseExpenseFields({ expense, onChange, errors = {} }) {
               aria-hidden
             />
           </div>
-          {errors.type && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.type}</p>
+          {errors.category && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.category}</p>
           )}
         </div>
       </div>

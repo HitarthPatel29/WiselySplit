@@ -125,7 +125,7 @@ export default function ExpenseForm({
         title: prev?.title ?? '',
         amount: prev?.amount ?? 0,
         date: prev?.date ?? new Date().toLocaleDateString('en-CA'),
-        type: prev?.type ?? '',
+        category: prev?.category ?? '',
       }
       if (newMode === 'personal') {
         return {
@@ -161,7 +161,7 @@ export default function ExpenseForm({
       base.title = prev?.title ?? ''
       base.amount = prev?.amount ?? 0
       base.date = prev?.date ?? ''
-      base.type = prev?.type ?? ''
+      base.category = prev?.category ?? ''
       base.payerId = prev?.payerId ?? currentUserId
       return base.shareWithType === 'group' ? equalDivide(base) : base
     })
@@ -227,6 +227,7 @@ export default function ExpenseForm({
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    console.log('ExpenseForm: handleSubmit: Validating expense', { expense })
     const error = validateExpense(
       expense,
       currentUserId,
@@ -238,12 +239,14 @@ export default function ExpenseForm({
       showError(error, { asSnackbar: true })
       return
     }
+    console.log('ExpenseForm: handleSubmit: Normalizing expense', { expense })
     const payload = normalizeExpenseForAPI(
       { ...expense },
       currentUserId,
       billSplitApplied,
       expenseMode
     )
+    console.log('ExpenseForm: handleSubmit: Payload', { payload })
     onSubmit(payload, expenseMode)
   }
 

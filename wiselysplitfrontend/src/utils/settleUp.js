@@ -10,7 +10,7 @@ const toCurrencyNumber = (value) => {
 
 export const formatCurrency = (value = 0) => toCurrencyNumber(value).toFixed(2)
 
-export const SETTLE_EXPENSE_TYPE = 'SettleUp'
+export const SETTLE_EXPENSE_CATEGORY = 'SettleUp'
 
 /**
  * Build the payload expected by the Expenses endpoint to log a settle-up entry.
@@ -36,7 +36,7 @@ export const buildSettleUpPayload = ({
     title: `Settle up with ${targetName}`,
     amount: sanitized,
     date: today(),
-    type: SETTLE_EXPENSE_TYPE,
+    category: SETTLE_EXPENSE_CATEGORY,
     payerId: currentUserId,
     shareWithId,
     shareWith: shareWithName || targetName,

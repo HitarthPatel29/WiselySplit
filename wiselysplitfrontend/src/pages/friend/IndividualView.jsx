@@ -271,7 +271,7 @@ export default function IndividualView() {
                 : ''
               const subtitle = ex.isSettleUp
                 ? getSettlementMethodLabel(ex.paymentId)
-                : ex.groupId != null ? [ex.expenseType, `Shared with ${groupName}`].filter(Boolean).join(' · ') : ex.expenseType
+                : ex.groupId != null ? [ex.category ?? ex.expenseType, `Shared with ${groupName}`].filter(Boolean).join(' · ') : (ex.category ?? '')
 
               acc[dateKey].push({
                 expenseId: ex.expenseId,

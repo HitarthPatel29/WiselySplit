@@ -18,7 +18,7 @@ public class IncomeService {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
-            String type = (String) payload.get("type");
+            String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int userId = ((Number) payload.get("userId")).intValue();
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
@@ -47,7 +47,7 @@ public class IncomeService {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
-            String type = (String) payload.get("type");
+            String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int payerId = ((Number) payload.get("userId")).intValue();
 

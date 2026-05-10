@@ -24,7 +24,7 @@ export default function IncomeForm({ wallets = [], onSubmit, onCancel, initialDa
     title: '',
     amount: '',
     date: '',
-    type: '',
+    category: '',
     walletId: null,
   })
 
@@ -34,7 +34,7 @@ export default function IncomeForm({ wallets = [], onSubmit, onCancel, initialDa
         title: initialData.title || '',
         amount: initialData.amount != null ? String(initialData.amount) : '',
         date: initialData.date || new Date().toLocaleDateString('en-CA'),
-        type: initialData.type || '',
+        category: initialData.category ?? '',
         walletId: initialData.walletId ?? null,
       })
     } else if (!income.date) {
@@ -123,8 +123,8 @@ export default function IncomeForm({ wallets = [], onSubmit, onCancel, initialDa
             </label>
             <div className="relative">
               <select
-                name="type"
-                value={income.type}
+                name="category"
+                value={income.category}
                 onChange={updateField}
                 required
                 className={selectClass}

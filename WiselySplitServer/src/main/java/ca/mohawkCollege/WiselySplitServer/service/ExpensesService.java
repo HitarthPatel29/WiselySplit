@@ -6,6 +6,8 @@ import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.dao.WalletDAO;
 import ca.mohawkCollege.WiselySplitServer.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.web.util.ThrowableCauseExtractor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +37,7 @@ public class ExpensesService {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
-            String type = (String) payload.get("type");
+            String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int payerId = ((Number) payload.get("payerId")).intValue();
 
@@ -70,7 +72,7 @@ public class ExpensesService {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
-            String type = (String) payload.get("type");
+            String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int userId = ((Number) payload.get("userId")).intValue();
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
@@ -92,8 +94,7 @@ public class ExpensesService {
             String type = (String) payload.get("name");
             String walletName = (String) payload.get("cardName");
 
-            double amount = sanitizeAmount(payload.get("amount"));
- 
+            double amount = this.sanitizeAmount(payload.get("amount"));
             // If amount is 0, throw an error
             if (amount == 0) throw new IllegalArgumentException("Invalid Amount: " + amount);
 
@@ -102,15 +103,20 @@ public class ExpensesService {
             int userId = (user.orElseThrow(()-> new RuntimeException("User not found")).getUserId());
 
             // Find wallet by name. If wallet not found, throw an error
-            Map<String, Object> walletMap = walletDAO.getWalletId(walletName, userId);
-            if (walletMap.isEmpty()) throw new NullPointerException("Error finding wallet name: " + walletName);
-            int walletId = ((Number) walletMap.get("walletId")).intValue();
+            int walletId;
+            try {
+                Map<String, Object> walletMap = walletDAO.getWalletId(walletName, userId);
+                walletId = ((Number) walletMap.get("walletId")).intValue();
+            }catch (EmptyResultDataAccessException erdae){
+                throw new NullPointerException("Error finding wallet name: " + walletName);
+            }
 
             // Insert personal expense
             int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "expense", null);
 
             return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Error creating personal expense: " + e.getMessage());
         }
     }
@@ -208,7 +214,7 @@ public class ExpensesService {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
-            String type = (String) payload.get("type");
+            String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int payerId = ((Number) payload.get("payerId")).intValue();
             String shareWithType = (String) payload.get("shareWithType");
@@ -240,6 +246,7 @@ public class ExpensesService {
             }
             return Map.of("success", true, "expenseId", expenseId, "message", "Expense updated successfully");
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Error updating expense: " + e.getMessage());
         }
     }

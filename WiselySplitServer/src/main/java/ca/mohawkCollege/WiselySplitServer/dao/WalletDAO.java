@@ -47,12 +47,13 @@ public class WalletDAO {
         return jdbcTemplate.queryForList(sql, userId);
     }
 
+    /** Get WalletID by matching cardName while ignoring spaces and letter casing*/
     public Map<String, Object> getWalletId(String walletName, int userId){
         String sql = """
                 SELECT
                     w.WalletID AS walletId
                 FROM Wallets w
-                WHERE w.CardName = ? AND w.UserID = ?
+                WHERE REPLACE(LOWER(w.CardName), ' ', '') = REPLACE(LOWER(?), ' ', '') AND w.UserID = ?
             """;
         return jdbcTemplate.queryForMap(sql, walletName, userId);
     }

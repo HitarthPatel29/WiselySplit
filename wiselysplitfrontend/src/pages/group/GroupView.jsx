@@ -376,7 +376,7 @@ export default function GroupView() {
               const userBalance = isPayer ? ex.amount - userShare : -userShare
 
               const cardType = ex.isSettleUp ? 'settle' : userBalance==0 ? 'not-involved' : 'shared'
-              const subtitle = ex.isSettleUp ? getSettlementMethodLabel(ex.paymentId) : ex.expenseType
+              const subtitle = ex.isSettleUp ? getSettlementMethodLabel(ex.paymentId) : (ex.category ?? 'Other')
 
 
               acc[dateKey].push({

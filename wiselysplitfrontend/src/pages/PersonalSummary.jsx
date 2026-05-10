@@ -148,13 +148,13 @@ export default function PersonalSummary() {
 
       if (r.entryKind === 'income') {
         inc += amt
-        const cat = r.type || 'Other'
+        const cat = r.category ?? 'Other'
         iCat[cat] = (iCat[cat] || 0) + amt
         mo[mIdx].i += amt
       } else {
         const userAmt = r.isPersonal ? amt : (r.userContribution ?? amt)
         exp += userAmt
-        const cat = r.type || 'Other'
+        const cat = r.category ?? 'Other'
         eCat[cat] = (eCat[cat] || 0) + userAmt
         mo[mIdx].e += userAmt
       }

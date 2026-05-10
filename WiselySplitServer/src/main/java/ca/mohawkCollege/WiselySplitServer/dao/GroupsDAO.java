@@ -74,7 +74,7 @@ public class GroupsDAO {
                     e.ExpenseID AS expenseId,
                     e.ExpenseTitle AS expenseTitle,
                     e.ExpenseDate AS expenseDate,
-                    e.ExpenseType AS expenseType,
+                    e.ExpenseType AS category,
                     e.Amount AS amount,
                     e.IsSettleUp AS isSettleUp,
                     e.PaymentID AS paymentId,

@@ -62,7 +62,7 @@ public class FriendsDAO {
                 e.ExpenseID AS expenseId,
                 e.ExpenseTitle AS expenseTitle,
                 e.ExpenseDate AS expenseDate,
-                e.ExpenseType AS expenseType,
+                e.ExpenseType AS category,
                 e.Amount AS amount,
                 e.IsSettleUp AS isSettleUp,
                 e.GroupID AS groupId,
