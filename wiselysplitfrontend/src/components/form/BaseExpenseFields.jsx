@@ -17,7 +17,7 @@ const EXPENSE_CATEGORIES = [
 
 // Shared styles so dropdowns blend with text fields
 const inputClass =
-  'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400'
+  'w-full appearance-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400'
 const selectClass =
   'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 pr-9 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 appearance-none cursor-pointer'
 
@@ -25,9 +25,9 @@ export default function BaseExpenseFields({ expense, onChange, errors = {} }) {
   if (!expense) return null
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden shadow-sm">
-      <div className="p-4 flex flex-col gap-4">
-        <div>
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+      <div className="p-4 grid grid-cols-2 gap-2">
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Expense title
           </label>
@@ -49,54 +49,50 @@ export default function BaseExpenseFields({ expense, onChange, errors = {} }) {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Amount
-            </label>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-700 dark:text-gray-300 font-semibold">$</span>
-              <input
-                type="number"
-                name="amount"
-                value={
-                  (expense.amount === undefined || expense.amount === null)
-                    ? (expense.totalAmount === 0 || expense.totalAmount === '' ? '' : expense.totalAmount)
-                    : (expense.amount === 0 || expense.amount === '' ? '' : expense.amount)
-                }
-           
-                onChange={onChange}
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                className={inputClass}
-                aria-invalid={!!errors.amount}
-              />
-            </div>
-            {errors.amount && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.amount}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Date
-            </label>
-            <input
-              type="date"
-              name="date"
-              value={expense.date ?? ''}
-              onChange={onChange}
-              required
-              className={inputClass}
-              aria-invalid={!!errors.date}
-            />
-            {errors.date && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date}</p>
-            )}
-          </div>
-        </div>
-
         <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Amount
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-700 dark:text-gray-300 font-semibold">$</span>
+            <input
+              type="number"
+              name="amount"
+              value={
+                (expense.amount === undefined || expense.amount === null)
+                  ? (expense.totalAmount === 0 || expense.totalAmount === '' ? '' : expense.totalAmount)
+                  : (expense.amount === 0 || expense.amount === '' ? '' : expense.amount)
+              }
+              onChange={onChange}
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              className={`${inputClass} min-w-0 flex-1`}
+              aria-invalid={!!errors.amount}
+            />
+          </div>
+          {errors.amount && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.amount}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Date
+          </label>
+          <input
+            type="date"
+            name="date"
+            value={expense.date ?? ''}
+            onChange={onChange}
+            required
+            className={inputClass}
+            aria-invalid={!!errors.date}
+          />
+          {errors.date && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date}</p>
+          )}
+        </div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Expense Category
           </label>

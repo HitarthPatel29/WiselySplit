@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 
-const INCOME_TYPES = [
+const INCOME_CATEGORIES = [
   { value: '', label: 'Select a type' },
   { value: 'Salary', label: 'Salary' },
   { value: 'Freelance', label: 'Freelance' },
@@ -15,7 +15,7 @@ const INCOME_TYPES = [
 ]
 
 const inputClass =
-  'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400'
+  'w-full appearance-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400'
 const selectClass =
   'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 pr-9 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 appearance-none cursor-pointer'
 
@@ -119,17 +119,17 @@ export default function IncomeForm({ wallets = [], onSubmit, onCancel, initialDa
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Income type
+              Income Category
             </label>
             <div className="relative">
               <select
                 name="category"
-                value={income.category}
+                value={income.category ?? ''}
                 onChange={updateField}
                 required
                 className={selectClass}
               >
-                {INCOME_TYPES.map((opt) => (
+                {INCOME_CATEGORIES.map((opt) => (
                   <option key={opt.value || 'empty'} value={opt.value}>
                     {opt.label}
                   </option>
