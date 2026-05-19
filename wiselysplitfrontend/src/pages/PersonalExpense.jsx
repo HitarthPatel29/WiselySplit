@@ -249,7 +249,7 @@ export default function PersonalExpense() {
     try {
       await api.post(`/users/${userId}/wallets`, {
         walletName: data.walletName,
-        walletType: data.walletType,
+        cardName: data.cardName,
         walletColor: data.walletColor,
         walletBalance: data.walletBalance,
       })
@@ -357,6 +357,7 @@ export default function PersonalExpense() {
               const translateX = offset * LAYER_SPACING + (isActive ? dragOffset : 0)
               const walletId = wallet.walletId ?? wallet.id
               const walletName = wallet.walletName ?? wallet.name
+              const cardName = wallet.cardName
               const netBalance = computeNetBalance(wallet)
 
               return (
@@ -372,9 +373,7 @@ export default function PersonalExpense() {
                   }}
                   onMouseDown={isActive ? handleMouseDown : undefined}
                 >
-                  <div
-                    className={`rounded-2xl border-2 shadow-xl p-5 h-[130px] flex flex-col justify-between relative ${getWalletCardClasses(wallet)}`}
-                  >
+                  <div className={`rounded-2xl border-2 shadow-xl p-5 h-[130px] flex flex-col justify-between relative ${getWalletCardClasses(wallet)}`} >
                     <div className="absolute top-2 right-2" ref={openMenuWalletId === walletId ? menuRef : undefined}>
                       <button
                         type="button"
@@ -421,9 +420,16 @@ export default function PersonalExpense() {
                         </div>
                       )}
                     </div>
-                    <p className="font-semibold text-white text-sm uppercase tracking-wider pr-8">
-                      {walletName}
-                    </p>
+                    <div className="pr-8">
+                      <p className="font-semibold text-white text-sm uppercase tracking-wider">
+                        {walletName}
+                      </p>
+                      {cardName && (
+                        <p className="font-light text-white/70 text-xs tracking-wide truncate">
+                          {cardName}
+                        </p>
+                      )}
+                    </div>
                     <p className="text-2xl font-bold tracking-tight text-white">
                       ${Math.abs(netBalance).toFixed(2)}
                     </p>

@@ -17,16 +17,15 @@ public class WalletDAO {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public int insertWallet(Integer userId, String walletName, double walletBalance, String walletType, String walletColor) {
-        String sql = "INSERT INTO Wallets (UserID, Name, Balance, Type, Color) VALUES (?, ?, ?, ?, ?)";
-
+    public int insertWallet(Integer userId, String walletName, double walletBalance, String cardName, String walletColor) {
+        String sql = "INSERT INTO Wallets (UserID, Name, Balance, CardName, Color) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, userId);
             ps.setString(2, walletName);
             ps.setDouble(3, walletBalance);
-            ps.setString(4, walletType);
+            ps.setString(4, cardName);
             ps.setString(5, walletColor);
             return ps;
         }, keyHolder);

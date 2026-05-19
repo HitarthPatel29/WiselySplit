@@ -18,12 +18,11 @@ public class WalletService {
         try {
             String walletName = (String) payload.get("walletName");
             double walletBalance = ((Number) payload.get("walletBalance")).doubleValue();
-            String walletType = (String) payload.get("walletType");
+            String cardName = (String) payload.get("cardName");
             String walletColor = (String) payload.get("walletColor");
 
-
             // Insert into Expenses table
-            int walletId = walletDAO.insertWallet(userId, walletName, walletBalance, walletType, walletColor);
+            int walletId = walletDAO.insertWallet(userId, walletName, walletBalance, cardName, walletColor);
 
             return Map.of("success", true, "walletId", walletId, "message", "New Wallet created successfully");
         } catch (Exception e) {
