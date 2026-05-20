@@ -259,7 +259,7 @@ export default function Signup() {
 
           {/* Phone + Email */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <TextInput id='phoneNum' label='Phone Number' type='tel' placeholder='+1 234 567 8901' autoComplete='tel' value={form.phoneNum} onChange={update} required={true} />
+            <TextInput id='phoneNum' label='Phone Number' type='tel' placeholder='+1 234 567 8901' autoComplete='tel' value={form.phoneNum} onChange={update} required={false} />
             <div className='flex flex-col gap-1'>
               <label 
                 htmlFor='email' 

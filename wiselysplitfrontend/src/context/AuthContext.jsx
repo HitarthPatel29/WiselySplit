@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
           logout()
         } else {
           setToken(storedToken)
-          setUserId(decoded.userId || null) // ✅ extract userId from JWT claim
+          setUserId(decoded.userId || null) // extract userId from JWT claim
         }
       } catch (err) {
         console.error('Invalid stored token, clearing it:', err)

@@ -80,8 +80,8 @@ public class UserServiceImpl implements UserService {
 
         try {
             user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
-            userDAO.save(user);
-            inviteDAO.linkInvitesToUser(user.getEmail(), user.getUserId());
+            user.setUserId(userDAO.save(user));
+            inviteDAO.linkInvitesToUser(user.getEmail(), user.getUserId()); //sets UserID for all external Email Invites
             return user;
         } catch (DataIntegrityViolationException ex) {
             throw new DuplicateUserException("Username or Email already exists");

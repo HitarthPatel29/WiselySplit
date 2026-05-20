@@ -1,6 +1,7 @@
 package ca.mohawkCollege.WiselySplitServer.controller;
 
 import ca.mohawkCollege.WiselySplitServer.Security.JwtUtil;
+import ca.mohawkCollege.WiselySplitServer.Security.PasswordUtil;
 import ca.mohawkCollege.WiselySplitServer.dao.UserDAO;
 import ca.mohawkCollege.WiselySplitServer.model.User;
 import ca.mohawkCollege.WiselySplitServer.service.EmailServiceMailTrapAPI;
@@ -136,6 +137,9 @@ public class AuthController {
             GoogleIdToken.Payload payload = idToken.getPayload();
             String email = payload.getEmail();
             String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
+            String googleSubjectID = payload.getSubject();
+
 
             // Look up user via UserDAO
             Optional<User> existingUser = userDAO.findByEmail(email);
@@ -144,8 +148,11 @@ public class AuthController {
                 User newUser = new User();
                 newUser.setEmail(email);
                 newUser.setName(name);
-                newUser.setPassword("GOOGLE_USER"); // dummy, never used
-                userDAO.save(newUser);
+                newUser.setUserName(email.split("@")[0]);
+                String generatedPassword = ((String) payload.get("given_name")).toLowerCase() + googleSubjectID.substring(0, 4);    //(John + 109873... -> john1098)
+                newUser.setPassword(PasswordUtil.hashPassword(generatedPassword));      // dummy, never used
+                newUser.setProfilePicture(picture);
+                newUser.setUserId(userDAO.save(newUser));   // creates User and sets UserID
                 return newUser;
             });
 
@@ -161,6 +168,7 @@ public class AuthController {
             ));
 
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error","Google login failed: " + e.getMessage()));
         }

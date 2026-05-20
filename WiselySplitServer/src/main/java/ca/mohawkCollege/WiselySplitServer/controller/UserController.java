@@ -30,7 +30,7 @@ public class UserController {
             @RequestParam("name") String name,
             @RequestParam("userName") String userName,
             @RequestParam("email") String email,
-            @RequestParam("phoneNum") Long phoneNum,
+            @RequestParam(value = "phoneNum", required = false) Long phoneNum,
             @RequestParam("password") String password,
             @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
         try {

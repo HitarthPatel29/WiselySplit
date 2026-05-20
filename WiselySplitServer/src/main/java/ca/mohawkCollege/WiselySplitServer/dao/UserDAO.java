@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,13 +30,19 @@ public class UserDAO {
 
     public int save(User user) {
         String sql = "INSERT INTO User (Name, UserName, Email, PhoneNum, Password, ProfilePicture) VALUES (?, ?, ?, ?, ?, ?)";
-        return jdbcTemplate.update(sql,
-                user.getName(),
-                user.getUserName(),
-                user.getEmail(),
-                user.getPhoneNum(),
-                user.getPassword(),
-                user.getProfilePicture());
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, user.getName());
+            ps.setString(2, user.getUserName());
+            ps.setString(3, user.getEmail());
+            if (user.getPhoneNum() != null) ps.setLong(4, user.getPhoneNum());
+            else ps.setNull(4, Types.BIGINT);
+            ps.setString(5, user.getPassword());
+            ps.setString(6, user.getProfilePicture());
+            return ps;
+        }, keyHolder);
+        return keyHolder.getKey().intValue();
     }
 
     public Optional<User> findByEmail(String email) {
