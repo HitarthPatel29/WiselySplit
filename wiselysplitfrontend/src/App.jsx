@@ -23,6 +23,7 @@ import PersonalSummary from './pages/PersonalSummary.jsx'
 import PersonalExpense from './pages/PersonalExpense.jsx'
 import StripeSettleUp from './pages/settle/StripeSettleUp.jsx'
 import StripeConnectSetup from './pages/stripe/StripeConnectSetup.jsx'
+import ClassifierAdmin from './pages/admin/ClassifierAdmin.jsx'
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -298,6 +299,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <StripeConnectSetup />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/classifier"
+        element={
+          <PrivateRoute>
+            <ClassifierAdmin />
           </PrivateRoute>
         }
       />

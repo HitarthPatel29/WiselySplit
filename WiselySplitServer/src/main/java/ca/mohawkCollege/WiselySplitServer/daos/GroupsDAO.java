@@ -1,0 +1,202 @@
+package ca.mohawkCollege.wiselySplitServer.daos;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
+
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.List;
+import java.util.Map;
+
+@Repository
+public class GroupsDAO {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private ExpensesDAO expensesDAO;
+
+    public int insertGroup(String name, String type, String profilePicture) {
+        String sql = "INSERT INTO ExpenseGroups (GroupName, GroupType, ProfilePicture) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sql, name, type, profilePicture);
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, name);
+            ps.setString(2, type);
+            ps.setString(3, profilePicture);
+            return ps;
+        }, keyHolder);
+        return keyHolder.getKey().intValue();
+    }
+
+    public void addParticipant(int groupId, int userId) {
+        String sql = "INSERT INTO GroupParticipants (GroupID, UserID) VALUES (?, ?)";
+        jdbcTemplate.update(sql, groupId, userId);
+    }
+
+    public List<Map<String, Object>> findGroupsForUser(int userId) {
+        String sql = """
+            SELECT 
+                g.GroupID AS groupId,
+                g.GroupName AS groupName,
+                g.GroupType AS groupType,
+                g.ProfilePicture AS profilePicture,
+                COALESCE(SUM(
+                    CASE
+                        WHEN e.PayerID = ? AND ep.UserID <> ? THEN ep.Contribution
+                        WHEN ep.UserID = ? AND e.PayerID <> ? THEN -ep.Contribution
+                        ELSE 0
+                    END
+                ), 0) AS netBalance
+            FROM ExpenseGroups g
+            JOIN GroupParticipants gp ON g.GroupID = gp.GroupID
+            LEFT JOIN Expenses e ON e.GroupID = g.GroupID
+            LEFT JOIN ExpenseParticipation ep ON ep.ExpenseID = e.ExpenseID
+            WHERE gp.UserID = ?
+            GROUP BY g.GroupID, g.GroupName, g.GroupType, g.ProfilePicture
+            ORDER BY g.GroupName ASC
+        """;
+        return jdbcTemplate.queryForList(sql, userId, userId, userId, userId, userId);
+    }
+    public Map<String, Object> findGroupInfo(int groupId) {
+        String sql = "SELECT GroupID AS groupId, GroupName AS groupName, GroupType AS groupType, ProfilePicture AS profilePicture FROM ExpenseGroups WHERE GroupID = ?";
+        return jdbcTemplate.queryForMap(sql, groupId);
+    }
+
+    public List<Map<String, Object>> findGroupExpenses(int groupId, int userId) {
+        String sql = """
+                SELECT
+                    e.ExpenseID AS expenseId,
+                    e.ExpenseTitle AS expenseTitle,
+                    e.ExpenseDate AS expenseDate,
+                    e.ExpenseType AS category,
+                    e.Amount AS amount,
+                    e.IsSettleUp AS isSettleUp,
+                    e.PaymentID AS paymentId,
+                    e.WalletID AS walletId,
+                    e.PayerID AS payerId,
+                    p.Name AS payerName
+                FROM Expenses e
+                JOIN User p ON e.PayerID = p.UserID
+                WHERE e.GroupID = ?
+                    AND e.ExpenseType <> 'Fugazi'
+                    AND e.IsPersonal = 0
+                ORDER BY e.ExpenseDate DESC;
+                """;
+
+        List<Map<String,Object>> list = jdbcTemplate.queryForList(sql, groupId);
+        for (Map<String,Object> expense: list) {
+            expense.put("splitDetails", expensesDAO.findExpenseParticipants((Integer) expense.get("expenseId")));
+        }
+        return list;
+    }
+    //  update group (partial: name, type, photo)
+    public void updateGroup(int groupId, String name, String type, String profilePicture) {
+        String sql;
+        if (profilePicture == null){
+            sql = "UPDATE ExpenseGroups SET GroupName = ?, GroupType = ? WHERE GroupID = ?";
+            jdbcTemplate.update(sql, name, type, groupId);
+        }else {
+            sql = "UPDATE ExpenseGroups SET GroupName = ?, GroupType = ?, ProfilePicture = ? WHERE GroupID = ?";
+            jdbcTemplate.update(sql, name, type, profilePicture, groupId);
+        }
+
+    }
+    public List<Map<String, Object>> findGroupParticipantsWithBalances(int groupId, int currentUserId) {
+        String sql = """
+            SELECT
+                u.UserID AS userId,
+                u.Name AS name,
+                u.Username AS username,
+                u.ProfilePicture AS profilePicture,
+                COALESCE((
+                    SELECT SUM(
+                        CASE
+                            WHEN e.PayerID = ? AND ep.UserID = u.UserID THEN ep.Contribution
+                            WHEN e.PayerID = u.UserID AND ep.UserID = ? THEN -ep.Contribution
+                            ELSE 0
+                        END
+                    )
+                    FROM Expenses e
+                    JOIN ExpenseParticipation ep ON ep.ExpenseID = e.ExpenseID
+                    WHERE e.GroupID = ?
+                ), 0) AS userBalance
+            FROM GroupParticipants gp
+            JOIN User u ON gp.UserID = u.UserID
+            WHERE gp.GroupID = ?
+              AND u.UserID <> ?
+            ORDER BY u.Name ASC
+        """;
+        return jdbcTemplate.queryForList( sql, currentUserId, currentUserId, groupId, groupId, currentUserId);
+    }
+    public boolean isUserInGroup(int groupId, int userId) {
+        String sql = "SELECT COUNT(*) FROM GroupParticipants WHERE GroupID = ? AND UserID = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, groupId, userId);
+        return count != null && count > 0;
+    }
+
+    /* compute a user's net balance in a given group (same logic as findGroupsForUser but per-group)*/
+    public double getUserNetBalanceInGroup(int groupId, int userId) {
+        String sql = """
+        SELECT COALESCE(SUM(
+            CASE
+                WHEN e.PayerID = ? AND ep.UserID <> ? THEN ep.Contribution
+                WHEN ep.UserID = ? AND e.PayerID <> ? THEN -ep.Contribution
+                ELSE 0
+            END
+        ), 0) AS NetBalance
+        FROM ExpenseGroups g
+        JOIN GroupParticipants gp ON g.GroupID = gp.GroupID
+        LEFT JOIN Expenses e ON e.GroupID = g.GroupID
+        LEFT JOIN ExpenseParticipation ep ON ep.ExpenseID = e.ExpenseID
+        WHERE gp.UserID = ?
+          AND g.GroupID = ?
+    """;
+
+        Double net = jdbcTemplate.queryForObject(sql, Double.class, userId, userId, userId, userId, userId, groupId
+        );
+        return net != null ? net : 0.0;
+    }
+
+     /*remove a participant from a group*/
+    public void removeParticipant(int groupId, int userId) {
+        String sql = "DELETE FROM GroupParticipants WHERE GroupID = ? AND UserID = ?";
+        jdbcTemplate.update(sql, groupId, userId);
+    }
+
+      /*get all participant IDs of a group*/
+    public List<Integer> findParticipantIds(int groupId) {
+        String sql = "SELECT UserID FROM GroupParticipants WHERE GroupID = ?";
+        return jdbcTemplate.queryForList(sql, Integer.class, groupId);
+    }
+
+    /*delete a group and related data*/
+    public void deleteGroup(int groupId) {
+        // Adjust order depending on your foreign key constraints (or use ON DELETE CASCADE)
+
+        // Delete participation rows for expenses in this group
+        String deleteParticipation = """
+        DELETE ep FROM ExpenseParticipation ep
+        JOIN Expenses e ON ep.ExpenseID = e.ExpenseID
+        WHERE e.GroupID = ?
+    """;
+        jdbcTemplate.update(deleteParticipation, groupId);
+
+        // Delete expenses in this group
+        String deleteExpenses = "DELETE FROM Expenses WHERE GroupID = ?";
+        jdbcTemplate.update(deleteExpenses, groupId);
+
+        // Delete participants
+        String deleteParticipants = "DELETE FROM GroupParticipants WHERE GroupID = ?";
+        jdbcTemplate.update(deleteParticipants, groupId);
+
+        // Finally delete the group
+        String deleteGroup = "DELETE FROM ExpenseGroups WHERE GroupID = ?";
+        jdbcTemplate.update(deleteGroup, groupId);
+    }
+}

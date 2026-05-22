@@ -175,6 +175,7 @@ export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied,
       toWalletId: expense.entryKind === 'transfer' ? (expense.toWalletId ?? null) : null,
       isPersonal: true,
       entryKind: expense.entryKind || 'expense',
+      predictedCategory: expense.predictedCategory ?? null,
     }
   }
 
@@ -234,6 +235,7 @@ export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied,
     paymentId: clean.paymentId ?? null,
     walletId: clean.walletId ?? null,
     isPersonal: clean.isPersonal ?? false,
+    predictedCategory: clean.predictedCategory ?? null,
   }
   return payload
 }

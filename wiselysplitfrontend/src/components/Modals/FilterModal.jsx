@@ -116,7 +116,24 @@ export default function FilterModal({
             )}
           </legend>
           <div className='flex flex-wrap gap-2' role="group" aria-label="Expense type filters">
-            {['Work', 'Food', 'Travel', 'Personal', 'Utilities', 'Entertainment', 'Other'].map(item => (
+            {[
+              'Food & Dining',
+              'Transport',
+              'Housing',
+              'Utilities',
+              'Health & Medical',
+              'Entertainment',
+              'Shopping',
+              'Education',
+              'Personal Care',
+              'Travel',
+              'Finance',
+              'Savings & Investments',
+              'Gifts & Donations',
+              'Kids & Family',
+              'Pets',
+              'Other',
+            ].map(item => (
               <button
                 key={item}
                 type="button"

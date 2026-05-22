@@ -1,0 +1,1066 @@
+title,label
+mcdonalds drive thru,Food & Dining
+burger king meal,Food & Dining
+wendys lunch,Food & Dining
+harveys burger,Food & Dining
+a and w breakfast,Food & Dining
+swiss chalet dinner,Food & Dining
+the keg steakhouse,Food & Dining
+montanas dinner,Food & Dining
+kelseys pub,Food & Dining
+jack astors,Food & Dining
+boston pizza,Food & Dining
+milestones grill,Food & Dining
+earls kitchen,Food & Dining
+joey restaurant,Food & Dining
+moxies dinner,Food & Dining
+red lobster,Food & Dining
+olive garden,Food & Dining
+chilis grill,Food & Dining
+applebees,Food & Dining
+pizza pizza,Food & Dining
+dominos pizza,Food & Dining
+pizza hut,Food & Dining
+papa johns,Food & Dining
+little caesars,Food & Dining
+popeyes chicken,Food & Dining
+kfc bucket,Food & Dining
+subway sandwich,Food & Dining
+chipotle burrito,Food & Dining
+taco bell,Food & Dining
+pita pit,Food & Dining
+freshii bowl,Food & Dining
+starbucks coffee,Food & Dining
+tim hortons,Food & Dining
+second cup,Food & Dining
+mccafe drink,Food & Dining
+dunkin donuts,Food & Dining
+balzacs coffee,Food & Dining
+bubble tea,Food & Dining
+ice cream cone,Food & Dining
+dessert shop,Food & Dining
+sushi dinner,Food & Dining
+ramen lunch,Food & Dining
+thai food,Food & Dining
+vietnamese pho,Food & Dining
+indian buffet,Food & Dining
+chinese takeout,Food & Dining
+korean bbq,Food & Dining
+uber eats order,Food & Dining
+doordash delivery,Food & Dining
+skip the dishes,Food & Dining
+foodora order,Food & Dining
+grubhub,Food & Dining
+instacart groceries,Food & Dining
+walmart groceries,Food & Dining
+freshco shopping,Food & Dining
+no frills groceries,Food & Dining
+food basics,Food & Dining
+sobeys groceries,Food & Dining
+loblaws shopping,Food & Dining
+metro supermarket,Food & Dining
+costco groceries,Food & Dining
+real canadian superstore,Food & Dining
+t and t supermarket,Food & Dining
+farm boy market,Food & Dining
+whole foods,Food & Dining
+trader joes,Food & Dining
+lunch with team,Food & Dining
+dinner with friends,Food & Dining
+weekend brunch,Food & Dining
+breakfast cafe,Food & Dining
+food court mall,Food & Dining
+snacks corner store,Food & Dining
+restaurant tip,Food & Dining
+takeout dinner,Food & Dining
+beer at pub,Food & Dining
+wine bar,Food & Dining
+shell gas station,Transport
+petro canada fuel,Transport
+esso fillup,Transport
+husky gas,Transport
+ultramar fuel,Transport
+pioneer gas,Transport
+mobil station,Transport
+costco gas,Transport
+chevron fuel,Transport
+suncor gas,Transport
+gas top up,Transport
+uber ride,Transport
+uber x trip,Transport
+uber comfort,Transport
+uber pool,Transport
+lyft trip,Transport
+lyft xl,Transport
+ola cab,Transport
+beck taxi,Transport
+diamond taxi,Transport
+yellow cab,Transport
+airport taxi,Transport
+ttc metropass,Transport
+ttc fare,Transport
+presto reload,Transport
+presto card top up,Transport
+go transit pass,Transport
+go train ticket,Transport
+viva transit,Transport
+mississauga miway,Transport
+brampton transit,Transport
+exo montreal,Transport
+stm metro,Transport
+oc transpo,Transport
+translink fare,Transport
+bc transit compass,Transport
+single bus ticket,Transport
+subway fare,Transport
+parking fee,Transport
+parking ticket,Transport
+indigo parking,Transport
+impark lot,Transport
+paid parking lot,Transport
+monthly parking pass,Transport
+garage parking,Transport
+valet parking,Transport
+hourly parking meter,Transport
+highway 407 toll,Transport
+etr 407 bill,Transport
+toll road charge,Transport
+car wash,Transport
+oil change,Transport
+mr lube service,Transport
+brake pad replacement,Transport
+mechanic visit,Transport
+tire change,Transport
+winter tires installation,Transport
+transmission service,Transport
+drive test fee,Transport
+license renewal,Transport
+plate sticker renewal,Transport
+car battery replacement,Transport
+towing fee,Transport
+roadside assistance,Transport
+caa membership,Transport
+bike share day pass,Transport
+monthly rent,Housing
+rent payment,Housing
+apartment rent,Housing
+condo rent payment,Housing
+basement suite rent,Housing
+landlord rent,Housing
+parking spot rent,Housing
+storage locker rent,Housing
+mortgage payment,Housing
+scotiabank mortgage,Housing
+td mortgage,Housing
+rbc mortgage,Housing
+cibc mortgage,Housing
+bmo mortgage,Housing
+hsbc mortgage,Housing
+manulife one mortgage,Housing
+biweekly mortgage payment,Housing
+mortgage prepayment,Housing
+home equity payment,Housing
+property tax,Housing
+city property tax,Housing
+condo fees,Housing
+strata fee,Housing
+hoa dues,Housing
+building maintenance fees,Housing
+property management fee,Housing
+plumber visit,Housing
+electrician fee,Housing
+roof repair,Housing
+hvac maintenance,Housing
+furnace tune up,Housing
+ac repair,Housing
+water heater service,Housing
+drain cleaning,Housing
+eavestrough cleaning,Housing
+snow removal service,Housing
+lawn care,Housing
+landscaping,Housing
+pool maintenance,Housing
+pest control,Housing
+exterminator visit,Housing
+locksmith,Housing
+painter quote,Housing
+deck staining,Housing
+fence repair,Housing
+home insurance deductible,Housing
+home depot tools,Housing
+home depot purchase,Housing
+rona materials,Housing
+lowes hardware,Housing
+canadian tire hardware,Housing
+kitchen renovation,Housing
+bathroom renovation,Housing
+ikea furniture for living room,Housing
+paint supplies,Housing
+drywall repair,Housing
+light fixtures,Housing
+ceiling fan install,Housing
+garage door opener,Housing
+new appliance install,Housing
+new locks install,Housing
+hydro one bill,Utilities
+toronto hydro bill,Utilities
+alectra utilities,Utilities
+oakville hydro,Utilities
+enmax electricity,Utilities
+fortis electricity,Utilities
+bc hydro,Utilities
+manitoba hydro,Utilities
+sasktel power,Utilities
+nova scotia power,Utilities
+hydro quebec,Utilities
+electricity prepaid,Utilities
+electricity bill,Utilities
+city water bill,Utilities
+regional water bill,Utilities
+water and sewer,Utilities
+sewer fees,Utilities
+enbridge gas bill,Utilities
+fortis bc gas,Utilities
+union gas,Utilities
+natural gas bill,Utilities
+atco gas,Utilities
+gas heating bill,Utilities
+bell internet,Utilities
+rogers internet,Utilities
+telus internet,Utilities
+fido internet,Utilities
+virgin internet,Utilities
+teksavvy internet,Utilities
+distributel internet,Utilities
+vmedia internet,Utilities
+oxio internet,Utilities
+start internet,Utilities
+shaw internet,Utilities
+cogeco internet,Utilities
+eastlink internet,Utilities
+beanfield internet,Utilities
+wifi monthly,Utilities
+broadband bill,Utilities
+home internet plan,Utilities
+fido phone bill,Utilities
+koodo phone bill,Utilities
+telus mobility,Utilities
+bell mobility,Utilities
+rogers wireless,Utilities
+virgin mobile,Utilities
+public mobile,Utilities
+freedom mobile,Utilities
+chatr mobile,Utilities
+lucky mobile,Utilities
+mint mobile,Utilities
+verizon wireless,Utilities
+att wireless,Utilities
+mobile postpaid bill,Utilities
+mobile prepaid recharge,Utilities
+phone recharge,Utilities
+sim card top up,Utilities
+bell satellite tv,Utilities
+rogers cable tv,Utilities
+shaw direct,Utilities
+cable tv subscription,Utilities
+bell fibe tv,Utilities
+trash pickup fee,Utilities
+recycling fee,Utilities
+doctor visit copay,Health & Medical
+walk in clinic,Health & Medical
+family doctor appointment,Health & Medical
+telehealth visit,Health & Medical
+telus health md,Health & Medical
+maple virtual care,Health & Medical
+specialist consultation,Health & Medical
+dermatologist visit,Health & Medical
+gp checkup,Health & Medical
+annual physical exam,Health & Medical
+blood test fee,Health & Medical
+lab work fee,Health & Medical
+ultrasound scan,Health & Medical
+mri scan,Health & Medical
+x ray fee,Health & Medical
+physiotherapy session,Health & Medical
+chiropractor visit,Health & Medical
+massage therapy,Health & Medical
+registered massage therapist,Health & Medical
+acupuncture,Health & Medical
+naturopath visit,Health & Medical
+mental health therapy,Health & Medical
+counselling session,Health & Medical
+psychologist visit,Health & Medical
+psychiatrist visit,Health & Medical
+betterhelp subscription,Health & Medical
+talkspace therapy,Health & Medical
+optometrist visit,Health & Medical
+glasses purchase,Health & Medical
+contact lenses,Health & Medical
+eye exam fee,Health & Medical
+hearing aid,Health & Medical
+dental cleaning,Health & Medical
+dentist appointment,Health & Medical
+dental copay,Health & Medical
+orthodontist visit,Health & Medical
+invisalign payment,Health & Medical
+teeth whitening,Health & Medical
+root canal payment,Health & Medical
+dental x ray,Health & Medical
+wisdom tooth removal,Health & Medical
+shoppers drug mart,Health & Medical
+rexall pharmacy,Health & Medical
+jean coutu,Health & Medical
+costco pharmacy,Health & Medical
+walmart pharmacy,Health & Medical
+pharmaprix,Health & Medical
+london drugs pharmacy,Health & Medical
+prescription refill,Health & Medical
+prescription meds,Health & Medical
+otc medication,Health & Medical
+advil purchase,Health & Medical
+tylenol,Health & Medical
+vitamins,Health & Medical
+supplements gnc,Health & Medical
+popeyes supplements,Health & Medical
+optimum nutrition,Health & Medical
+multivitamin,Health & Medical
+gym membership,Health & Medical
+goodlife fitness,Health & Medical
+fit4less,Health & Medical
+la fitness,Health & Medical
+ymca membership,Health & Medical
+anytime fitness,Health & Medical
+planet fitness,Health & Medical
+crossfit monthly,Health & Medical
+orangetheory class,Health & Medical
+yoga class,Health & Medical
+hot yoga membership,Health & Medical
+pilates studio,Health & Medical
+peloton subscription,Health & Medical
+peloton bike payment,Health & Medical
+classpass subscription,Health & Medical
+apple fitness plus,Health & Medical
+strava subscription,Health & Medical
+netflix subscription,Entertainment
+disney plus,Entertainment
+amazon prime video,Entertainment
+crave subscription,Entertainment
+hbo max,Entertainment
+apple tv plus,Entertainment
+paramount plus,Entertainment
+peacock streaming,Entertainment
+prime video rental,Entertainment
+mubi subscription,Entertainment
+hulu plus,Entertainment
+fubo tv,Entertainment
+sling tv,Entertainment
+dazn subscription,Entertainment
+nhl streaming,Entertainment
+mlb tv,Entertainment
+nba league pass,Entertainment
+spotify premium,Entertainment
+apple music,Entertainment
+youtube premium,Entertainment
+youtube music,Entertainment
+soundcloud go,Entertainment
+tidal music,Entertainment
+deezer premium,Entertainment
+xbox game pass,Entertainment
+playstation plus,Entertainment
+nintendo eshop,Entertainment
+steam game purchase,Entertainment
+epic games store,Entertainment
+ea play,Entertainment
+ubisoft plus,Entertainment
+gog game,Entertainment
+fortnite v bucks,Entertainment
+league of legends rp,Entertainment
+roblox robux,Entertainment
+twitch sub,Entertainment
+twitch bits,Entertainment
+in app mobile game,Entertainment
+movie tickets,Entertainment
+cineplex tickets,Entertainment
+landmark cinemas,Entertainment
+imax movie,Entertainment
+cineplex scotiabank,Entertainment
+vip cineplex experience,Entertainment
+concert tickets,Entertainment
+ticketmaster purchase,Entertainment
+live nation event,Entertainment
+broadway show,Entertainment
+theatre tickets,Entertainment
+comedy show ticket,Entertainment
+stand up tickets,Entertainment
+drive in movie,Entertainment
+amusement park entry,Entertainment
+canadas wonderland,Entertainment
+niagara falls attractions,Entertainment
+zoo tickets,Entertainment
+museum pass,Entertainment
+art gallery admission,Entertainment
+escape room booking,Entertainment
+bowling night,Entertainment
+mini golf,Entertainment
+arcade tokens,Entertainment
+karaoke night,Entertainment
+nightclub cover,Entertainment
+sports game tickets,Entertainment
+raptors tickets,Entertainment
+leafs hockey tickets,Entertainment
+jays baseball tickets,Entertainment
+zara clothes,Shopping
+h and m haul,Shopping
+uniqlo basics,Shopping
+mango fashion,Shopping
+old navy,Shopping
+gap clothing,Shopping
+banana republic,Shopping
+club monaco,Shopping
+aritzia haul,Shopping
+lululemon athletic,Shopping
+athleta,Shopping
+simons clothes,Shopping
+hudsons bay,Shopping
+winners shopping,Shopping
+marshalls,Shopping
+nordstrom rack,Shopping
+holt renfrew,Shopping
+harry rosen,Shopping
+suit alteration,Shopping
+dry cleaning,Shopping
+shoes purchase,Shopping
+boots online,Shopping
+sneakers nike,Shopping
+adidas sneakers,Shopping
+apple store purchase,Shopping
+best buy electronics,Shopping
+the source electronics,Shopping
+staples electronics,Shopping
+microsoft store,Shopping
+samsung store,Shopping
+lenovo laptop,Shopping
+dell desktop,Shopping
+nintendo switch console,Shopping
+sony tv,Shopping
+soundbar speaker,Shopping
+bose headphones,Shopping
+sony wh 1000xm5,Shopping
+airpods pro,Shopping
+smart watch,Shopping
+garmin gps watch,Shopping
+ipad purchase,Shopping
+macbook pro,Shopping
+iphone purchase,Shopping
+android phone,Shopping
+computer parts,Shopping
+hard drive,Shopping
+ssd upgrade,Shopping
+monitor purchase,Shopping
+keyboard and mouse,Shopping
+webcam for office,Shopping
+ring doorbell,Shopping
+smart bulb,Shopping
+alexa echo,Shopping
+google nest,Shopping
+ikea furniture,Shopping
+ashley furniture,Shopping
+leons furniture,Shopping
+the brick furniture,Shopping
+structube purchase,Shopping
+sleep country mattress,Shopping
+casper mattress,Shopping
+kitchen utensils,Shopping
+cookware set,Shopping
+dyson vacuum,Shopping
+instant pot,Shopping
+air fryer,Shopping
+blender purchase,Shopping
+microwave oven,Shopping
+towels and bedding,Shopping
+curtains,Shopping
+light bulbs,Shopping
+batteries,Shopping
+household supplies,Shopping
+dollarama,Shopping
+dollar tree,Shopping
+walmart household,Shopping
+costco shopping,Shopping
+sams club,Shopping
+amazon order,Shopping
+amazon prime purchase,Shopping
+ebay order,Shopping
+etsy purchase,Shopping
+shein clothes,Shopping
+temu order,Shopping
+aliexpress order,Shopping
+princess auto,Shopping
+udemy course,Education
+coursera subscription,Education
+edx course,Education
+linkedin learning,Education
+masterclass subscription,Education
+skillshare membership,Education
+codecademy pro,Education
+datacamp course,Education
+duolingo plus,Education
+babbel subscription,Education
+rosetta stone,Education
+brilliant org subscription,Education
+khan academy donation,Education
+textbook purchase,Education
+kindle textbook,Education
+oreilly subscription,Education
+packt ebook,Education
+chegg books,Education
+university bookstore,Education
+amazon textbook,Education
+tuition fee,Education
+university tuition,Education
+college tuition,Education
+semester payment,Education
+course registration fee,Education
+application fee,Education
+exam fee,Education
+gre exam,Education
+gmat exam,Education
+lsat exam,Education
+ielts exam,Education
+toefl test fee,Education
+cfa exam fee,Education
+pmp exam,Education
+aws certification,Education
+azure certification,Education
+gcp certification,Education
+cisco exam,Education
+comptia voucher,Education
+school supplies,Education
+stationery purchase,Education
+notebooks,Education
+pens and pencils,Education
+calculator graphing,Education
+school backpack,Education
+lunchbox,Education
+lab coat,Education
+scientific calculator,Education
+chatgpt plus,Education
+github copilot,Education
+jetbrains license,Education
+adobe creative cloud,Education
+microsoft 365 student,Education
+notion plus,Education
+evernote premium,Education
+todoist premium,Education
+grammarly premium,Education
+quizlet plus,Education
+scribd subscription,Education
+perlego subscription,Education
+workshop registration,Education
+conference fee,Education
+bootcamp tuition,Education
+language class fee,Education
+art class fee,Education
+music lesson fee,Education
+piano lessons,Education
+guitar lessons,Education
+driving lessons,Education
+photography class,Education
+haircut salon,Personal Care
+barber shop,Personal Care
+great clips,Personal Care
+supercuts,Personal Care
+first choice haircutters,Personal Care
+mens haircut,Personal Care
+womens haircut,Personal Care
+hair color,Personal Care
+hair highlights,Personal Care
+balayage treatment,Personal Care
+keratin treatment,Personal Care
+hair perm,Personal Care
+hair extensions,Personal Care
+nail salon,Personal Care
+manicure,Personal Care
+pedicure,Personal Care
+gel nails,Personal Care
+acrylic nails,Personal Care
+nail art,Personal Care
+eyebrow threading,Personal Care
+eyebrow tint,Personal Care
+eyelash extensions,Personal Care
+lash lift,Personal Care
+microblading,Personal Care
+facial treatment,Personal Care
+spa massage,Personal Care
+spa day,Personal Care
+deep tissue massage,Personal Care
+hot stone massage,Personal Care
+body scrub,Personal Care
+waxing service,Personal Care
+laser hair removal,Personal Care
+tanning salon,Personal Care
+spray tan,Personal Care
+sephora order,Personal Care
+mac cosmetics,Personal Care
+ulta beauty,Personal Care
+charlotte tilbury,Personal Care
+glow recipe,Personal Care
+the ordinary skincare,Personal Care
+fresh skincare,Personal Care
+kiehls,Personal Care
+drunk elephant,Personal Care
+sunday riley,Personal Care
+fenty beauty,Personal Care
+rare beauty,Personal Care
+nars cosmetics,Personal Care
+lush bath bombs,Personal Care
+bath and body works,Personal Care
+the body shop,Personal Care
+makeup haul,Personal Care
+beauty supplies,Personal Care
+shampoo and conditioner,Personal Care
+toothpaste,Personal Care
+deodorant,Personal Care
+soap and body wash,Personal Care
+razors and shaving cream,Personal Care
+hair gel,Personal Care
+perfume cologne,Personal Care
+fragrance purchase,Personal Care
+sunscreen lotion,Personal Care
+moisturizer,Personal Care
+lip balm,Personal Care
+hand cream,Personal Care
+air canada flight,Travel
+westjet ticket,Travel
+porter airlines,Travel
+swoop flight,Travel
+flair airlines,Travel
+air transat flight,Travel
+delta airlines,Travel
+united airlines,Travel
+american airlines,Travel
+jetblue flight,Travel
+british airways,Travel
+klm flight,Travel
+lufthansa,Travel
+air france,Travel
+emirates flight,Travel
+qatar airways,Travel
+singapore airlines,Travel
+ana flight,Travel
+cathay pacific,Travel
+expedia flight,Travel
+kayak booking,Travel
+google flights booking,Travel
+hotel booking,Travel
+expedia hotel,Travel
+booking dot com stay,Travel
+hotels com reservation,Travel
+marriott hotel,Travel
+sheraton stay,Travel
+hilton hotel,Travel
+hyatt resort,Travel
+holiday inn,Travel
+comfort inn,Travel
+best western,Travel
+four seasons,Travel
+ritz carlton,Travel
+fairmont hotel,Travel
+ihg hotel,Travel
+accor hotel,Travel
+motel night,Travel
+vacation rental,Travel
+airbnb stay,Travel
+vrbo rental,Travel
+cottage rental,Travel
+all inclusive resort,Travel
+cruise booking,Travel
+royal caribbean cruise,Travel
+disney cruise,Travel
+carnival cruise,Travel
+norwegian cruise,Travel
+sandals resort,Travel
+club med,Travel
+hawaii vacation,Travel
+mexico vacation,Travel
+cuba all inclusive,Travel
+dominican republic trip,Travel
+paris trip,Travel
+italy vacation,Travel
+japan trip,Travel
+banff getaway,Travel
+travel insurance,Travel
+esim international,Travel
+airalo esim,Travel
+roaming charges,Travel
+airport parking,Travel
+airport shuttle,Travel
+airport lounge,Travel
+baggage fee,Travel
+seat upgrade,Travel
+currency exchange,Travel
+foreign atm withdrawal,Travel
+souvenirs,Travel
+sightseeing tour,Travel
+train ticket via rail,Travel
+amtrak ticket,Travel
+greyhound bus,Travel
+megabus ticket,Travel
+enterprise car rental,Travel
+hertz rental,Travel
+avis rental,Travel
+budget rental car,Travel
+zoomcar rental,Travel
+turo rental,Travel
+loan payment,Finance
+car loan payment,Finance
+student loan payment,Finance
+personal loan emi,Finance
+line of credit payment,Finance
+home equity loan,Finance
+scotia line of credit,Finance
+td line of credit,Finance
+td auto finance,Finance
+ford credit payment,Finance
+gm financial payment,Finance
+honda finance payment,Finance
+nissan finance payment,Finance
+toyota finance payment,Finance
+sallie mae payment,Finance
+osap repayment,Finance
+nslsc payment,Finance
+car insurance,Finance
+auto insurance premium,Finance
+intact insurance,Finance
+td insurance,Finance
+belairdirect,Finance
+sonnet insurance,Finance
+aviva insurance,Finance
+allstate insurance,Finance
+cooperators insurance,Finance
+desjardins insurance,Finance
+home insurance premium,Finance
+tenant insurance,Finance
+renters insurance,Finance
+life insurance premium,Finance
+manulife insurance,Finance
+sunlife premium,Finance
+canada life,Finance
+primerica payment,Finance
+term life insurance,Finance
+whole life insurance,Finance
+critical illness insurance,Finance
+disability insurance,Finance
+pet insurance,Finance
+dental insurance premium,Finance
+bank service charge,Finance
+monthly bank fee,Finance
+atm fee,Finance
+foreign transaction fee,Finance
+overdraft fee,Finance
+nsf fee,Finance
+e transfer fee,Finance
+wire transfer fee,Finance
+late payment fee,Finance
+credit card annual fee,Finance
+credit card interest,Finance
+paypal fee,Finance
+stripe fee,Finance
+currency conversion fee,Finance
+account maintenance fee,Finance
+cheque order fee,Finance
+turbotax purchase,Finance
+h and r block fee,Finance
+accountant fee,Finance
+financial advisor fee,Finance
+notary fee,Finance
+lawyer consultation,Finance
+rrsp contribution,Savings & Investments
+tfsa contribution,Savings & Investments
+lira contribution,Savings & Investments
+resp contribution,Savings & Investments
+rrif withdrawal,Savings & Investments
+spousal rrsp,Savings & Investments
+group rrsp deduction,Savings & Investments
+employer rrsp match,Savings & Investments
+fhsa contribution,Savings & Investments
+stock purchase,Savings & Investments
+etf purchase,Savings & Investments
+vfv etf,Savings & Investments
+voo etf,Savings & Investments
+qqq etf,Savings & Investments
+xeqt etf,Savings & Investments
+vgro etf,Savings & Investments
+xgro etf,Savings & Investments
+veqt etf,Savings & Investments
+mutual fund buy,Savings & Investments
+index fund deposit,Savings & Investments
+dividend reinvestment,Savings & Investments
+drip purchase,Savings & Investments
+individual stock buy,Savings & Investments
+apple stock purchase,Savings & Investments
+microsoft shares,Savings & Investments
+tesla shares,Savings & Investments
+nvidia shares,Savings & Investments
+amazon stock,Savings & Investments
+google stock,Savings & Investments
+shopify stock,Savings & Investments
+options trade,Savings & Investments
+call option purchase,Savings & Investments
+put option,Savings & Investments
+spy options,Savings & Investments
+treasury bond,Savings & Investments
+government bond,Savings & Investments
+corporate bond,Savings & Investments
+gic deposit,Savings & Investments
+certificate of deposit,Savings & Investments
+savings account deposit,Savings & Investments
+high interest savings deposit,Savings & Investments
+eq bank deposit,Savings & Investments
+wealthsimple deposit,Savings & Investments
+questrade deposit,Savings & Investments
+td direct investing,Savings & Investments
+ib transfer,Savings & Investments
+robinhood deposit,Savings & Investments
+fidelity deposit,Savings & Investments
+bitcoin purchase,Savings & Investments
+ethereum buy,Savings & Investments
+solana purchase,Savings & Investments
+crypto purchase coinbase,Savings & Investments
+binance trade,Savings & Investments
+kraken purchase,Savings & Investments
+shakepay deposit,Savings & Investments
+ndax deposit,Savings & Investments
+newton deposit,Savings & Investments
+cold wallet hardware,Savings & Investments
+reit purchase,Savings & Investments
+vanguard reit,Savings & Investments
+pension contribution,Savings & Investments
+employer pension match,Savings & Investments
+defined contribution plan,Savings & Investments
+dcpp deduction,Savings & Investments
+dbpp pension,Savings & Investments
+cpp top up,Savings & Investments
+real estate down payment,Savings & Investments
+birthday gift,Gifts & Donations
+birthday card purchase,Gifts & Donations
+birthday cake,Gifts & Donations
+birthday party supplies,Gifts & Donations
+birthday flowers,Gifts & Donations
+birthday surprise,Gifts & Donations
+balloon arrangement,Gifts & Donations
+birthday dinner gift,Gifts & Donations
+hallmark card,Gifts & Donations
+indigo gift,Gifts & Donations
+amazon gift card,Gifts & Donations
+starbucks gift card,Gifts & Donations
+sephora gift card,Gifts & Donations
+costco gift card,Gifts & Donations
+walmart gift card,Gifts & Donations
+ebay gift card,Gifts & Donations
+steam gift card,Gifts & Donations
+apple gift card,Gifts & Donations
+google play gift card,Gifts & Donations
+itunes gift card,Gifts & Donations
+restaurant gift certificate,Gifts & Donations
+spa gift voucher,Gifts & Donations
+christmas gift,Gifts & Donations
+christmas tree,Gifts & Donations
+hanukkah gift,Gifts & Donations
+holiday gifts,Gifts & Donations
+secret santa gift,Gifts & Donations
+holiday decorations,Gifts & Donations
+valentines day gift,Gifts & Donations
+valentines flowers,Gifts & Donations
+anniversary gift,Gifts & Donations
+anniversary dinner gift,Gifts & Donations
+mothers day gift,Gifts & Donations
+fathers day gift,Gifts & Donations
+easter chocolate,Gifts & Donations
+halloween candy,Gifts & Donations
+diwali sweets,Gifts & Donations
+lunar new year gift,Gifts & Donations
+eid gifts,Gifts & Donations
+thanksgiving gift,Gifts & Donations
+baby shower gift,Gifts & Donations
+bridal shower gift,Gifts & Donations
+wedding gift,Gifts & Donations
+housewarming gift,Gifts & Donations
+graduation gift,Gifts & Donations
+retirement gift,Gifts & Donations
+baptism gift,Gifts & Donations
+congratulations bouquet,Gifts & Donations
+charity donation,Gifts & Donations
+red cross donation,Gifts & Donations
+salvation army,Gifts & Donations
+unicef donation,Gifts & Donations
+doctors without borders,Gifts & Donations
+world wildlife fund,Gifts & Donations
+sickkids donation,Gifts & Donations
+terry fox donation,Gifts & Donations
+food bank donation,Gifts & Donations
+daily bread donation,Gifts & Donations
+habitat for humanity,Gifts & Donations
+gofundme contribution,Gifts & Donations
+kickstarter pledge,Gifts & Donations
+patreon support,Gifts & Donations
+ko fi donation,Gifts & Donations
+twitch donation,Gifts & Donations
+church donation,Gifts & Donations
+mosque donation,Gifts & Donations
+temple donation,Gifts & Donations
+religious tithe,Gifts & Donations
+daycare payment,Kids & Family
+babysitter payment,Kids & Family
+nanny payment,Kids & Family
+after school program,Kids & Family
+summer camp registration,Kids & Family
+day camp fee,Kids & Family
+march break camp,Kids & Family
+montessori tuition,Kids & Family
+preschool fees,Kids & Family
+kindergarten fees,Kids & Family
+before and after care,Kids & Family
+school photos,Kids & Family
+school field trip,Kids & Family
+school book fees,Kids & Family
+parent council donation,Kids & Family
+fundraiser bake sale,Kids & Family
+kids stationery,Kids & Family
+school uniform,Kids & Family
+backpack child,Kids & Family
+lunchbox child,Kids & Family
+toys r us purchase,Kids & Family
+walmart toys,Kids & Family
+indigo kids,Kids & Family
+mastermind toys,Kids & Family
+lego set,Kids & Family
+barbie dolls,Kids & Family
+hot wheels,Kids & Family
+nerf gun,Kids & Family
+board game purchase,Kids & Family
+baby toys,Kids & Family
+plush toy,Kids & Family
+puzzle for kids,Kids & Family
+kids tablet,Kids & Family
+kindle for kids,Kids & Family
+kids headphones,Kids & Family
+hockey registration,Kids & Family
+soccer registration,Kids & Family
+baseball league,Kids & Family
+basketball clinic,Kids & Family
+swim lessons,Kids & Family
+dance class,Kids & Family
+ballet lessons,Kids & Family
+karate lessons,Kids & Family
+gymnastics class,Kids & Family
+music lessons piano,Kids & Family
+kids art class,Kids & Family
+kumon tutoring,Kids & Family
+sylvan tutoring,Kids & Family
+oxford learning,Kids & Family
+mathnasium,Kids & Family
+scouts registration,Kids & Family
+girl guides,Kids & Family
+beavers registration,Kids & Family
+kids clothing,Kids & Family
+carters baby,Kids & Family
+gap kids,Kids & Family
+gymboree,Kids & Family
+h and m kids,Kids & Family
+oshkosh kids,Kids & Family
+baby formula,Kids & Family
+diapers and wipes,Kids & Family
+baby food,Kids & Family
+stroller purchase,Kids & Family
+car seat purchase,Kids & Family
+crib mattress,Kids & Family
+baby clothes,Kids & Family
+family dinner out,Kids & Family
+family movie night,Kids & Family
+parent date night,Kids & Family
+family vacation extras,Kids & Family
+child birthday party,Kids & Family
+kids birthday venue,Kids & Family
+kids haircut,Kids & Family
+kids dental,Kids & Family
+pet food,Pets
+dog food,Pets
+cat food,Pets
+royal canin food,Pets
+hills science diet,Pets
+blue buffalo,Pets
+orijen pet food,Pets
+acana pet food,Pets
+kirkland pet food,Pets
+taste of the wild,Pets
+freshpet,Pets
+raw diet meal,Pets
+treats and chews,Pets
+kong treats,Pets
+dental chews,Pets
+dog biscuits,Pets
+catnip toy,Pets
+vet visit,Pets
+vet checkup,Pets
+annual vet exam,Pets
+vaccinations dog,Pets
+vaccinations cat,Pets
+deworming,Pets
+flea and tick treatment,Pets
+heartworm prevention,Pets
+spay surgery,Pets
+neuter surgery,Pets
+dental cleaning pet,Pets
+emergency vet,Pets
+vca animal hospital,Pets
+banfield pet hospital,Pets
+ontario veterinary,Pets
+lab tests vet,Pets
+pet grooming,Pets
+dog grooming,Pets
+cat grooming,Pets
+mobile groomer,Pets
+dog bath,Pets
+nail trim pet,Pets
+ear cleaning pet,Pets
+anal gland expression,Pets
+fur trim,Pets
+paw spa,Pets
+petsmart grooming,Pets
+pet valu grooming,Pets
+pet supplies,Pets
+dog leash,Pets
+collar with tag,Pets
+dog harness,Pets
+cat litter,Pets
+cat tree,Pets
+scratching post,Pets
+dog bed,Pets
+cat bed,Pets
+pet carrier,Pets
+dog crate,Pets
+pet toy,Pets
+kong chew,Pets
+pet bowl,Pets
+pet fountain,Pets
+automatic feeder,Pets
+dog clothes,Pets
+dog raincoat,Pets
+dog boots,Pets
+halloween costume pet,Pets
+pet boarding,Pets
+pet daycare,Pets
+dog walker,Pets
+dog training class,Pets
+pet insurance premium,Pets
+microchip service,Pets
+pet adoption fee,Pets
+humane society donation,Pets
+pet travel,Pets
+pet sitter,Pets
+petsmart purchase,Pets
+pet valu store,Pets
+rens pets,Pets
+global pet foods,Pets
+chewy order,Pets
+amazon pet supplies,Pets

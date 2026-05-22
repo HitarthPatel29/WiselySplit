@@ -1,12 +1,11 @@
 // src/components/form/SharedExpenseFields.jsx
 // Second card for shared expense: Share With, Paid By, Wallet (if payer is user), Bill Split, split details
 
-import React, { useState, useRef, useEffect } from 'react'
+import React from 'react'
 import { ChevronDownIcon, UserGroupIcon, UserCircleIcon } from '@heroicons/react/24/solid'
 import { getFriendOweOptions } from '../../utils/expenseModel'
+import IconCombobox from '../IO/IconCombobox'
 
-const inputClass =
-  'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400'
 const selectClass =
   'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 pr-9 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 appearance-none cursor-pointer'
 
@@ -32,100 +31,20 @@ function ToggleSwitch({ checked, onChange, ariaLabel }) {
   )
 }
 
-function ShareExpenseWithCombobox({ value, options, onChange }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const selected = options.find((p) => p.id === value) || options[0]
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+// Build IconCombobox options from the raw friends/groups list. Each entry needs
+// a stringified value (so the existing parseInt-based handler keeps working),
+// an avatar URL or a fallback icon, and a suffix for the "(Group)" hint.
+function buildShareWithOptions(friendsAndGroups) {
+  return friendsAndGroups.map((p) => {
+    const isGroup = p.type === 'group'
+    return {
+      value: String(p.id),
+      label: p.name,
+      suffix: isGroup ? '(Group)' : undefined,
+      imageUrl: p.profilePicture,
+      Icon: isGroup ? UserGroupIcon : UserCircleIcon,
     }
-    if (open) document.addEventListener('click', handleClickOutside)
-    return () => document.removeEventListener('click', handleClickOutside)
-  }, [open])
-
-  return (
-    <div ref={ref} className="relative">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        Share expense with
-      </label>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={`${inputClass} flex items-center gap-3 text-left cursor-pointer min-h-[42px]`}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label="Share expense with"
-      >
-        {selected ? (
-          <>
-            <span className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-              {selected.profilePicture ? (
-                <img src={selected.profilePicture} alt="" className="w-full h-full object-cover" />
-              ) : selected.type === 'group' ? (
-                <UserGroupIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
-              ) : (
-                <UserCircleIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
-              )}
-            </span>
-            <span className="flex-1 truncate">
-              {selected.name} {selected.type === 'group' ? '(Group)' : ''}
-            </span>
-            <ChevronDownIcon
-              className={`w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
-              aria-hidden
-            />
-          </>
-        ) : (
-          <span className="text-gray-500 dark:text-gray-400">Select...</span>
-        )}
-      </button>
-
-      {open && options.length > 0 && (
-        <ul
-          role="listbox"
-          className="absolute z-10 mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg max-h-56 overflow-auto py-1"
-          aria-label="Share expense with"
-        >
-          {options.map((p) => {
-            const avatar = p.profilePicture
-            const group = p.type === 'group'
-            const isSelected = p.id === value
-            return (
-              <li
-                key={p.id}
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => {
-                  onChange({ target: { value: String(p.id) } })
-                  setOpen(false)
-                }}
-                className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition ${
-                  isSelected
-                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100'
-                }`}
-              >
-                <span className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                  {avatar ? (
-                    <img src={avatar} alt="" className="w-full h-full object-cover" />
-                  ) : group ? (
-                    <UserGroupIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                  ) : (
-                    <UserCircleIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                  )}
-                </span>
-                <span className="truncate">
-                  {p.name} {group ? '(Group)' : ''}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
-  )
+  })
 }
 
 export default function SharedExpenseFields({
@@ -153,9 +72,11 @@ export default function SharedExpenseFields({
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden shadow-sm">
       <div className="p-4 flex flex-col gap-4">
-        <ShareExpenseWithCombobox
+        <IconCombobox
+          label="Share expense with"
+          ariaLabel="Share expense with"
           value={expense.shareWithId ?? ''}
-          options={friendsAndGroups}
+          options={buildShareWithOptions(friendsAndGroups)}
           onChange={onShareWithChange}
         />
 

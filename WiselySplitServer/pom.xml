@@ -105,6 +105,17 @@
 			<artifactId>stripe-java</artifactId>
 			<version>24.16.0</version>
 		</dependency>
+		<!-- pom.xml -->
+		<dependency>
+			<groupId>com.github.haifengl</groupId>
+			<artifactId>smile-core</artifactId>
+			<version>3.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.haifengl</groupId>
+			<artifactId>smile-nlp</artifactId>
+			<version>3.1.1</version>
+		</dependency>
 	</dependencies>
 
 
