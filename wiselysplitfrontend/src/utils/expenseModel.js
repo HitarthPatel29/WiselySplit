@@ -167,10 +167,10 @@ export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied,
   if (mode === 'personal') {
     return {
       title: expense.title || '',
-      amount: expense.totalAmount || expense.amount,
+      amount: parseFloat(expense.totalAmount || expense.amount) || 0,
       date: expense.date || '',
       category: expense.category || '',
-      payerId: expense.userId ?? currentUserId,
+      userId: expense.userId ?? currentUserId,
       walletId: expense.walletId ?? null,
       toWalletId: expense.entryKind === 'transfer' ? (expense.toWalletId ?? null) : null,
       isPersonal: true,

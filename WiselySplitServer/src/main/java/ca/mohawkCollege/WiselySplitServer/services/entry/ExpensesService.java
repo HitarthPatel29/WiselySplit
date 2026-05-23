@@ -5,6 +5,7 @@ import ca.mohawkCollege.wiselySplitServer.daos.PaymentDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.WalletDAO;
 import ca.mohawkCollege.wiselySplitServer.models.User;
+import ca.mohawkCollege.wiselySplitServer.services.classification.ClassificationService;
 import ca.mohawkCollege.wiselySplitServer.services.classification.FeedbackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -27,10 +28,12 @@ public class ExpensesService {
     @Autowired
     private PaymentDAO paymentDAO;
     @Autowired
+    private ClassificationService classificationService;
+    @Autowired
     private FeedbackService feedbackService;
 
     /**
-     * Best-effort: send a feedback row to the classifier so it can learn from
+     * Best-effort: send a feedback row to the classifier, so it can learn from
      * what the user actually saved. Never throws into the expense flow.
      */
     private void sendClassifierFeedback(Map<String, Object> payload, String title, String finalCategory, Integer userId) {
@@ -44,6 +47,7 @@ public class ExpensesService {
             feedbackService.recordFeedback(title, predicted, finalCategory, userId);
         } catch (Exception ignored) {
             // Never let feedback errors break the expense create flow.
+            ignored.printStackTrace();
         }
     }
 
@@ -53,7 +57,7 @@ public class ExpensesService {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
-            String type = (String) payload.get("category");
+            String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int payerId = ((Number) payload.get("payerId")).intValue();
 
@@ -65,7 +69,7 @@ public class ExpensesService {
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
 
             // Insert into Expenses table
-            int expenseId = expensesDAO.insertSharedExpense(title, date, type, amount, payerId, groupId, isSettleUp, paymentId, walletId);
+            int expenseId = expensesDAO.insertSharedExpense(title, date, category, amount, payerId, groupId, isSettleUp, paymentId, walletId);
 
             // Insert participants
             List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
@@ -78,7 +82,7 @@ public class ExpensesService {
                 }
             }
 
-            sendClassifierFeedback(payload, title, type, payerId);
+            sendClassifierFeedback(payload, title, category, payerId);
 
             return Map.of("success", true, "expenseId", expenseId, "message", "Shared Expense created successfully");
         } catch (Exception e) {
@@ -90,16 +94,16 @@ public class ExpensesService {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
-            String type = (String) payload.get("category");
+            String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int userId = ((Number) payload.get("userId")).intValue();
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
             String entryKind = payload.get("entryKind") != null ? (String) payload.get("entryKind") : "expense";
             Integer toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).intValue() : null;
 
-            int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, entryKind, toWalletId);
+            int expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, entryKind, toWalletId);
 
-            sendClassifierFeedback(payload, title, type, userId);
+            sendClassifierFeedback(payload, title, category, userId);
 
             return Map.of("success", true, "expenseId", expenseId, "message", "Personal entry created successfully");
         } catch (Exception e) {
@@ -112,7 +116,7 @@ public class ExpensesService {
         try {
             String title = (String) payload.get("transactionTitle");
             String date = (String) payload.get("transactionDate");
-            String type = (String) payload.get("name");
+            String category = classificationService.predict(title).category();
             String walletName = (String) payload.get("cardName");
 
             double amount = this.sanitizeAmount(payload.get("amount"));
@@ -133,7 +137,7 @@ public class ExpensesService {
             }
 
             // Insert personal expense
-            int expenseId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "expense", null);
+            int expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
 
             return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
         } catch (Exception e) {
@@ -235,7 +239,7 @@ public class ExpensesService {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
-            String type = (String) payload.get("category");
+            String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
             int payerId = ((Number) payload.get("payerId")).intValue();
             String shareWithType = (String) payload.get("shareWithType");
@@ -250,7 +254,7 @@ public class ExpensesService {
             String entryKind = payload.get("entryKind") != null ? (String) payload.get("entryKind") : "expense";
             Integer toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).intValue() : null;
 
-            expensesDAO.updateExpense(expenseId, title, date, type, amount, payerId, groupId, isPersonal, walletId, entryKind, toWalletId);
+            expensesDAO.updateExpense(expenseId, title, date, category, amount, payerId, groupId, isPersonal, walletId, entryKind, toWalletId);
 
             if (!isPersonal) {
                 // Delete old participation and insert new ones

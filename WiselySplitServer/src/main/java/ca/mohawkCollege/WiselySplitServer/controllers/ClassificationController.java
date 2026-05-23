@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/classify")
@@ -133,6 +134,7 @@ public class ClassificationController {
             body.put("activeTrainingSize", classificationService.trainingSize());
             body.put("byLabel", trainingDataDAO.countByLabel());
             body.put("bySource", trainingDataDAO.countBySource());
+            body.put("pendingDataSinceLastTrain", feedbackService.getPendingSinceLastTrain());
             return ResponseEntity.ok(body);
         } catch (Exception e) {
             e.printStackTrace();
@@ -161,6 +163,49 @@ public class ClassificationController {
                 rows.add(row);
             }
             return ResponseEntity.ok(Map.of("models", rows));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Only user-facing sources are exposed through the feedback browser. */
+    private static final Set<String> FEEDBACK_SOURCES = Set.of("user_confirmed", "user_corrected");
+
+    /**
+     * GET /api/classify/training-data?source=user_corrected&limit=25&offset=0
+     *
+     *  - `source` is REQUIRED to be one of 'user_confirmed' or 'user_corrected'.
+     *  - `limit` is clamped to [1, 200], default 25.
+     *  - `offset` is clamped to >= 0, default 0.
+     *
+     * Returns: { rows: [...], total, limit, offset, source }
+     */
+    @GetMapping("/training-data")
+    public ResponseEntity<?> trainingData(
+            @RequestParam(value = "source", defaultValue = "user_corrected") String source,
+            @RequestParam(value = "limit",  defaultValue = "15") int limit,
+            @RequestParam(value = "offset", defaultValue = "0")  int offset
+    ) {
+        try {
+            if (!FEEDBACK_SOURCES.contains(source)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "source must be one of user_confirmed or user_corrected"
+                ));
+            }
+            int safeLimit  = Math.max(1, Math.min(200, limit));
+            int safeOffset = Math.max(0, offset);
+
+            List<Map<String, Object>> rows = trainingDataDAO.findRecentBySource(source, safeLimit, safeOffset);
+            int total = trainingDataDAO.countBySourceValue(source);
+
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("rows", rows);
+            body.put("total", total);
+            body.put("limit", safeLimit);
+            body.put("offset", safeOffset);
+            body.put("source", source);
+            return ResponseEntity.ok(body);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));

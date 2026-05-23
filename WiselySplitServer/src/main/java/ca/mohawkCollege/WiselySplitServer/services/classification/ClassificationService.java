@@ -32,7 +32,7 @@ public class ClassificationService {
     private static final Logger log = LoggerFactory.getLogger(ClassificationService.class);
 
     private static final String SEED_CSV = "ml/seed_categories.csv";
-    private static final double MIN_CONFIDENCE = 0.30;
+    private static final double MIN_CONFIDENCE = 0.25;
 
     @Autowired private ModelService modelService;
     @Autowired private TrainingPipeline trainingPipeline;
@@ -126,11 +126,11 @@ public class ClassificationService {
         ModelBundle bundle = current;
         if (bundle == null || title == null || title.isBlank()) return null;
 
-        int[] x = trainingPipeline.vectorize(title, bundle.getVocab());
-        if (!trainingPipeline.hasFeatures(x)) return null;
+        int[] titleVectors = trainingPipeline.vectorize(title, bundle.getVocab());
+        if (!trainingPipeline.hasFeatures(titleVectors)) return null;
 
         double[] posteriori = new double[bundle.getClasses().length];
-        int idx = bundle.getNb().predict(x, posteriori);
+        int idx = bundle.getNb().predict(titleVectors, posteriori);
         if (idx < 0 || idx >= bundle.getClasses().length) return null;
 
         double confidence = posteriori[idx];

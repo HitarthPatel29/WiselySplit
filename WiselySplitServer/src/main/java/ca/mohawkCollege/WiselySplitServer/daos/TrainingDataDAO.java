@@ -55,10 +55,10 @@ public class TrainingDataDAO {
         return n == null ? 0 : n;
     }
 
-    public int countSince(Timestamp since) {
+    public int countPendingTrainDataSinceLastTrain() {
         Integer n = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM training_data WHERE CreatedAt > ?",
-                Integer.class, since
+                "SELECT COUNT(*) FROM training_data WHERE Source = 'user_corrected' AND CreatedAt > (SELECT CreatedAt FROM model_store order by ModelID desc limit 1) ",
+                Integer.class
         );
         return n == null ? 0 : n;
     }
@@ -93,5 +93,35 @@ public class TrainingDataDAO {
     /** Removes every row sourced from the bundled seed CSV. */
     public int deleteSeedRows() {
         return jdbcTemplate.update("DELETE FROM training_data WHERE Source = 'seed'");
+    }
+
+    /**
+     * Paginated feedback rows filtered by a single source value
+     * (e.g. 'user_confirmed' or 'user_corrected'). Seed rows are never
+     * returned through this method — callers must pass a non-seed source.
+     */
+    public List<Map<String, Object>> findRecentBySource(String source, int limit, int offset) {
+        String sql = """
+            SELECT Id        AS id,
+                   Title     AS title,
+                   Label     AS label,
+                   Source    AS source,
+                   UserID    AS userId,
+                   CreatedAt AS createdAt
+              FROM training_data
+             WHERE Source = ?
+             ORDER BY CreatedAt DESC, Id DESC
+             LIMIT ? OFFSET ?
+            """;
+        return jdbcTemplate.queryForList(sql, source, limit, offset);
+    }
+
+    /** Count of training rows for a single source value. */
+    public int countBySourceValue(String source) {
+        Integer n = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM training_data WHERE Source = ?",
+                Integer.class, source
+        );
+        return n == null ? 0 : n;
     }
 }

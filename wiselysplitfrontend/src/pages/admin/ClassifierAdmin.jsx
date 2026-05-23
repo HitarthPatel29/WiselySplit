@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/solid'
 import Header from '../../components/Header.jsx'
 import api from '../../api'
+import { useAuth } from '../../context/AuthContext'
 import { useNotification } from '../../context/NotificationContext'
 
 const SOURCE_COLORS = {
@@ -84,6 +85,7 @@ function Pill({ children, className = '' }) {
 
 export default function ClassifierAdmin() {
   const { showSuccess, showError, showAlert } = useNotification()
+  const { userId } = useAuth()
 
   const [status, setStatus] = useState(null)
   const [stats, setStats] = useState(null)
@@ -95,6 +97,27 @@ export default function ClassifierAdmin() {
   const [predictTitle, setPredictTitle] = useState('')
   const [prediction, setPrediction] = useState(null)
   const [predicting, setPredicting] = useState(false)
+  const [feedbackBusy, setFeedbackBusy] = useState(null) // class label currently being submitted
+  const [feedbackSent, setFeedbackSent] = useState(null) // { finalLabel, kind: 'user_confirmed' | 'user_corrected' }
+
+  // Feedback browser (User_Corrected and User_Confirmed training data).
+  // Fetched data is cached in memory. 
+  // Once a page is loaded it lives in memory until the admin clicks Refresh or records new
+  // feedback for that source.
+  //
+  //   feedbackCache = {
+  //     user_corrected: { total, pages: { [offset]: rows[] } },
+  //     user_confirmed: { total, pages: { [offset]: rows[] } },
+  //   }
+  const FEEDBACK_PAGE_SIZE = 15
+  const emptyFeedbackCache = () => ({
+    user_corrected: { total: null, pages: {} },
+    user_confirmed: { total: null, pages: {} },
+  })
+  const [feedbackCache, setFeedbackCache] = useState(emptyFeedbackCache)
+  const [feedbackSource, setFeedbackSource] = useState('user_corrected')
+  const [feedbackOffset, setFeedbackOffset] = useState(0)
+  const [feedbackPageLoading, setFeedbackPageLoading] = useState(false)
 
   const loadStatus = useCallback(async () => {
     try {
@@ -123,15 +146,89 @@ export default function ClassifierAdmin() {
     }
   }, [])
 
+  // Derived view of the currently-selected (source, offset) slice. `rows` is
+  // `undefined` when this page hasn't been fetched yet — that's the signal for
+  // the lazy-fetch effect below to go to the network.
+  const currentBucket = feedbackCache[feedbackSource] ?? { total: null, pages: {} }
+  const currentRows = currentBucket.pages[feedbackOffset]
+  const currentTotal = currentBucket.total ?? 0
+
+  // Lazy-fetch effect: only hits the API when the (source, offset) page we want
+  // to show is not already in the cache. Tab toggles and revisiting a
+  // previously-loaded page therefore cost zero API calls.
+  useEffect(() => {
+    if (currentRows !== undefined) {
+      // Already cached. Clear any leftover loading flag from a prior fetch
+      // that was cancelled mid-flight by this navigation so the spinner can
+      // never get stuck on a cached page.
+      setFeedbackPageLoading(false)
+      return
+    }
+
+    const source = feedbackSource
+    const offset = feedbackOffset
+    let cancelled = false
+    setFeedbackPageLoading(true)
+    console.log('fetching feedback page for', source, offset)
+    api.get('/classify/training-data', { params: { source, limit: FEEDBACK_PAGE_SIZE, offset } })
+      .then(({ data }) => {
+        if (cancelled) return
+        const limit = data.limit ?? FEEDBACK_PAGE_SIZE
+        const normalizedOffset = data.offset ?? offset
+        setFeedbackCache((prev) => {
+          const bucket = prev[source] ?? { total: null, pages: {} }
+          return {
+            ...prev,
+            [source]: {
+              total: data.total ?? bucket.total ?? 0,
+              limit,
+              pages: {
+                ...bucket.pages,
+                [normalizedOffset]: data.rows || [],
+              },
+            },
+          }
+        })
+      })
+      .catch((e) => {
+        console.error('Failed to load feedback rows', e)
+      })
+      .finally(() => {
+        if (!cancelled) setFeedbackPageLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [feedbackSource, feedbackOffset, currentRows])
+
+  // Invalidating a source clears its cache so the next render fetches fresh
+  // data via the effect above. We bump offset back to 0 if we're invalidating
+  // the source the user is currently looking at.
+  const invalidateFeedback = useCallback((source) => {
+    setFeedbackCache((prev) => ({
+      ...prev,
+      [source]: { total: null, pages: {} },
+    }))
+  }, [])
+
   const refreshAll = useCallback(async () => {
     setRefreshing(true)
+    // Force a re-fetch of the visible feedback page by dropping every cached
+    // bucket — the lazy-fetch effect re-runs as soon as `currentRows` becomes
+    // undefined again.
+    setFeedbackCache(emptyFeedbackCache())
+    setFeedbackOffset(0)
     await Promise.all([loadStatus(), loadStats(), loadModels()])
     setRefreshing(false)
   }, [loadStatus, loadStats, loadModels])
 
   useEffect(() => {
     refreshAll()
-  }, [refreshAll])
+    // Mount-only initial load. The lazy fetch effect handles subsequent
+    // (source, offset) navigation without re-running this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handlePredict = async (e) => {
     e?.preventDefault?.()
@@ -139,13 +236,60 @@ export default function ClassifierAdmin() {
     if (!title) return
     setPredicting(true)
     setPrediction(null)
+    setFeedbackSent(null)
     try {
       const { data } = await api.get('/classify/predict', { params: { title } })
-      setPrediction(data)
+      // Capture the title so feedback always targets exactly what was predicted,
+      // even if the user keeps typing in the input afterwards.
+      setPrediction({ ...data, title })
     } catch (err) {
       showError(err.response?.data?.error || 'Prediction failed', { asSnackbar: true })
     } finally {
       setPredicting(false)
+    }
+  }
+
+  const handleSendFeedback = async (finalLabel) => {
+    if (!finalLabel || !prediction?.title) return
+    const predictedLabel = prediction.category || null
+    const kind =
+      predictedLabel &&
+      predictedLabel.toLowerCase() === finalLabel.toLowerCase()
+        ? 'user_confirmed'
+        : 'user_corrected'
+
+    setFeedbackBusy(finalLabel)
+    try {
+      await api.post('/classify/feedback', {
+        title: prediction.title,
+        predicted: predictedLabel,
+        final: finalLabel,
+        userId: userId ?? null,
+      })
+      setFeedbackSent({ finalLabel, kind })
+      showSuccess(
+        kind === 'user_confirmed'
+          ? `Confirmed: "${prediction.title}" → ${finalLabel}`
+          : `Recorded correction: "${prediction.title}" → ${finalLabel}`,
+        { asSnackbar: true }
+      )
+      // Stats / training counts are now stale. Refresh the lightweight ones
+      // and invalidate the cached feedback pages for the source we just wrote
+      // to so the table re-fetches page 0 the next time the user looks at it.
+      invalidateFeedback(kind)
+      // Jump the user to the source they just wrote to, on page 0, so the new
+      // row is visible. Setting offset=0 + invalidated cache => lazy fetch.
+      if (kind !== feedbackSource) {
+        setFeedbackSource(kind)
+      }
+      setFeedbackOffset(0)
+      await Promise.all([loadStats(), loadStatus()])
+    } catch (err) {
+      showError(err.response?.data?.error || 'Failed to record feedback', {
+        asSnackbar: true,
+      })
+    } finally {
+      setFeedbackBusy(null)
     }
   }
 
@@ -230,7 +374,7 @@ export default function ClassifierAdmin() {
             </button>
           }
         >
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <Stat
               label="Status"
               value={
@@ -277,6 +421,11 @@ export default function ClassifierAdmin() {
                 (status?.classes?.length ?? 0) +
                 ' classes loaded'
               }
+            />
+            <Stat
+              label="User corrections"
+              value={stats?.pendingDataSinceLastTrain ?? '—'}
+              hint="Since last training"
             />
           </div>
 
@@ -359,6 +508,97 @@ export default function ClassifierAdmin() {
                 </p>
               )}
             </div>
+
+            {prediction && (status?.classes?.length ?? 0) > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-baseline justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Teach the model
+                  </h3>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                    one click to send feedback
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  Tap{' '}
+                  <strong className="text-emerald-600 dark:text-emerald-400">
+                    {prediction.category ?? 'any category'}
+                  </strong>{' '}
+                  to confirm, or any other category to record a correction. Every click
+                  inserts a new <code className="text-[11px]">training_data</code> row for
+                  the next retrain.
+                </p>
+
+                {feedbackSent ? (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <CheckBadgeIcon
+                      className="w-5 h-5 text-emerald-500"
+                      aria-hidden
+                    />
+                    <span className="text-gray-700 dark:text-gray-200">
+                      Recorded as
+                    </span>
+                    <Pill
+                      className={
+                        SOURCE_COLORS[feedbackSent.kind] ||
+                        'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                      }
+                    >
+                      {feedbackSent.finalLabel}
+                      <span className="ml-1 opacity-70">({feedbackSent.kind})</span>
+                    </Pill>
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackSent(null)}
+                      className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+                    >
+                      Send another
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {status.classes.map((c) => {
+                      const isPredicted =
+                        prediction.category &&
+                        c.toLowerCase() === prediction.category.toLowerCase()
+                      const isBusy = feedbackBusy === c
+                      const anyBusy = feedbackBusy !== null
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => handleSendFeedback(c)}
+                          disabled={anyBusy}
+                          className={
+                            'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:cursor-not-allowed ' +
+                            (isPredicted
+                              ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600 disabled:opacity-70'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50')
+                          }
+                          aria-label={
+                            isPredicted
+                              ? `Confirm prediction as ${c}`
+                              : `Record correction to ${c}`
+                          }
+                          title={
+                            isPredicted
+                              ? 'Confirm — records user_confirmed'
+                              : 'Override — records user_corrected'
+                          }
+                        >
+                          {isBusy ? (
+                            <ArrowPathIcon className="w-3 h-3 animate-spin" aria-hidden />
+                          ) : isPredicted ? (
+                            <CheckBadgeIcon className="w-3 h-3" aria-hidden />
+                          ) : null}
+                          {c}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </SectionCard>
 
           <SectionCard title="Retrain model" icon={ArrowPathIcon}>
@@ -455,6 +695,152 @@ export default function ClassifierAdmin() {
                 )
               })}
             </ul>
+          )}
+        </SectionCard>
+
+        {/* Recent feedback browser */}
+        <SectionCard
+          title="Recent feedback"
+          icon={CircleStackIcon}
+          action={
+            <div
+              className="inline-flex items-center rounded-lg bg-gray-100 dark:bg-gray-700/60 p-0.5 text-xs font-medium"
+              role="tablist"
+              aria-label="Feedback source filter"
+            >
+              {[
+                { value: 'user_corrected', label: 'Corrections' },
+                { value: 'user_confirmed', label: 'Confirmations' },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={feedbackSource === opt.value}
+                  onClick={() => {
+                    if (feedbackSource !== opt.value) {
+                      setFeedbackSource(opt.value)
+                      setFeedbackOffset(0)
+                    }
+                  }}
+                  className={
+                    'px-3 py-1.5 rounded-md transition focus:outline-none focus:ring-2 focus:ring-emerald-400 ' +
+                    (feedbackSource === opt.value
+                      ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100')
+                  }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          }
+        >
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            Only rows from real user feedback are shown — seed data is excluded to keep
+            the table small.
+          </p>
+
+          {feedbackPageLoading && currentRows === undefined ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="py-6 text-center text-sm text-gray-500 dark:text-gray-400"
+            >
+              <div
+                className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"
+                aria-hidden
+              />
+              <p className="mt-2">Loading rows…</p>
+            </div>
+          ) : !currentRows || currentRows.length === 0 ? (
+            <p className="text-sm italic text-gray-400 dark:text-gray-500">
+              No {feedbackSource === 'user_corrected' ? 'corrections' : 'confirmations'}{' '}
+              recorded yet.
+            </p>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                      <th className="py-2 pr-3">Title</th>
+                      <th className="py-2 pr-3">Label</th>
+                      <th className="py-2 pr-3">Source</th>
+                      <th className="py-2 pr-3">User</th>
+                      <th className="py-2 pr-3">Recorded</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentRows.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="border-b border-gray-100 dark:border-gray-800 last:border-0"
+                      >
+                        <td className="py-2 pr-3 text-gray-900 dark:text-gray-100 max-w-[18rem] truncate">
+                          {row.title}
+                        </td>
+                        <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
+                          {row.label}
+                        </td>
+                        <td className="py-2 pr-3">
+                          <Pill
+                            className={
+                              SOURCE_COLORS[row.source] ||
+                              'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                            }
+                          >
+                            {row.source}
+                          </Pill>
+                        </td>
+                        <td className="py-2 pr-3 text-gray-500 dark:text-gray-400 tabular-nums">
+                          {row.userId ?? '—'}
+                        </td>
+                        <td className="py-2 pr-3 text-gray-500 dark:text-gray-400">
+                          {formatTimestamp(row.createdAt)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {(() => {
+                const limit = FEEDBACK_PAGE_SIZE
+                const page = Math.floor(feedbackOffset / limit) + 1
+                const totalPages = Math.max(1, Math.ceil(currentTotal / limit))
+                const start = currentTotal === 0 ? 0 : feedbackOffset + 1
+                const end = Math.min(currentTotal, feedbackOffset + currentRows.length)
+                const hasPrev = feedbackOffset > 0
+                const hasNext = feedbackOffset + currentRows.length < currentTotal
+                return (
+                  <div className="flex items-center justify-between mt-4">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFeedbackOffset((o) => Math.max(0, o - limit))
+                      }
+                      disabled={!hasPrev}
+                      className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ← Previous
+                    </button>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Showing {start}–{end} of {currentTotal} · page {page} of{' '}
+                      {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackOffset((o) => o + limit)}
+                      disabled={!hasNext}
+                      className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )
+              })()}
+            </>
           )}
         </SectionCard>
 

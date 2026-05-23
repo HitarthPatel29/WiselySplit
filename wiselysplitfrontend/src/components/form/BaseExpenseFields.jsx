@@ -116,6 +116,21 @@ export default function BaseExpenseFields({ expense, onChange, errors = {} }) {
             </p>
           )}
         </div>
+        <div className="col-span-2">
+          <IconCombobox
+            label="Expense Category"
+            name="category"
+            value={expense.category ?? expense.expenseType ?? ''}
+            onChange={onChange}
+            options={EXPENSE_CATEGORIES}
+            placeholder="Select a type"
+            required
+            error={errors.category}
+          />
+          {errors.category && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.category}</p>
+          )}
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -158,21 +173,6 @@ export default function BaseExpenseFields({ expense, onChange, errors = {} }) {
           />
           {errors.date && (
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date}</p>
-          )}
-        </div>
-        <div className="col-span-2">
-          <IconCombobox
-            label="Expense Category"
-            name="category"
-            value={expense.category ?? expense.expenseType ?? ''}
-            onChange={onChange}
-            options={EXPENSE_CATEGORIES}
-            placeholder="Select a type"
-            required
-            error={errors.category}
-          />
-          {errors.category && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.category}</p>
           )}
         </div>
       </div>

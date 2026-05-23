@@ -4,6 +4,7 @@ import ca.mohawkCollege.wiselySplitServer.daos.TrainingDataDAO;
 import ca.mohawkCollege.wiselySplitServer.models.ModelBundle;
 import ca.mohawkCollege.wiselySplitServer.utilities.classification.TrainingPipeline;
 import ca.mohawkCollege.wiselySplitServer.utilities.classification.TrainingPipeline.LabeledRow;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,7 @@ public class FeedbackService {
 
     private static final Logger log = LoggerFactory.getLogger(FeedbackService.class);
 
-    /** How many new training rows trigger a retrain. */
+    /** How many user_corrected feedbacks trigger a retrain. */
     private static final int RETRAIN_THRESHOLD = 10;
 
     @Autowired private TrainingDataDAO trainingDataDAO;
@@ -39,9 +40,17 @@ public class FeedbackService {
     private volatile boolean retrainInFlight = false;
 
     /**
-     * Persist a (title, finalLabel) row. Source is 'user_confirmed' if the
-     * model's prediction matched the final category, otherwise 'user_corrected'.
-     * No-op if title or finalLabel is missing.
+     * recovers the Number of Pending Training Data since last training from DB
+     */
+    @PostConstruct
+    public void recoverPendingSinceLastTrain(){
+        pendingSinceLastTrain.set(trainingDataDAO.countPendingTrainDataSinceLastTrain());
+    }
+    /**
+     * Persist a (title, finalLabel) row. Source is 'user_confirmed',
+     * if the model's prediction matched the final category, otherwise 'user_corrected'.
+     * No-operations if title or finalLabel is missing.
+     * counts the user_corrected feedback and initializes retraining when RETRAIN_THRESHOLD reached
      */
     public void recordFeedback(String title, String predictedLabel, String finalLabel, Integer userId) {
         if (title == null || title.isBlank() || finalLabel == null || finalLabel.isBlank()) return;
@@ -56,9 +65,11 @@ public class FeedbackService {
             return;
         }
 
-        int newCount = pendingSinceLastTrain.incrementAndGet();
-        if (newCount >= RETRAIN_THRESHOLD && !retrainInFlight) {
-            self.retrainAsync();
+        //only count user corrected feedbacks
+        if ("user_corrected".equalsIgnoreCase(source)) {
+            int newCount = pendingSinceLastTrain.incrementAndGet();
+            if (newCount >= RETRAIN_THRESHOLD && !retrainInFlight)
+                self.retrainAsync();
         }
     }
 
@@ -90,5 +101,9 @@ public class FeedbackService {
         int version = modelService.saveNewVersion(bundle);
         classificationService.hotSwap(bundle);
         return version;
+    }
+
+    public int getPendingSinceLastTrain() {
+        return pendingSinceLastTrain.get();
     }
 }

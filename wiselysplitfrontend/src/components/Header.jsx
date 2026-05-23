@@ -188,15 +188,6 @@ export default function Header({ title = '' }) {
                     Edit Profile
                   </button>
                 </li>
-
-                <li role="listitem">
-                  <button
-                    onClick={() => handleMenuClick('/admin/classifier')}
-                    className='w-full text-left px-4 py-3 rounded-xl bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 font-semibold hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400'
-                  >
-                    Classifier Admin
-                  </button>
-                </li>
               </ul>
             </div>
 
