@@ -5,8 +5,17 @@ import Header from '../components/Header.jsx'
 import FilterModal from '../components/Modals/FilterModal.jsx'
 import AddWallet from '../components/Modals/AddWallet.jsx'
 import AlertModal from '../components/Modals/AlertModal.jsx'
+import WalletCard from '../components/IO/WalletCard.jsx'
 import ExpensesGroupByDate from '../components/ListItem/ExpensesGroupByDate.jsx'
-import { AdjustmentsHorizontalIcon, ChevronLeftIcon, ChevronRightIcon, EllipsisVerticalIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/solid'
+import { AdjustmentsHorizontalIcon, ChevronLeftIcon, ChevronRightIcon, EllipsisHorizontalIcon, EllipsisVerticalIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/solid'
+import ReorderWalletsModal from '../components/Modals/ReorderWalletsModal.jsx'
+import {
+  applyWalletOrder,
+  getWalletId,
+  setWalletOrder,
+  syncWalletOrderWithWallets,
+  walletIdsFromList,
+} from '../utils/walletOrderStorage.js'
 import { WALLET_COLOR_MAP } from '../constants/walletColors'
 import PrimaryButton from '../components/IO/PrimaryButton.jsx'
 import api from '../api.js'
@@ -25,6 +34,7 @@ export default function PersonalExpense() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [walletToDelete, setWalletToDelete] = useState(null)
   const [openMenuWalletId, setOpenMenuWalletId] = useState(null)
+  const [showReorderWallets, setShowReorderWallets] = useState(false)
   const menuRef = useRef(null)
   const [activeWalletIndex, setActiveWalletIndex] = useState(0)
   const [dragOffset, setDragOffset] = useState(0)
@@ -54,10 +64,12 @@ export default function PersonalExpense() {
     try {
       const res = await api.get(`/expenses/group-by-wallets/${userId}`)
       const list = res.data || []
-      setWallets(list)
-      setActiveWalletIndex((i) => Math.min(i, Math.max(0, list.length - 1)))
-      console.log('after fetch wallets with expenses data:', list)
-      return list
+      const savedOrder = syncWalletOrderWithWallets(userId, list)
+      const ordered = applyWalletOrder(list, savedOrder)
+      setWallets(ordered)
+      setActiveWalletIndex((i) => Math.min(i, Math.max(0, ordered.length - 1)))
+      console.log('after fetch wallets with expenses data:', ordered)
+      return ordered
     } catch (err) {
       console.error('Failed to fetch wallets with expenses', err)
       setWallets([])
@@ -285,13 +297,22 @@ export default function PersonalExpense() {
     try {
       await api.delete(`/users/${userId}/wallets/${walletToDelete.walletId}`)
 
+      const deletedId = getWalletId(walletToDelete)
       setWallets((prev) => {
-        const idx = prev.findIndex((w) => w.walletId === walletToDelete.walletId)
-        if (idx === -1) return prev
-        const updatedWalletList = prev.filter((w) => w.walletId !== walletToDelete.walletId)
+        const deletedIndex = prev.findIndex((w) => getWalletId(w) === deletedId)
+        const updatedWalletList = prev.filter((w) => getWalletId(w) !== deletedId)
+        if (userId) {
+          setWalletOrder(userId, walletIdsFromList(updatedWalletList))
+        }
+        setActiveWalletIndex((i) => {
+          if (updatedWalletList.length === 0) return 0
+          if (deletedIndex === -1) return Math.min(i, updatedWalletList.length - 1)
+          if (i > deletedIndex) return i - 1
+          if (i === deletedIndex) return Math.min(i, updatedWalletList.length - 1)
+          return i
+        })
         return updatedWalletList
       })
-      setActiveWalletIndex(Math.max(0, activeWalletIndex - 1))
       setShowDeleteModal(false)
       setWalletToDelete(null)
     } catch (err) {
@@ -314,6 +335,16 @@ export default function PersonalExpense() {
     return net
   }
 
+  const handleReorderWalletsSave = (orderedWallets) => {
+    const activeId = wallets[activeWalletIndex] ? getWalletId(wallets[activeWalletIndex]) : null
+    setWalletOrder(userId, walletIdsFromList(orderedWallets))
+    setWallets(orderedWallets)
+    if (activeId != null) {
+      const newIndex = orderedWallets.findIndex((w) => getWalletId(w) === activeId)
+      if (newIndex >= 0) setActiveWalletIndex(newIndex)
+    }
+  }
+
   const getWalletCardClasses = (wallet) => {
     const colorKey = wallet.walletColor || wallet.color
     if (colorKey && WALLET_COLOR_MAP[colorKey]) {
@@ -331,7 +362,7 @@ export default function PersonalExpense() {
 
       <main id="main-content" className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 py-4">
         {/* 1/4 - Stacked Cards Carousel (Swipeable) */}
-        <section className="h-[25vh] min-h-[150px] flex-shrink-0 mb-2">
+        <section className="relative h-[25vh] min-h-[150px] flex-shrink-0 mb-2 flex flex-col justify-between">
           {walletsLoading ? (
             <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
               Loading wallets...
@@ -341,143 +372,120 @@ export default function PersonalExpense() {
               No wallets yet. Add one using the button below.
             </div>
           ) : (
-          <div
-            ref={containerRef}
-            className="relative h-full flex items-center justify-center overflow-hidden touch-none select-none"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={handleTouchEnd}
-          >
-            {/* Layered cards: center focused, sides smaller, outer layers smaller still */}
-            {wallets.map((wallet, idx) => {
-              const offset = getOffsetForWallet(idx)
-              const isActive = offset === 0
-              const scale = getScaleForOffset(offset)
-              const zIndex = 10 - Math.abs(offset)
-              const translateX = offset * LAYER_SPACING + (isActive ? dragOffset : 0)
-              const walletId = wallet.walletId ?? wallet.id
-              const walletName = wallet.walletName ?? wallet.name
-              const cardName = wallet.cardName
-              const netBalance = computeNetBalance(wallet)
-
-              return (
-                <div
-                  key={walletId}
-                  className="absolute left-1/2 top-1/2 origin-center"
-                  style={{
-                    width: '240px',
-                    transform: `translate(calc(-50% + ${translateX}px), -50%) scale(${scale})`,
-                    zIndex,
-                    transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
-                    cursor: isActive ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                  }}
-                  onMouseDown={isActive ? handleMouseDown : undefined}
-                >
-                  <div className={`rounded-2xl border-2 shadow-xl p-5 h-[130px] flex flex-col justify-between relative ${getWalletCardClasses(wallet)}`} >
-                    <div className="absolute top-2 right-2" ref={openMenuWalletId === walletId ? menuRef : undefined}>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                          setOpenMenuWalletId((prev) => (prev === walletId ? null : walletId))
-                        }}
-                        className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
-                        aria-label="Wallet options"
-                        aria-expanded={openMenuWalletId === walletId}
-                        aria-haspopup="true"
-                      >
-                        <EllipsisVerticalIcon className="w-5 h-5" />
-                      </button>
-                      {openMenuWalletId === walletId && (
-                        <div className="absolute right-0 top-full mt-1 py-1 min-w-[140px] rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setEditWallet(wallet)
-                              setShowAddWallet(true)
-                              setOpenMenuWalletId(null)
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
-                          >
-                            <PencilSquareIcon className="w-4 h-4" />
-                            Edit wallet
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setWalletToDelete(wallet)
-                              setShowDeleteModal(true)
-                              setOpenMenuWalletId(null)
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                            Delete wallet
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="pr-8">
-                      <p className="font-semibold text-white text-sm uppercase tracking-wider">
-                        {walletName}
-                      </p>
-                      {cardName && (
-                        <p className="font-light text-white/70 text-xs tracking-wide truncate">
-                          {cardName}
-                        </p>
-                      )}
-                    </div>
-                    <p className="text-2xl font-bold tracking-tight text-white">
-                      ${Math.abs(netBalance).toFixed(2)}
-                    </p>
+            <>
+              {/* 1: Reorder Wallet Button */}
+              <div className="flex justify-end w-full relative z-40 h-10">
+                {wallets.length > 1 && (
+                  <div className="group relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowReorderWallets(true)}
+                      className="p-2 rounded-lg bg-white/95 dark:bg-gray-800 shadow-lg hover:scale-110 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      aria-label="Reorder wallets"
+                    >
+                      <EllipsisHorizontalIcon className="w-5 h-5 text-gray-700 dark:text-gray-200" aria-hidden="true" />
+                    </button>
+                    <span
+                      role="tooltip"
+                      className="pointer-events-none absolute right-0 top-full mt-1 whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 text-white text-xs px-2.5 py-1.5 shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                    >
+                      Reorder wallets
+                    </span>
                   </div>
-                </div>
-              )
-            })}
-
-            {/* Nav arrows - hidden at boundaries (linear, no wrap) */}
-            {wallets.length > 1 && (
-              <>
-                {activeWalletIndex > 0 && (
-                  <button
-                    onClick={goToPrev}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/95 dark:bg-gray-800 shadow-lg hover:scale-110 active:scale-95 transition-transform"
-                    aria-label="Previous wallet"
-                  >
-                    <ChevronLeftIcon className="w-6 h-6 text-gray-700 dark:text-gray-200" />
-                  </button>
                 )}
-                {activeWalletIndex < wallets.length - 1 && (
-                  <button
-                    onClick={goToNext}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/95 dark:bg-gray-800 shadow-lg hover:scale-110 active:scale-95 transition-transform"
-                    aria-label="Next wallet"
-                  >
-                    <ChevronRightIcon className="w-6 h-6 text-gray-700 dark:text-gray-200" />
-                  </button>
-                )}
-              </>
-            )}
-
-            {/* Dots indicator */}
-            {wallets.length > 1 && (
-              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-2 z-30">
-                {wallets.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveWalletIndex(i)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      i === activeWalletIndex ? 'bg-emerald-500 w-6' : 'bg-gray-400/60 w-2 hover:bg-gray-400/80'
-                    }`}
-                    aria-label={`Go to wallet ${i + 1}`}
-                  />
-                ))}
               </div>
-            )}
-          </div>
+              
+              {/* 2: Carousel Cards & Nav Arrows  */}
+              <div
+                ref={containerRef}
+                className="relative flex-1 min-h-0 flex items-center justify-center touch-none select-none overflow-x-hidden "
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
+              >
+                {/* Card Carousel */}
+                {wallets.map((wallet, idx) => {
+
+                  // inside wallets.map(...)
+                  
+                  const offset = getOffsetForWallet(idx)
+                  const isActive = offset === 0
+                  const scale = getScaleForOffset(offset)
+                  const zIndex = 10 - Math.abs(offset)
+                  const translateX = offset * LAYER_SPACING + (isActive ? dragOffset : 0)
+                  const walletId = wallet.walletId ?? wallet.id
+                  const walletName = wallet.walletName ?? wallet.name
+                  const cardName = wallet.cardName
+                  const netBalance = computeNetBalance(wallet)
+
+                  return (
+                    <WalletCard
+                      key={walletId}
+                      wallet={wallet}
+                      netBalance={computeNetBalance(wallet)}
+                      openMenuId={openMenuWalletId}
+                      onMenuToggle={(id) => setOpenMenuWalletId((prev) => prev === id ? null : id)}
+                      onEdit={(w) => { setEditWallet(w); setShowAddWallet(true) }}
+                      onDelete={(w) => { setWalletToDelete(w); setShowDeleteModal(true) }}
+                      menuRef={menuRef}
+                      isDragging={isDragging}
+                      isActive={offset === 0}
+                      onMouseDown={offset === 0 ? handleMouseDown : undefined}
+                      style={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: '50%',
+                        width: '240px',
+                        transform: `translate(calc(-50% + ${translateX}px), -50%) scale(${scale})`,
+                        zIndex,
+                        transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
+                        transformOrigin: 'center',
+                      }}
+                    />
+                  )
+                })}
+
+                {/* Nav arrows - hidden at boundaries (linear, no wrap) */}
+                {wallets.length > 1 && (
+                  <>
+                    {activeWalletIndex > 0 && (
+                      <button
+                        onClick={goToPrev}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/95 dark:bg-gray-800 shadow-lg hover:scale-110 active:scale-95 transition-transform"
+                        aria-label="Previous wallet"
+                      >
+                        <ChevronLeftIcon className="w-6 h-6 text-gray-700 dark:text-gray-200" />
+                      </button>
+                    )}
+                    {activeWalletIndex < wallets.length - 1 && (
+                      <button
+                        onClick={goToNext}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/95 dark:bg-gray-800 shadow-lg hover:scale-110 active:scale-95 transition-transform"
+                        aria-label="Next wallet"
+                      >
+                        <ChevronRightIcon className="w-6 h-6 text-gray-700 dark:text-gray-200" />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+              
+              {/* 3: Dots indicator */}
+              <div className="flex items-center justify-center gap-2 min-h-[20px] max-h-[20px]">
+                {wallets.length > 1 && (
+                  wallets.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveWalletIndex(i)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        i === activeWalletIndex ? 'bg-emerald-500 w-6' : 'bg-gray-400/60 w-2 hover:bg-gray-400/80'
+                      }`}
+                      aria-label={`Go to wallet ${i + 1}`}
+                    />
+                  ))
+                )}
+              </div>
+            </>
           )}
         </section>
 
@@ -596,6 +604,13 @@ export default function PersonalExpense() {
           endDate: displayEndDate || endDate,
           month: monthFilter,
         }}
+      />
+
+      <ReorderWalletsModal
+        isOpen={showReorderWallets}
+        onClose={() => setShowReorderWallets(false)}
+        wallets={wallets}
+        onSave={handleReorderWalletsSave}
       />
 
       <AddWallet
