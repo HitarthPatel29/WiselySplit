@@ -71,6 +71,9 @@ public class ExpensesService {
             // Insert into Expenses table
             int expenseId = expensesDAO.insertSharedExpense(title, date, category, amount, payerId, groupId, isSettleUp, paymentId, walletId);
 
+            //Update wallet Balance
+            if (null != walletId) walletDAO.updateWalletBalance(payerId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
+
             // Insert participants
             List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
             for (Map<String, Object> m : participants) {
@@ -98,10 +101,11 @@ public class ExpensesService {
             double amount = ((Number) payload.get("amount")).doubleValue();
             int userId = ((Number) payload.get("userId")).intValue();
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
-            String entryKind = payload.get("entryKind") != null ? (String) payload.get("entryKind") : "expense";
-            Integer toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).intValue() : null;
 
-            int expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, entryKind, toWalletId);
+            int expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
+
+            //Update wallet Balance
+            if (null != walletId) walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
 
             sendClassifierFeedback(payload, title, category, userId);
 
@@ -116,8 +120,11 @@ public class ExpensesService {
         try {
             String title = (String) payload.get("transactionTitle");
             String date = (String) payload.get("transactionDate");
-            String category = classificationService.predict(title).category();
             String walletName = (String) payload.get("cardName");
+
+            //Asks for prediction, if nothing gets return category is empty string
+            ClassificationService.Prediction prediction= classificationService.predict(title);
+            String category = (null != prediction) ? prediction.category() : "";
 
             double amount = this.sanitizeAmount(payload.get("amount"));
             // If amount is 0, throw an error
@@ -138,6 +145,10 @@ public class ExpensesService {
 
             // Insert personal expense
             int expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
+
+            //Update wallet Balance
+            walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
+
 
             return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
         } catch (Exception e) {
@@ -231,6 +242,7 @@ public class ExpensesService {
 
     /**  Delete expense */
     public void deleteExpense(int expenseId) {
+        walletDAO.updateWalletBalanceForEntryDelete(expenseId, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
         expensesDAO.deleteExpense(expenseId);
     }
 
@@ -251,11 +263,13 @@ public class ExpensesService {
 
             Boolean isPersonal = ((Boolean) payload.get("isPersonal")).booleanValue();
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
-            String entryKind = payload.get("entryKind") != null ? (String) payload.get("entryKind") : "expense";
-            Integer toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).intValue() : null;
 
-            expensesDAO.updateExpense(expenseId, title, date, category, amount, payerId, groupId, isPersonal, walletId, entryKind, toWalletId);
+            //Update wallet Balance
+            if (null != walletId) walletDAO.updateWalletBalanceForEntryUpdate(payerId, walletId, expenseId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
 
+            expensesDAO.updateExpense(expenseId, title, date, category, amount, payerId, groupId, isPersonal, walletId, "expense", null);
+
+            //Only for Shared Expenses
             if (!isPersonal) {
                 // Delete old participation and insert new ones
                 expensesDAO.deleteExpenseParticipation(expenseId);

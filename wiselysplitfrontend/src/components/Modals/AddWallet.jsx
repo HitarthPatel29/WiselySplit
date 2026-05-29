@@ -17,7 +17,7 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
       if (editWallet) {
         setWalletName(editWallet.walletName ?? '')
         setCardName(editWallet.cardName ?? '')
-        setWalletBalance(String(editWallet.walletBalance ?? editWallet.balance ?? ''))
+        setWalletBalance(String(editWallet.initialBalance ?? editWallet.walletBalance ?? editWallet.balance ?? ''))
         setWalletColor(editWallet.walletColor ?? editWallet.color ?? 'emerald')
       } else {
         setWalletName('')
@@ -53,13 +53,16 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
   }, [isOpen, onClose])
 
   const handleSubmit = () => {
-    const walletBalanceNum = parseFloat(walletBalance)
+    const balanceNum = parseFloat(walletBalance)
     if (!walletName.trim()) return
+    const parsedBalance = isNaN(balanceNum) ? 0 : balanceNum
     const data = {
       walletName: walletName.trim(),
       cardName: cardName.trim(),
-      walletBalance: isNaN(walletBalanceNum) ? 0 : walletBalanceNum,
-      walletColor: walletColor
+      walletColor: walletColor,
+      ...(isEdit
+        ? { initialBalance: parsedBalance }
+        : { walletBalance: parsedBalance }),
     }
     console.log('handleSubmit data:', data)
     if (isEdit && onEdit) {
@@ -140,7 +143,7 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
         />
 
         <InputField
-          label="Current Balance"
+          label={isEdit ? 'Initial Balance' : 'Current Balance'}
           type="number"
           value={walletBalance}
           onChange={(e) => setWalletBalance(e.target.value)}

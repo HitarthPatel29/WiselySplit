@@ -37,11 +37,11 @@ public class WalletService {
     public Map<String, Object> updateWallet(int userId, int walletId, Map<String, Object> payload) {
         try{
             String walletName = (String) payload.get("walletName");
-            double walletBalance = ((Number) payload.get("walletBalance")).doubleValue();
+            double initialBalance = ((Number) payload.get("initialBalance")).doubleValue();
             String cardName = (String) payload.get("cardName");
             String walletColor = (String) payload.get("walletColor");
 
-            walletDAO.updateWallet(userId, walletId, walletName, walletBalance, cardName, walletColor);
+            walletDAO.updateWallet(userId, walletId, walletName, initialBalance, cardName, walletColor);
 
             return Map.of("success", true, "walletId", walletId, "message", "Wallet updated successfully");
         } catch (Exception e) {

@@ -7,7 +7,6 @@ import { WALLET_COLOR_MAP } from '../../constants/walletColors'
  *
  * Props:
  *   wallet         {object}   - Wallet data object
- *   netBalance     {number}   - Computed net balance to display
  *   openMenuId     {any}      - ID of the wallet whose menu is currently open (controlled externally)
  *   onMenuToggle   {fn}       - (walletId) => void  — toggles the options menu
  *   onEdit         {fn}       - (wallet) => void
@@ -21,7 +20,6 @@ import { WALLET_COLOR_MAP } from '../../constants/walletColors'
  */
 export default function WalletCard({
   wallet,
-  netBalance,
   openMenuId,
   onMenuToggle,
   onEdit,
@@ -36,6 +34,7 @@ export default function WalletCard({
   const walletId   = wallet.walletId  ?? wallet.id
   const walletName = wallet.walletName ?? wallet.name
   const cardName   = wallet.cardName
+  const balance    = Number(wallet.walletBalance ?? wallet.balance ?? 0)
   const isMenuOpen = openMenuId === walletId
 
   const getCardClasses = () => {
@@ -43,7 +42,6 @@ export default function WalletCard({
     if (colorKey && WALLET_COLOR_MAP[colorKey]) {
       return `bg-gradient-to-br ${WALLET_COLOR_MAP[colorKey]} text-white shadow-emerald-900/20`
     }
-    const balance = wallet.walletBalance ?? wallet.balance ?? 0
     return balance >= 0
       ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 border-emerald-400/40 text-white shadow-emerald-900/20'
       : 'bg-gradient-to-br from-rose-500 to-rose-700 border-rose-400/40 text-white shadow-rose-900/20'
@@ -125,7 +123,7 @@ export default function WalletCard({
 
         {/* ── Balance ── */}
         <p className="text-2xl font-bold tracking-tight text-white">
-          ${Math.abs(netBalance).toFixed(2)}
+          ${Math.abs(balance).toFixed(2)}
         </p>
       </div>
     </div>

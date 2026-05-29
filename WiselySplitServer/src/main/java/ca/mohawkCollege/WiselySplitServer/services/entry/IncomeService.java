@@ -1,6 +1,7 @@
 package ca.mohawkCollege.wiselySplitServer.services.entry;
 
 import ca.mohawkCollege.wiselySplitServer.daos.ExpensesDAO;
+import ca.mohawkCollege.wiselySplitServer.daos.WalletDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,9 @@ public class IncomeService {
 
     @Autowired
     private ExpensesDAO expensesDAO;
+
+    @Autowired
+    private WalletDAO walletDAO;
 
     @Transactional
     public Map<String, Object> createIncome(Map<String, Object> payload) {
@@ -23,6 +27,9 @@ public class IncomeService {
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
 
             int incomeId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "income", null);
+
+            //Update wallet Balance
+            if (null != walletId) walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.INCOME);
 
             return Map.of("success", true, "incomeId", incomeId, "message", "Personal entry created successfully");
         } catch (Exception e) {
@@ -38,6 +45,7 @@ public class IncomeService {
 
     /**  Delete income */
     public void deleteIncome(int incomeId) {
+        walletDAO.updateWalletBalanceForEntryDelete(incomeId, WalletDAO.WalletBalanceUpdateMode.INCOME);
         expensesDAO.deleteExpense(incomeId);
     }
 
@@ -48,11 +56,14 @@ public class IncomeService {
             String date = (String) payload.get("date");
             String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int payerId = ((Number) payload.get("userId")).intValue();
+            int userId = ((Number) payload.get("userId")).intValue();
 
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
 
-            expensesDAO.updateExpense(incomeId, title, date, type, amount, payerId, null, true, walletId, "income", null);
+            //Deducts old income amount and Adds new income amount
+            if (null != walletId) walletDAO.updateWalletBalanceForEntryUpdate(userId, walletId, incomeId, amount, WalletDAO.WalletBalanceUpdateMode.INCOME);
+
+            expensesDAO.updateExpense(incomeId, title, date, type, amount, userId, null, true, walletId, "income", null);
 
             return Map.of("success", true, "incomeId", incomeId, "message", "Income updated successfully");
         } catch (Exception e) {

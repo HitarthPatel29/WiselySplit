@@ -16,7 +16,6 @@ import {
   syncWalletOrderWithWallets,
   walletIdsFromList,
 } from '../utils/walletOrderStorage.js'
-import { WALLET_COLOR_MAP } from '../constants/walletColors'
 import PrimaryButton from '../components/IO/PrimaryButton.jsx'
 import api from '../api.js'
 
@@ -278,14 +277,9 @@ export default function PersonalExpense() {
     try {
       console.log('before API call data:', data)
       await api.put(`/users/${userId}/wallets/${targetWalletId}`, data)
-      
-      setWallets((prev) =>
-        prev.map((wallet) => wallet.walletId === targetWalletId ? {...wallet,...data} : wallet)
-      )
-      
+      await fetchWalletsWithExpenses()
       setEditWallet(null)
       setShowAddWallet(false)
-      console.log('after update wallets data:', wallets)
     } catch (err) {
       console.error('Failed to update wallet', err)
       console.error('targetWalletId: ', targetWalletId, 'data: ', data)
@@ -321,20 +315,6 @@ export default function PersonalExpense() {
     }
   }
 
-  const computeNetBalance = (wallet) => {
-    const initial = wallet.walletBalance ?? wallet.balance ?? 0
-    let net = initial
-    for (const e of (wallet.expenses || [])) {
-      const amt = e.totalAmount ?? 0
-      if (e.type === 'income' || e.type === 'transfer_in') {
-        net += amt
-      } else {
-        net -= amt
-      }
-    }
-    return net
-  }
-
   const handleReorderWalletsSave = (orderedWallets) => {
     const activeId = wallets[activeWalletIndex] ? getWalletId(wallets[activeWalletIndex]) : null
     setWalletOrder(userId, walletIdsFromList(orderedWallets))
@@ -343,17 +323,6 @@ export default function PersonalExpense() {
       const newIndex = orderedWallets.findIndex((w) => getWalletId(w) === activeId)
       if (newIndex >= 0) setActiveWalletIndex(newIndex)
     }
-  }
-
-  const getWalletCardClasses = (wallet) => {
-    const colorKey = wallet.walletColor || wallet.color
-    if (colorKey && WALLET_COLOR_MAP[colorKey]) {
-      return `bg-gradient-to-br ${WALLET_COLOR_MAP[colorKey]} text-white shadow-emerald-900/20`
-    }
-    const balance = wallet.walletBalance ?? wallet.balance ?? 0
-    return balance >= 0
-      ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 border-emerald-400/40 text-white shadow-emerald-900/20'
-      : 'bg-gradient-to-br from-rose-500 to-rose-700 border-rose-400/40 text-white shadow-rose-900/20'
   }
 
   return (
@@ -405,24 +374,17 @@ export default function PersonalExpense() {
               >
                 {/* Card Carousel */}
                 {wallets.map((wallet, idx) => {
-
-                  // inside wallets.map(...)
-                  
                   const offset = getOffsetForWallet(idx)
                   const isActive = offset === 0
                   const scale = getScaleForOffset(offset)
                   const zIndex = 10 - Math.abs(offset)
                   const translateX = offset * LAYER_SPACING + (isActive ? dragOffset : 0)
                   const walletId = wallet.walletId ?? wallet.id
-                  const walletName = wallet.walletName ?? wallet.name
-                  const cardName = wallet.cardName
-                  const netBalance = computeNetBalance(wallet)
 
                   return (
                     <WalletCard
                       key={walletId}
                       wallet={wallet}
-                      netBalance={computeNetBalance(wallet)}
                       openMenuId={openMenuWalletId}
                       onMenuToggle={(id) => setOpenMenuWalletId((prev) => prev === id ? null : id)}
                       onEdit={(w) => { setEditWallet(w); setShowAddWallet(true) }}

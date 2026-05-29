@@ -301,7 +301,7 @@ function WalletsTile({ wallets, total, onView, onAdd }) {
               {w.walletName}
             </p>
             <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
-              {fmt(w.walletBalance)}
+              {fmt(w.walletBalance ?? w.balance ?? 0)}
             </p>
           </div>
         ))}
@@ -568,7 +568,7 @@ export default function Dashboard() {
   )
 
   const walletTotal = useMemo(
-    () => wallets.reduce((sum, w) => sum + w.walletBalance, 0),
+    () => wallets.reduce((sum, w) => sum + Number(w.walletBalance ?? w.balance ?? 0), 0),
     [wallets]
   )
 
