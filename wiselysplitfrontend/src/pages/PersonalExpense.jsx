@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import Header from '../components/Header.jsx'
 import FilterModal from '../components/Modals/FilterModal.jsx'
 import AddWallet from '../components/Modals/AddWallet.jsx'
 import AlertModal from '../components/Modals/AlertModal.jsx'
-import WalletCard from '../components/IO/WalletCard.jsx'
+import WalletCarousel from '../components/IO/WalletCarousel.jsx'
 import ExpensesGroupByDate from '../components/ListItem/ExpensesGroupByDate.jsx'
-import { AdjustmentsHorizontalIcon, ChevronLeftIcon, ChevronRightIcon, EllipsisHorizontalIcon, EllipsisVerticalIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/solid'
-import ReorderWalletsModal from '../components/Modals/ReorderWalletsModal.jsx'
+import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/solid'
 import {
   applyWalletOrder,
   getWalletId,
@@ -18,9 +17,6 @@ import {
 } from '../utils/walletOrderStorage.js'
 import PrimaryButton from '../components/IO/PrimaryButton.jsx'
 import api from '../api.js'
-
-const SWIPE_THRESHOLD = 60
-const LAYER_SPACING = 80
 
 export default function PersonalExpense() {
   const navigate = useNavigate()
@@ -32,15 +28,7 @@ export default function PersonalExpense() {
   const [editWallet, setEditWallet] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [walletToDelete, setWalletToDelete] = useState(null)
-  const [openMenuWalletId, setOpenMenuWalletId] = useState(null)
-  const [showReorderWallets, setShowReorderWallets] = useState(false)
-  const menuRef = useRef(null)
   const [activeWalletIndex, setActiveWalletIndex] = useState(0)
-  const [dragOffset, setDragOffset] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const dragStartRef = useRef({ x: 0 })
-  const isDraggingRef = useRef(false)
-  const containerRef = useRef(null)
   const [search, setSearch] = useState('')
   const [showFilter, setShowFilter] = useState(false)
   const [groups, setGroups] = useState([])
@@ -81,18 +69,6 @@ export default function PersonalExpense() {
   useEffect(() => {
     fetchWalletsWithExpenses()
   }, [fetchWalletsWithExpenses])
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpenMenuWalletId(null)
-      }
-    }
-    if (openMenuWalletId != null) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [openMenuWalletId])
 
   // Sync filtered expenses when wallet or raw data changes (expenses come directly from API response)
   useEffect(() => {
@@ -156,89 +132,6 @@ export default function PersonalExpense() {
     // Don't set displayStartDate/displayEndDate on mount - show all expenses by default
   }, [])
 
-  const goToPrev = () => {
-    setActiveWalletIndex((i) => Math.max(0, i - 1))
-  }
-
-  const goToNext = () => {
-    setActiveWalletIndex((i) => Math.min(wallets.length - 1, i + 1))
-  }
-
-  const getOffsetForWallet = useCallback(
-    (walletIndex) => {
-      return walletIndex - activeWalletIndex
-    },
-    [activeWalletIndex]
-  )
-
-  const getScaleForOffset = (offset) => {
-    const abs = Math.abs(offset)
-    if (abs === 0) return 1
-    return Math.max(0.55, 1 - abs * 0.12)
-  }
-
-
-
-  const handleDragStart = useCallback((clientX) => {
-    setIsDragging(true)
-    isDraggingRef.current = true
-    dragStartRef.current = { x: clientX }
-    setDragOffset(0)
-  }, [])
-
-  const handleDragMove = useCallback((clientX) => {
-    if (!isDraggingRef.current) return
-    const delta = clientX - dragStartRef.current.x
-    const maxDrag = containerRef.current?.offsetWidth ? containerRef.current.offsetWidth * 0.4 : 150
-    const clamped = Math.max(-maxDrag, Math.min(maxDrag, delta))
-    setDragOffset(clamped)
-  }, [])
-
-  const handleDragEnd = useCallback(() => {
-    if (!isDraggingRef.current) return
-    isDraggingRef.current = false
-    setIsDragging(false)
-    setDragOffset((current) => {
-      if (Math.abs(current) > SWIPE_THRESHOLD) {
-        if (current > 0 && activeWalletIndex > 0) goToPrev()
-        else if (current < 0 && activeWalletIndex < wallets.length - 1) goToNext()
-      }
-      return 0
-    })
-  }, [goToPrev, goToNext, activeWalletIndex, wallets.length])
-
-  const handleTouchStart = (e) => handleDragStart(e.touches[0].clientX)
-  const handleTouchEnd = () => handleDragEnd()
-  const handleMouseDown = (e) => {
-    e.preventDefault()
-    handleDragStart(e.clientX)
-  }
-
-  useEffect(() => {
-    if (!isDragging) return
-    const onMouseMove = (e) => handleDragMove(e.clientX)
-    const onMouseUp = () => handleDragEnd()
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
-    return () => {
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
-    }
-  }, [isDragging, handleDragMove, handleDragEnd])
-
-  // Re-run when carousel is actually mounted (e.g. after loading) so touchmove attaches to the container
-  const carouselMounted = !walletsLoading && wallets.length > 0
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const onTouchMove = (e) => {
-      if (isDraggingRef.current) e.preventDefault()
-      handleDragMove(e.touches[0].clientX)
-    }
-    el.addEventListener('touchmove', onTouchMove, { passive: false })
-    return () => el.removeEventListener('touchmove', onTouchMove)
-  }, [handleDragMove, carouselMounted])
-
   const handleApplyFilters = (f) => {
     setTypeFilter(f.typeFilter)
     setCategoryFilter(f.categoryFilter || [])
@@ -289,7 +182,7 @@ export default function PersonalExpense() {
   const handleDeleteWallet = async () => {
     if (!userId || !walletToDelete) return
     try {
-      await api.delete(`/users/${userId}/wallets/${walletToDelete.walletId}`)
+      await api.delete(`/users/${userId}/wallets/${getWalletId(walletToDelete)}`)
 
       const deletedId = getWalletId(walletToDelete)
       setWallets((prev) => {
@@ -315,14 +208,8 @@ export default function PersonalExpense() {
     }
   }
 
-  const handleReorderWalletsSave = (orderedWallets) => {
-    const activeId = wallets[activeWalletIndex] ? getWalletId(wallets[activeWalletIndex]) : null
-    setWalletOrder(userId, walletIdsFromList(orderedWallets))
+  const handleWalletsReorder = (orderedWallets) => {
     setWallets(orderedWallets)
-    if (activeId != null) {
-      const newIndex = orderedWallets.findIndex((w) => getWalletId(w) === activeId)
-      if (newIndex >= 0) setActiveWalletIndex(newIndex)
-    }
   }
 
   return (
@@ -330,126 +217,24 @@ export default function PersonalExpense() {
       <Header title="Personal Expenses" />
 
       <main id="main-content" className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 py-4">
-        {/* 1/4 - Stacked Cards Carousel (Swipeable) */}
-        <section className="relative h-[25vh] min-h-[150px] flex-shrink-0 mb-2 flex flex-col justify-between">
-          {walletsLoading ? (
-            <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-              Loading wallets...
-            </div>
-          ) : wallets.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-center px-4">
-              No wallets yet. Add one using the button below.
-            </div>
-          ) : (
-            <>
-              {/* 1: Reorder Wallet Button */}
-              <div className="flex justify-end w-full relative z-40 h-10">
-                {wallets.length > 1 && (
-                  <div className="group relative">
-                    <button
-                      type="button"
-                      onClick={() => setShowReorderWallets(true)}
-                      className="p-2 rounded-lg bg-white/95 dark:bg-gray-800 shadow-lg hover:scale-110 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                      aria-label="Reorder wallets"
-                    >
-                      <EllipsisHorizontalIcon className="w-5 h-5 text-gray-700 dark:text-gray-200" aria-hidden="true" />
-                    </button>
-                    <span
-                      role="tooltip"
-                      className="pointer-events-none absolute right-0 top-full mt-1 whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 text-white text-xs px-2.5 py-1.5 shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
-                    >
-                      Reorder wallets
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              {/* 2: Carousel Cards & Nav Arrows  */}
-              <div
-                ref={containerRef}
-                className="relative flex-1 min-h-0 flex items-center justify-center touch-none select-none overflow-x-hidden "
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                onTouchCancel={handleTouchEnd}
-              >
-                {/* Card Carousel */}
-                {wallets.map((wallet, idx) => {
-                  const offset = getOffsetForWallet(idx)
-                  const isActive = offset === 0
-                  const scale = getScaleForOffset(offset)
-                  const zIndex = 10 - Math.abs(offset)
-                  const translateX = offset * LAYER_SPACING + (isActive ? dragOffset : 0)
-                  const walletId = wallet.walletId ?? wallet.id
-
-                  return (
-                    <WalletCard
-                      key={walletId}
-                      wallet={wallet}
-                      openMenuId={openMenuWalletId}
-                      onMenuToggle={(id) => setOpenMenuWalletId((prev) => prev === id ? null : id)}
-                      onEdit={(w) => { setEditWallet(w); setShowAddWallet(true) }}
-                      onDelete={(w) => { setWalletToDelete(w); setShowDeleteModal(true) }}
-                      menuRef={menuRef}
-                      isDragging={isDragging}
-                      isActive={offset === 0}
-                      onMouseDown={offset === 0 ? handleMouseDown : undefined}
-                      style={{
-                        position: 'absolute',
-                        left: '50%',
-                        top: '50%',
-                        width: '240px',
-                        transform: `translate(calc(-50% + ${translateX}px), -50%) scale(${scale})`,
-                        zIndex,
-                        transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
-                        transformOrigin: 'center',
-                      }}
-                    />
-                  )
-                })}
-
-                {/* Nav arrows - hidden at boundaries (linear, no wrap) */}
-                {wallets.length > 1 && (
-                  <>
-                    {activeWalletIndex > 0 && (
-                      <button
-                        onClick={goToPrev}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/95 dark:bg-gray-800 shadow-lg hover:scale-110 active:scale-95 transition-transform"
-                        aria-label="Previous wallet"
-                      >
-                        <ChevronLeftIcon className="w-6 h-6 text-gray-700 dark:text-gray-200" />
-                      </button>
-                    )}
-                    {activeWalletIndex < wallets.length - 1 && (
-                      <button
-                        onClick={goToNext}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/95 dark:bg-gray-800 shadow-lg hover:scale-110 active:scale-95 transition-transform"
-                        aria-label="Next wallet"
-                      >
-                        <ChevronRightIcon className="w-6 h-6 text-gray-700 dark:text-gray-200" />
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-              
-              {/* 3: Dots indicator */}
-              <div className="flex items-center justify-center gap-2 min-h-[20px] max-h-[20px]">
-                {wallets.length > 1 && (
-                  wallets.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActiveWalletIndex(i)}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        i === activeWalletIndex ? 'bg-emerald-500 w-6' : 'bg-gray-400/60 w-2 hover:bg-gray-400/80'
-                      }`}
-                      aria-label={`Go to wallet ${i + 1}`}
-                    />
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </section>
+        <WalletCarousel
+          wallets={wallets}
+          loading={walletsLoading}
+          userId={userId}
+          activeWalletIndex={activeWalletIndex}
+          onActiveWalletChange={setActiveWalletIndex}
+          onWalletsReorder={handleWalletsReorder}
+          onEdit={(w) => {
+            setEditWallet(w)
+            setShowAddWallet(true)
+          }}
+          onDelete={(w) => {
+            setWalletToDelete(w)
+            setShowDeleteModal(true)
+          }}
+          emptyMessage="No wallets yet. Add one using the button below."
+          className="h-[25vh] min-h-[150px] flex-shrink-0 mb-2"
+        />
 
         {/* 3/4 - Search, Filter, Expense List */}
         <section className="flex-1 flex flex-col min-h-0">
@@ -566,13 +351,6 @@ export default function PersonalExpense() {
           endDate: displayEndDate || endDate,
           month: monthFilter,
         }}
-      />
-
-      <ReorderWalletsModal
-        isOpen={showReorderWallets}
-        onClose={() => setShowReorderWallets(false)}
-        wallets={wallets}
-        onSave={handleReorderWalletsSave}
       />
 
       <AddWallet

@@ -19,7 +19,18 @@ import {
 } from '@heroicons/react/24/solid'
 import { useAuth } from '../context/AuthContext'
 import DashboardHeader from '../components/DashboardHeader.jsx'
+import WalletCarousel from '../components/IO/WalletCarousel.jsx'
+import AddWallet from '../components/Modals/AddWallet.jsx'
+import AlertModal from '../components/Modals/AlertModal.jsx'
+import PrimaryButton from '../components/IO/PrimaryButton.jsx'
 import api from '../api'
+import {
+  applyWalletOrder,
+  getWalletId,
+  setWalletOrder,
+  syncWalletOrderWithWallets,
+  walletIdsFromList,
+} from '../utils/walletOrderStorage.js'
 
 const DEFAULT_AVATAR =
   'https://res.cloudinary.com/dwq5yfjsd/image/upload/v1758920140/default-avatar-profile_esweq0.webp'
@@ -280,7 +291,17 @@ function GroupsTile({ groups, onView, onSelect }) {
   )
 }
 
-function WalletsTile({ wallets, total, onView, onAdd }) {
+function WalletsTile({
+  wallets,
+  walletsLoading,
+  total,
+  userId,
+  onView,
+  onAddWallet,
+  onWalletsReorder,
+  onEditWallet,
+  onDeleteWallet,
+}) {
   return (
     <TileCard
       title="Wallets"
@@ -288,25 +309,16 @@ function WalletsTile({ wallets, total, onView, onAdd }) {
       action={onView}
       actionLabel="View all"
     >
-      <p className="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wider mb-2">
-        Personal expense wallets
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
-        {wallets.slice(0, 3).map((w) => (
-          <div
-            key={w.id}
-            className="rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-col justify-between"
-          >
-            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide truncate">
-              {w.walletName}
-            </p>
-            <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
-              {fmt(w.walletBalance ?? w.balance ?? 0)}
-            </p>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+      <WalletCarousel
+        wallets={wallets}
+        loading={walletsLoading}
+        userId={userId}
+        onWalletsReorder={onWalletsReorder}
+        onEdit={onEditWallet}
+        onDelete={onDeleteWallet}
+      />
+      
+      <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-100 dark:border-gray-700">
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
             Total across wallets
@@ -315,13 +327,12 @@ function WalletsTile({ wallets, total, onView, onAdd }) {
             {fmt(total)}
           </p>
         </div>
-        <button
-          onClick={onAdd}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded px-2 py-1"
-        >
-          <PlusIcon className="w-4 h-4" aria-hidden="true" />
-          Add expense
-        </button>
+        <PrimaryButton
+          label="Add Wallet/Card"
+          onClick={onAddWallet}
+          className="flex-shrink-0 whitespace-nowrap"
+          ariaLabel="Add wallet, card, or account"
+        />
       </div>
     </TileCard>
   )
@@ -525,10 +536,15 @@ function QuickActionStrip({ onAddEntry, onTransfer, onSummary }) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { friendsAndGroups, fetchConnections, userId, wallets } = useAuth()
+  const { friendsAndGroups, fetchConnections, userId, wallets, setWallets, fetchWallets } = useAuth()
   const [stripeAccountId, setStripeAccountId] = useState(null)
   const [user, setUser] = useState(null)
   const [invites, setInvites] = useState(null)
+  const [walletsLoading, setWalletsLoading] = useState(true)
+  const [showAddWallet, setShowAddWallet] = useState(false)
+  const [editWallet, setEditWallet] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [walletToDelete, setWalletToDelete] = useState(null)
 
   useEffect(() => {
     if (localStorage.getItem('firstLogin') === 'true') {
@@ -539,6 +555,23 @@ export default function Dashboard() {
   useEffect(() => {
     fetchConnections()
   }, [fetchConnections])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      if (!userId) {
+        setWalletsLoading(false)
+        return
+      }
+      setWalletsLoading(true)
+      await fetchWallets()
+      if (!cancelled) setWalletsLoading(false)
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [userId, fetchWallets])
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -567,12 +600,68 @@ export default function Dashboard() {
     [friendsAndGroups]
   )
 
+  const orderedWallets = useMemo(() => {
+    if (!userId || !wallets.length) return wallets
+    const savedOrder = syncWalletOrderWithWallets(userId, wallets)
+    return applyWalletOrder(wallets, savedOrder)
+  }, [wallets, userId])
+
   const walletTotal = useMemo(
-    () => wallets.reduce((sum, w) => sum + Number(w.walletBalance ?? w.balance ?? 0), 0),
-    [wallets]
+    () => orderedWallets.reduce((sum, w) => sum + Number(w.walletBalance ?? w.balance ?? 0), 0),
+    [orderedWallets]
   )
 
   const goAddEntry = () => navigate('/personalExpense/add')
+
+  const handleAddWallet = async (data) => {
+    if (!userId) return
+    try {
+      await api.post(`/users/${userId}/wallets`, {
+        walletName: data.walletName,
+        cardName: data.cardName,
+        walletColor: data.walletColor,
+        walletBalance: data.walletBalance,
+      })
+      await fetchWallets()
+      setShowAddWallet(false)
+      setEditWallet(null)
+    } catch (err) {
+      console.error('Failed to create wallet', err)
+    }
+  }
+
+  const handleEditWallet = async (targetWalletId, data) => {
+    if (!userId) return
+    try {
+      await api.put(`/users/${userId}/wallets/${targetWalletId}`, data)
+      await fetchWallets()
+      setEditWallet(null)
+      setShowAddWallet(false)
+    } catch (err) {
+      console.error('Failed to update wallet', err)
+    }
+  }
+
+  const handleDeleteWallet = async () => {
+    if (!userId || !walletToDelete) return
+    try {
+      await api.delete(`/users/${userId}/wallets/${getWalletId(walletToDelete)}`)
+      const deletedId = getWalletId(walletToDelete)
+      setWallets((prev) => {
+        const updatedWalletList = prev.filter((w) => getWalletId(w) !== deletedId)
+        setWalletOrder(userId, walletIdsFromList(updatedWalletList))
+        return updatedWalletList
+      })
+      setShowDeleteModal(false)
+      setWalletToDelete(null)
+    } catch (err) {
+      console.error('Failed to delete wallet', err)
+    }
+  }
+
+  const handleWalletsReorder = (ordered) => {
+    setWallets(ordered)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -608,10 +697,21 @@ export default function Dashboard() {
               onSelect={(group) => navigate(`/groups/${group.id}`)}
             />
             <WalletsTile
-              wallets={wallets}
+              wallets={orderedWallets}
+              walletsLoading={walletsLoading}
               total={walletTotal}
+              userId={userId}
               onView={() => navigate('/personalExpense')}
-              onAdd={goAddEntry}
+              onAddWallet={() => setShowAddWallet(true)}
+              onWalletsReorder={handleWalletsReorder}
+              onEditWallet={(w) => {
+                setEditWallet(w)
+                setShowAddWallet(true)
+              }}
+              onDeleteWallet={(w) => {
+                setWalletToDelete(w)
+                setShowDeleteModal(true)
+              }}
             />
           </div>
 
@@ -632,9 +732,39 @@ export default function Dashboard() {
         </div>
 
         <footer className="pt-2 pb-4 text-center text-xs text-gray-400 dark:text-gray-500">
-          Wallets, invites, and profile use sample data — friends and groups are live.
+          Invites and profile use sample data — friends, groups, and wallets are live.
         </footer>
       </main>
+
+      <AddWallet
+        isOpen={showAddWallet}
+        onClose={() => {
+          setShowAddWallet(false)
+          setEditWallet(null)
+        }}
+        onAdd={handleAddWallet}
+        editWallet={editWallet}
+        onEdit={handleEditWallet}
+      />
+
+      <AlertModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false)
+          setWalletToDelete(null)
+        }}
+        title="Delete Wallet"
+        message={
+          walletToDelete
+            ? `Are you sure you want to delete "${walletToDelete.walletName}"? This cannot be undone.`
+            : ''
+        }
+        type="warning"
+        confirmText="Confirm Delete"
+        showCancel
+        cancelText="Cancel"
+        onConfirm={handleDeleteWallet}
+      />
     </div>
   )
 }

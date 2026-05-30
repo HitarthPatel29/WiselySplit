@@ -90,15 +90,13 @@ export default function AddEntry() {
   const handleSaveIncome = async (payload) => {
     try {
       setSaving(true)
-      await api.post('/expenses/personal', {
+      await api.post('/income', {
         title: payload.title,
         amount: payload.amount,
         date: payload.date,
         category: payload.category ?? '',
         userId,
         walletId: payload.walletId ?? null,
-        entryKind: 'income',
-        isPersonal: true,
       })
       showSuccess('Income added successfully!', { asSnackbar: true })
       navigate('/personalExpense')
@@ -113,7 +111,7 @@ export default function AddEntry() {
   const handleSaveTransfer = async (payload) => {
     try {
       setSaving(true)
-      await api.post('/expenses/personal', {
+      await api.post('/transfer', {
         title: payload.title,
         amount: payload.amount,
         date: payload.date,
@@ -121,8 +119,6 @@ export default function AddEntry() {
         userId,
         walletId: payload.fromWalletId ?? null,
         toWalletId: payload.toWalletId ?? null,
-        entryKind: 'transfer',
-        isPersonal: true,
       })
       showSuccess('Transfer added successfully!', { asSnackbar: true })
       navigate('/personalExpense')
