@@ -253,7 +253,7 @@ public class ExpensesService {
             String date = (String) payload.get("date");
             String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int payerId = ((Number) payload.get("payerId")).intValue();
+            int payerId = ((Number) payload.get("userId")).intValue();
             String shareWithType = (String) payload.get("shareWithType");
 
             Integer groupId = null;
