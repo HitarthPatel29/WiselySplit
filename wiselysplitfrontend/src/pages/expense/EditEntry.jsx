@@ -41,12 +41,13 @@ export default function EditEntry() {
       }
     }
     fetchExpense()
-    console.log('EditEntry: normalized expense:', expense)
+    // console.log('EditEntry: normalized expense:', expense)
   }, [expenseId, id, userId])
 
   const handleExpenseUpdate = async (payload, _mode) => {
     try {
       setSaving(true)
+      // console.log('EditEntry: handleExpenseUpdate: Payload', { payload })
       await api.put(`/expenses/${expenseId}`, payload)
       showSuccess('Expense updated successfully!', { asSnackbar: true })
 
@@ -85,7 +86,7 @@ export default function EditEntry() {
   const handleTransferUpdate = async (payload) => {
     try {
       setSaving(true)
-      console.log(payload)
+      // console.log(payload)
       await api.put(`/transfer/${expenseId}`, {
         title: payload.title,
         amount: payload.amount,

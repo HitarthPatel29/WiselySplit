@@ -88,7 +88,7 @@ export const createNewPersonalExpense = (currentUserId, entryKind = 'expense') =
  * @param {Array} [wallets=[]] - User wallets (for personal: wallet required if length > 0)
  */
 export const validateExpense = (expense, currentUserId, billSplitApplied, mode = 'shared', wallets = []) => {
-  console.log('ExpenseModel: Validating expense', { expense })
+  // console.log('ExpenseModel: Validating expense', { expense })
   if (!expense.title) return 'Expense title is required.'
   if (!expense.date) return 'Date is required.'
   if (!expense.amount || expense.amount <= 0 ) 
@@ -170,7 +170,7 @@ export const normalizeExpenseForAPI = (expense, currentUserId, billSplitApplied,
       amount: parseFloat(expense.totalAmount || expense.amount) || 0,
       date: expense.date || '',
       category: expense.category || '',
-      userId: expense.userId ?? currentUserId,
+      payerId: expense.userId ?? currentUserId ?? expense.payerId,
       walletId: expense.walletId ?? null,
       toWalletId: expense.entryKind === 'transfer' ? (expense.toWalletId ?? null) : null,
       isPersonal: true,
@@ -253,7 +253,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
     return null
   }
 
-  console.log('normalizing Expense for Fields')
+  // console.log('normalizing Expense for Fields')
   const normalized = {
     id: data.expenseId || data.id || null,
     title: data.title || data.expenseTitle || '',
@@ -349,7 +349,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
       normalized.billSplitUsed = true // custom split outside presets
     }
   }
-  console.log('normalized Expense for feilds')
+  // console.log('normalized Expense for feilds')
   return normalized
 }
 

@@ -54,7 +54,7 @@ export default function GroupView() {
       setLoading(true)
       const res = await api.get(`/groups/${id}/details`, { params: { userId } })
       const data = res.data || {}
-      console.log('Fetched group details:', data)
+      // console.log('Fetched group details:', data)
 
       /* ---------------------- GROUP INFO ---------------------- */
       setGroup(data.group || {})
@@ -73,7 +73,7 @@ export default function GroupView() {
           balance: Number(p.userBalance) || 0,
         }))
 
-      console.log('Computed member standing:', finalStanding)
+      // console.log('Computed member standing:', finalStanding)
 
       setMembersStanding(finalStanding)
 

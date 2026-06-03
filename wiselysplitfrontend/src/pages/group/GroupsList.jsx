@@ -21,7 +21,7 @@ export default function GroupsList() {
         const res = await api.get(`/groups/${userId}`)
         const list = res.data || []
         setGroups(list)
-        console.log('Fetched groups:', res.data)
+        // console.log('Fetched groups:', res.data)
 
         const totalNet = list.reduce((sum, g) => sum + Number(g.netBalance ?? 0), 0)
         setOverallNet(Number(totalNet.toFixed(2)))

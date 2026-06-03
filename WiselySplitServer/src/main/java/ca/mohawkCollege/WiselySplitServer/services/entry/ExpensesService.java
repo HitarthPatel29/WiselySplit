@@ -99,7 +99,7 @@ public class ExpensesService {
             String date = (String) payload.get("date");
             String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int userId = ((Number) payload.get("userId")).intValue();
+            int userId = ((Number) payload.get("payerId")).intValue();
             Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
 
             int expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
@@ -253,7 +253,7 @@ public class ExpensesService {
             String date = (String) payload.get("date");
             String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int payerId = ((Number) payload.get("userId")).intValue();
+            int payerId = ((Number) payload.get("payerId")).intValue();
             String shareWithType = (String) payload.get("shareWithType");
 
             Integer groupId = null;
@@ -283,6 +283,7 @@ public class ExpensesService {
                     }
                 }
             }
+            sendClassifierFeedback(payload, title, category, payerId);
             return Map.of("success", true, "expenseId", expenseId, "message", "Expense updated successfully");
         } catch (Exception e) {
             e.printStackTrace();

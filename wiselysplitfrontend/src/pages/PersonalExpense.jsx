@@ -55,7 +55,7 @@ export default function PersonalExpense() {
       const ordered = applyWalletOrder(list, savedOrder)
       setWallets(ordered)
       setActiveWalletIndex((i) => Math.min(i, Math.max(0, ordered.length - 1)))
-      console.log('after fetch wallets with expenses data:', ordered)
+      // console.log('after fetch wallets with expenses data:', ordered)
       return ordered
     } catch (err) {
       console.error('Failed to fetch wallets with expenses', err)
@@ -168,7 +168,7 @@ export default function PersonalExpense() {
   const handleEditWallet = async (targetWalletId, data) => {
     if (!userId) return
     try {
-      console.log('before API call data:', data)
+      // console.log('before API call data:', data)
       await api.put(`/users/${userId}/wallets/${targetWalletId}`, data)
       await fetchWalletsWithExpenses()
       setEditWallet(null)

@@ -16,7 +16,7 @@ export default function ListItemCard({
     status === 'lent' ? `Owes you $${amount}` :
     status === 'owe' ? `You owe $${amount}` :
     'Settled'
-  console.log('ListItemCard - name:', name) // --- IGNORE ---
+  // console.log('ListItemCard - name:', name) // --- IGNORE ---
   return (
     <button
       onClick={onClick}

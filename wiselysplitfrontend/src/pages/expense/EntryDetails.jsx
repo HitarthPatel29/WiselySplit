@@ -66,7 +66,7 @@ export default function EntryDetails() {
         } else {
           res = await api.get(`/expenses/${expenseId}`)
         }
-        console.log(res)
+        // console.log(res)
         if (ignore) return
         const data = res.data || {}
         const normalized = normalizeExpenseForFields(data, userId, friendsAndGroups)

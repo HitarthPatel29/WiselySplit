@@ -22,14 +22,14 @@ export default function FriendsList() {
         const res = await api.get(`/friends/${userId}`)
         const list = res.data || []
         setFriends(res.data || []) 
-        console.log('Fetched friends:', friends)
-        console.log('API response data:', res.data)
+        // console.log('Fetched friends:', friends)
+        // console.log('API response data:', res.data)
 
         const totalNet = list.reduce(
           (sum, f) => sum + Number(f.netBalance || 0),
           0
         ).toFixed(2)
-        console.log('Calculated overall net balance:', totalNet)
+        // console.log('Calculated overall net balance:', totalNet)
         setOverallNet(totalNet)
 
         if (!res.data || res.data.length === 0) setMessage('No Expenses Shared right now.')
