@@ -5,6 +5,7 @@ import Header from '../components/Header.jsx'
 import FilterModal from '../components/Modals/FilterModal.jsx'
 import AddWallet from '../components/Modals/AddWallet.jsx'
 import AlertModal from '../components/Modals/AlertModal.jsx'
+import ImportCsvModal from '../components/Modals/ImportCsvModal.jsx'
 import WalletCarousel from '../components/IO/WalletCarousel.jsx'
 import ExpensesGroupByDate from '../components/ListItem/ExpensesGroupByDate.jsx'
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/solid'
@@ -25,6 +26,7 @@ export default function PersonalExpense() {
   const [wallets, setWallets] = useState([])
   const [walletsLoading, setWalletsLoading] = useState(true)
   const [showAddWallet, setShowAddWallet] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [editWallet, setEditWallet] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [walletToDelete, setWalletToDelete] = useState(null)
@@ -149,7 +151,7 @@ export default function PersonalExpense() {
   }
 
   const handleAddWallet = async (data) => {
-    if (!userId) return
+    if (!userId) return []
     try {
       await api.post(`/users/${userId}/wallets`, {
         walletName: data.walletName,
@@ -159,9 +161,11 @@ export default function PersonalExpense() {
       })
       const list = await fetchWalletsWithExpenses()
       setActiveWalletIndex(Math.max(0, list.length - 1))
+      return list
     } catch (err) {
       console.error('Failed to create wallet', err)
       console.error("data: ", data)
+      return []
     }
   }
 
@@ -254,6 +258,13 @@ export default function PersonalExpense() {
               >
                 <AdjustmentsHorizontalIcon className="w-5 h-5 text-emerald-700" />
               </button>
+              <PrimaryButton
+                label="Import CSV"
+                onClick={() => setShowImport(true)}
+                color="blue"
+                className="flex-1 sm:flex-none whitespace-nowrap"
+                ariaLabel="Import entries from a CSV file"
+              />
               <PrimaryButton
                 label="Add Entry"
                 onClick={() => navigate('/personalExpense/add')}
@@ -362,6 +373,16 @@ export default function PersonalExpense() {
         onAdd={handleAddWallet}
         editWallet={editWallet}
         onEdit={handleEditWallet}
+      />
+
+      <ImportCsvModal
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        wallets={wallets}
+        userId={userId}
+        defaultWalletId={wallets[activeWalletIndex] ? getWalletId(wallets[activeWalletIndex]) : null}
+        createWallet={handleAddWallet}
+        onImported={fetchWalletsWithExpenses}
       />
 
       <AlertModal

@@ -1,16 +1,22 @@
 package ca.mohawkCollege.wiselySplitServer.controllers;
 
+import ca.mohawkCollege.wiselySplitServer.models.IncomeImportDTO;
 import ca.mohawkCollege.wiselySplitServer.services.entry.IncomeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/income")
 public class IncomeController {
+
+    /** Max rows accepted in a single CSV batch import. */
+    private static final int MAX_BATCH_ROWS = 150;
 
     @Autowired
     private IncomeService incomeService;
@@ -30,6 +36,27 @@ public class IncomeController {
         }
     }
 
+
+    /**  BATCH CREATE Incomes (CSV import) */
+    @PostMapping("/batch")
+    public ResponseEntity<?> createIncomesBatch(@RequestBody List<IncomeImportDTO> rows) {
+        try {
+            if (rows == null || rows.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "No rows provided"));
+            }
+            if (rows.size() > MAX_BATCH_ROWS) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Too many rows. Please import " + MAX_BATCH_ROWS + " rows or fewer."));
+            }
+            Map<String, Object> result = incomeService.createIncomesBatch(rows);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
 
     /** GET Income details */
     @GetMapping("/{incomeId}")

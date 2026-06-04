@@ -1,5 +1,6 @@
 package ca.mohawkCollege.wiselySplitServer.controllers;
 
+import ca.mohawkCollege.wiselySplitServer.models.PersonalExpenseImportDTO;
 import ca.mohawkCollege.wiselySplitServer.services.entry.ExpensesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,11 +11,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpensesController {
+
+    /** Max rows accepted in a single CSV batch import. */
+    private static final int MAX_BATCH_ROWS = 150;
 
     @Autowired
     private ExpensesService expensesService;
@@ -39,6 +44,27 @@ public class ExpensesController {
     public ResponseEntity<?> createPersonalExpense(@RequestBody Map<String, Object> payload) {
         try {
             Map<String, Object> result = expensesService.createPersonalExpense(payload);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**  BATCH CREATE Personal Expenses (CSV import) */
+    @PostMapping("/personal/batch")
+    public ResponseEntity<?> createPersonalExpensesBatch(@RequestBody List<PersonalExpenseImportDTO> rows) {
+        try {
+            if (rows == null || rows.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "No rows provided"));
+            }
+            if (rows.size() > MAX_BATCH_ROWS) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Too many rows. Please import " + MAX_BATCH_ROWS + " rows or fewer."));
+            }
+            Map<String, Object> result = expensesService.createPersonalExpensesBatch(rows);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();

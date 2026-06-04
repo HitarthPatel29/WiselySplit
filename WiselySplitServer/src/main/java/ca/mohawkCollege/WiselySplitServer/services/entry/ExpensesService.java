@@ -4,6 +4,7 @@ import ca.mohawkCollege.wiselySplitServer.daos.ExpensesDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.PaymentDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.WalletDAO;
+import ca.mohawkCollege.wiselySplitServer.models.PersonalExpenseImportDTO;
 import ca.mohawkCollege.wiselySplitServer.models.User;
 import ca.mohawkCollege.wiselySplitServer.services.classification.ClassificationService;
 import ca.mohawkCollege.wiselySplitServer.services.classification.FeedbackService;
@@ -12,6 +13,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,6 +118,69 @@ public class ExpensesService {
             throw new RuntimeException("Error creating personal expense: " + e.getMessage());
         }
     }
+    /**
+     * Batch-create personal expenses from a CSV import.
+     * The classifier assigns each row's category. Inserts use INSERT IGNORE so
+     * duplicates (per the Expenses unique constraint) are skipped. The wallet
+     * balance is updated once per wallet using the sum of the inserted rows.
+     *
+     * @return { inserted: <count>, skipped: [ {title, date, amount}, ... ] }
+     */
+    @Transactional
+    public Map<String, Object> createPersonalExpensesBatch(List<PersonalExpenseImportDTO> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return Map.of("inserted", 0, "skipped", new ArrayList<>());
+        }
+
+        // Classify a category for every row (fallback to "Other").
+        List<String> categories = new ArrayList<>(rows.size());
+        for (PersonalExpenseImportDTO r : rows) {
+            String category = "Other";
+            try {
+                ClassificationService.Prediction prediction = classificationService.predict(r.getTitle());
+                if (prediction != null && prediction.category() != null && !prediction.category().isBlank()) {
+                    category = prediction.category();
+                }
+            } catch (Exception ignored) {
+                // A single prediction failure must not break the whole import.
+            }
+            categories.add(category);
+        }
+
+        int[] counts = expensesDAO.batchInsertPersonalExpenses(rows, categories);
+
+        int inserted = 0;
+        List<Map<String, Object>> skipped = new ArrayList<>();
+        Map<Integer, Double> walletSums = new HashMap<>();
+        Map<Integer, Integer> walletUser = new HashMap<>();
+
+        for (int i = 0; i < rows.size(); i++) {
+            PersonalExpenseImportDTO r = rows.get(i);
+            boolean wasInserted = i < counts.length && counts[i] != 0; // 1 = inserted, 0 = duplicate
+            if (wasInserted) {
+                inserted++;
+                if (r.getWalletId() != null) {
+                    walletSums.merge(r.getWalletId(), r.getAmount(), Double::sum);
+                    walletUser.put(r.getWalletId(), r.getPayerId());
+                }
+            } else {
+                Map<String, Object> s = new HashMap<>();
+                s.put("title", r.getTitle());
+                s.put("date", r.getDate());
+                s.put("amount", r.getAmount());
+                skipped.add(s);
+            }
+        }
+
+        // One wallet-balance update per wallet for the inserted (non-duplicate) rows.
+        for (Map.Entry<Integer, Double> e : walletSums.entrySet()) {
+            walletDAO.updateWalletBalance(walletUser.get(e.getKey()), e.getKey(), e.getValue(),
+                    WalletDAO.WalletBalanceUpdateMode.EXPENSE);
+        }
+
+        return Map.of("inserted", inserted, "skipped", skipped);
+    }
+
     @Transactional
     public Map<String, Object> createPersonalExpenseWithAutomation(Map<String, Object> payload, String userEmail) {
         try {

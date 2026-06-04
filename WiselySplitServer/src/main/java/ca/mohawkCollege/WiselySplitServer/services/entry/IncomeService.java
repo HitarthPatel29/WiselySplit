@@ -2,10 +2,14 @@ package ca.mohawkCollege.wiselySplitServer.services.entry;
 
 import ca.mohawkCollege.wiselySplitServer.daos.ExpensesDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.WalletDAO;
+import ca.mohawkCollege.wiselySplitServer.models.IncomeImportDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 @Service
 public class IncomeService {
@@ -37,6 +41,53 @@ public class IncomeService {
         }
     }
 
+
+    /**
+     * Batch-create incomes from a CSV import. Categories are left empty.
+     * Inserts use INSERT IGNORE so duplicates (per the Expenses unique
+     * constraint) are skipped. The wallet balance is updated once per wallet
+     * using the sum of the inserted rows.
+     *
+     * @return { inserted: <count>, skipped: [ {title, date, amount}, ... ] }
+     */
+    @Transactional
+    public Map<String, Object> createIncomesBatch(List<IncomeImportDTO> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return Map.of("inserted", 0, "skipped", new ArrayList<>());
+        }
+
+        int[] counts = expensesDAO.batchInsertIncomes(rows);
+
+        int inserted = 0;
+        List<Map<String, Object>> skipped = new ArrayList<>();
+        Map<Integer, Double> walletSums = new HashMap<>();
+        Map<Integer, Integer> walletUser = new HashMap<>();
+
+        for (int i = 0; i < rows.size(); i++) {
+            IncomeImportDTO r = rows.get(i);
+            boolean wasInserted = i < counts.length && counts[i] != 0; // 1 = inserted, 0 = duplicate
+            if (wasInserted) {
+                inserted++;
+                if (r.getWalletId() != null) {
+                    walletSums.merge(r.getWalletId(), r.getAmount(), Double::sum);
+                    walletUser.put(r.getWalletId(), r.getUserId());
+                }
+            } else {
+                Map<String, Object> s = new HashMap<>();
+                s.put("title", r.getTitle());
+                s.put("date", r.getDate());
+                s.put("amount", r.getAmount());
+                skipped.add(s);
+            }
+        }
+
+        for (Map.Entry<Integer, Double> e : walletSums.entrySet()) {
+            walletDAO.updateWalletBalance(walletUser.get(e.getKey()), e.getKey(), e.getValue(),
+                    WalletDAO.WalletBalanceUpdateMode.INCOME);
+        }
+
+        return Map.of("inserted", inserted, "skipped", skipped);
+    }
 
     /**  Fetch single income details */
     public Map<String, Object> getIncomeDetails(int incomeId) {

@@ -1,11 +1,15 @@
 package ca.mohawkCollege.wiselySplitServer.daos;
 
+import ca.mohawkCollege.wiselySplitServer.models.IncomeImportDTO;
+import ca.mohawkCollege.wiselySplitServer.models.PersonalExpenseImportDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
@@ -238,5 +242,67 @@ public class ExpensesDAO {
                 expense.put("splitDetails", findExpenseParticipants((Integer) expense.get("expenseId")));
         }
         return list;
+    }
+
+    /**
+     * Batch-insert personal expenses using INSERT IGNORE. Duplicates (per the
+     * Expenses unique constraint) are silently skipped. The returned int[] holds
+     * the per-row update count: 1 = inserted, 0 = ignored (duplicate).
+     *
+     * @param rows       expense rows to insert
+     * @param categories classifier-assigned category per row (same order/size as rows)
+     */
+    public int[] batchInsertPersonalExpenses(List<PersonalExpenseImportDTO> rows, List<String> categories) {
+        String sql = """
+            INSERT IGNORE INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, IsPersonal, WalletID, EntryKind)
+            VALUES (?, ?, ?, ?, ?, 1, ?, 'expense')
+        """;
+        return jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                PersonalExpenseImportDTO r = rows.get(i);
+                ps.setString(1, r.getTitle());
+                ps.setString(2, r.getDate());
+                ps.setString(3, categories.get(i));
+                ps.setDouble(4, r.getAmount());
+                ps.setInt(5, r.getPayerId());
+                if (r.getWalletId() != null) ps.setInt(6, r.getWalletId());
+                else ps.setNull(6, Types.INTEGER);
+            }
+
+            @Override
+            public int getBatchSize() {
+                return rows.size();
+            }
+        });
+    }
+
+    /**
+     * Batch-insert incomes using INSERT IGNORE. Income category is left empty.
+     * Returned int[] holds per-row update count: 1 = inserted, 0 = ignored (duplicate).
+     */
+    public int[] batchInsertIncomes(List<IncomeImportDTO> rows) {
+        String sql = """
+            INSERT IGNORE INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, IsPersonal, WalletID, EntryKind)
+            VALUES (?, ?, ?, ?, ?, 1, ?, 'income')
+        """;
+        return jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                IncomeImportDTO r = rows.get(i);
+                ps.setString(1, r.getTitle());
+                ps.setString(2, r.getDate());
+                ps.setString(3, "");
+                ps.setDouble(4, r.getAmount());
+                ps.setInt(5, r.getUserId());
+                if (r.getWalletId() != null) ps.setInt(6, r.getWalletId());
+                else ps.setNull(6, Types.INTEGER);
+            }
+
+            @Override
+            public int getBatchSize() {
+                return rows.size();
+            }
+        });
     }
 }
