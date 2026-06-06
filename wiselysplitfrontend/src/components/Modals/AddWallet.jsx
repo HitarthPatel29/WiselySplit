@@ -67,6 +67,9 @@ export default function AddWallet({ isOpen, onClose, onAdd, editWallet = null, o
     console.log('handleSubmit data:', data)
     if (isEdit && onEdit) {
       const id = editWallet.id ?? editWallet.walletId
+      console.log('editWallet:', editWallet)
+      console.log('id:', id)
+      console.log('data:', data)
       onEdit(id, data)
     } else {
       onAdd(data)

@@ -1,5 +1,6 @@
 package ca.mohawkCollege.wiselySplitServer.rowMappers;
 
+import ca.mohawkCollege.wiselySplitServer.models.Role;
 import ca.mohawkCollege.wiselySplitServer.models.User;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -24,6 +25,8 @@ public class UserRowMapper implements RowMapper<User> {
         } else {
             user.setStripeAccountId(stripeAccountId);
         }
+        // RBAC role - normalize null/blank/unknown to USER
+        user.setRole(Role.normalize(rs.getString("Role")));
         return user;
     }
 }

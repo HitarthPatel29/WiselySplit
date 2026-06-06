@@ -32,6 +32,8 @@ public class User {
 
     private String stripeAccountId; // Stripe Connect account ID for receiving payments
 
+    private String role = Role.DEFAULT; // RBAC role: ADMIN / TEST_PROFILE / USER
+
     // --- Constructors ---
     public User() {}
 
@@ -81,6 +83,9 @@ public class User {
     public String getStripeAccountId() { return stripeAccountId; }
     public void setStripeAccountId(String stripeAccountId) { this.stripeAccountId = stripeAccountId; }
 
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
     @Override
     public String toString() {
         return "User{" +
@@ -91,6 +96,7 @@ public class User {
                 ", phoneNum=" + phoneNum +
                 ", profilePicture='" + profilePicture + '\'' +
                 ", stripeAccountId='" + stripeAccountId + '\'' +
+                ", role='" + role + '\'' +
                 '}';
     }
 }

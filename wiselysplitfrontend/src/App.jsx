@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import Landing from './pages/Landing.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
 import ResetPassword from './pages/auth/ResetPassword.jsx'
@@ -24,6 +25,7 @@ import PersonalExpense from './pages/PersonalExpense.jsx'
 import StripeSettleUp from './pages/settle/StripeSettleUp.jsx'
 import StripeConnectSetup from './pages/stripe/StripeConnectSetup.jsx'
 import ClassifierAdmin from './pages/admin/ClassifierAdmin.jsx'
+import AdminPanel from './pages/admin/AdminPanel.jsx'
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -41,8 +43,33 @@ function PrivateRoute({ children }) {
     )
   }
 
-  return token ? children : <Navigate to="/" replace />
+  return token ? children : <Navigate to="/login" replace />
 } 
+
+// RBAC guard: only ADMIN accounts may access admin routes. Non-admins are
+// redirected to the dashboard (the classifier path is otherwise unguessable,
+// and the backend independently enforces ROLE_ADMIN on every /api/admin and
+// /api/classify write call).
+function AdminRoute({ children }) {
+  const { token, loading, isAdmin, roleLoading } = useAuth()
+
+  if (loading || (token && roleLoading)) {
+    return (
+      <div role="status" aria-live="polite" aria-label="Loading">
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" aria-hidden="true"></div>
+            <p className="sr-only">Loading...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!token) return <Navigate to="/login" replace />
+  if (!isAdmin) return <Navigate to="/dashboard" replace />
+  return children
+}
 
 function OnboardingRoute({ children }) {
   const { token, loading, firstLogin } = useAuth()
@@ -82,7 +109,7 @@ export default function App() {
       </a>
       <Routes>
       {/* Public routes */}
-      <Route path="/" element={<Login />} />
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -303,11 +330,19 @@ export default function App() {
         }
       />
       <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminPanel />
+          </AdminRoute>
+        }
+      />
+      <Route
         path="/admin/classifier"
         element={
-          <PrivateRoute>
+          <AdminRoute>
             <ClassifierAdmin />
-          </PrivateRoute>
+          </AdminRoute>
         }
       />
 

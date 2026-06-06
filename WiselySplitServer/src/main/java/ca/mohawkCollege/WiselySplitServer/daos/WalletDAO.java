@@ -105,7 +105,7 @@ public class WalletDAO {
 
     public void updateWallet(int userId, int walletId, String walletName, double initialBalance, String cardName, String walletColor) {
         String sql = "UPDATE Wallets SET Name=?, Balance=Balance-InitialBalance+?, InitialBalance=?, CardName=?, Color=? WHERE WalletID=? AND UserID=?";
-        jdbcTemplate.update(sql, walletName, initialBalance,initialBalance, cardName, walletColor, walletId, userId);
+        jdbcTemplate.update(sql, walletName, initialBalance, initialBalance, cardName, walletColor, walletId, userId);
     }
 
     public void deleteWallet(int userId, int walletId) {

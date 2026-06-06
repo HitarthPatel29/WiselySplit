@@ -304,7 +304,7 @@ function WalletsTile({
 }) {
   return (
     <TileCard
-      title="Wallets"
+      title="Your Wallet"
       icon={WalletIcon}
       action={onView}
       actionLabel="View all"
@@ -321,7 +321,7 @@ function WalletsTile({
       <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-100 dark:border-gray-700">
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-            Total across wallets
+            Total Balance
           </p>
           <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
             {fmt(total)}

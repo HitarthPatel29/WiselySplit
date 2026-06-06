@@ -5,7 +5,13 @@
 // expense categories, and income categories are left empty.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { XMarkIcon, InformationCircleIcon, CheckIcon, ArrowUpTrayIcon } from '@heroicons/react/24/solid'
+import {
+  XMarkIcon,
+  InformationCircleIcon,
+  CheckIcon,
+  ArrowUpTrayIcon,
+  ChevronDownIcon,
+} from '@heroicons/react/24/solid'
 import api from '../../api'
 import { normalizeExpenseForAPI } from '../../utils/expenseModel'
 import {
@@ -17,46 +23,12 @@ import {
   MAX_CSV_ROWS,
 } from '../../utils/csvImport'
 import AddWallet from './AddWallet'
-
-const STEPS = ['Wallet', 'Map fields', 'Review', 'Result']
-
-const selectClass =
-  'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 pr-9 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 cursor-pointer'
-
-function StepBar({ current }) {
-  return (
-    <ol className="flex items-center w-full mb-6" aria-label="Import progress">
-      {STEPS.map((label, idx) => {
-        const done = idx < current
-        const active = idx === current
-        return (
-          <li key={label} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center">
-              <span
-                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold border-2 transition-colors ${
-                  done
-                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                    : active
-                      ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                      : 'border-gray-300 dark:border-gray-600 text-gray-400'
-                }`}
-                aria-current={active ? 'step' : undefined}
-              >
-                {done ? <CheckIcon className="w-4 h-4" aria-hidden="true" /> : idx + 1}
-              </span>
-              <span className={`mt-1 text-xs whitespace-nowrap ${active ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-400'}`}>
-                {label}
-              </span>
-            </div>
-            {idx < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-2 ${done ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`} aria-hidden="true" />
-            )}
-          </li>
-        )
-      })}
-    </ol>
-  )
-}
+import ImportStepBar from './importCsv/ImportStepBar'
+import ImportStepFooter from './importCsv/ImportStepFooter'
+import ImportSectionCard from './importCsv/ImportSectionCard'
+import ImportFileDropzone from './importCsv/ImportFileDropzone'
+import ImportReviewList from './importCsv/ImportReviewList'
+import { selectClass } from './importCsv/constants'
 
 export default function ImportCsvModal({
   isOpen,
@@ -67,6 +39,7 @@ export default function ImportCsvModal({
   createWallet,
   onImported,
 }) {
+  const modalRef = useRef(null)
   const fileInputRef = useRef(null)
   const [step, setStep] = useState(0)
 
@@ -87,6 +60,7 @@ export default function ImportCsvModal({
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
   const [submitError, setSubmitError] = useState('')
+  const [showInvalidDetails, setShowInvalidDetails] = useState(false)
 
   const resetAll = () => {
     setStep(0)
@@ -103,6 +77,7 @@ export default function ImportCsvModal({
     setSubmitting(false)
     setResult(null)
     setSubmitError('')
+    setShowInvalidDetails(false)
   }
 
   useEffect(() => {
@@ -111,6 +86,16 @@ export default function ImportCsvModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      const firstElement = focusableElements[0]
+      if (firstElement) firstElement.focus()
+    }
+  }, [isOpen, step])
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -193,6 +178,14 @@ export default function ImportCsvModal({
     })
   }
 
+  const allEntries = useMemo(
+    () => [...normalized.expenses, ...normalized.incomes],
+    [normalized.expenses, normalized.incomes]
+  )
+
+  const includeAll = () => setExcluded(new Set())
+  const excludeAll = () => setExcluded(new Set(allEntries.map(keyOf)))
+
   const selectedExpenses = normalized.expenses.filter(isIncluded)
   const selectedIncomes = normalized.incomes.filter(isIncluded)
   const netDelta = computeNetDelta(selectedExpenses, selectedIncomes)
@@ -270,314 +263,409 @@ export default function ImportCsvModal({
     return w ? (w.walletName ?? w.name ?? `Wallet ${walletId}`) : ''
   })()
 
+  const importCount = selectedExpenses.length + selectedIncomes.length
+  const importLabel = submitting
+    ? 'Importing…'
+    : `Import ${importCount} entr${importCount === 1 ? 'y' : 'ies'}`
+
+  const renderFooter = () => {
+    if (step === 0) {
+      return (
+        <ImportStepFooter
+          showCancel
+          onCancel={handleClose}
+          primaryLabel="Next"
+          onPrimary={() => setStep(1)}
+          primaryDisabled={!walletId || rows.length === 0}
+          align="end"
+        />
+      )
+    }
+    if (step === 1) {
+      return (
+        <ImportStepFooter
+          showBack
+          onBack={() => setStep(0)}
+          primaryLabel="Next"
+          onPrimary={() => setStep(2)}
+          primaryDisabled={!mappingValid}
+        />
+      )
+    }
+    if (step === 2) {
+      return (
+        <ImportStepFooter
+          showBack
+          onBack={() => setStep(1)}
+          primaryLabel={importLabel}
+          onPrimary={handleSubmit}
+          primaryDisabled={submitting || importCount === 0}
+          primaryBusy={submitting}
+          primaryIcon={<ArrowUpTrayIcon className="w-5 h-5" aria-hidden="true" />}
+        />
+      )
+    }
+    if (step === 3) {
+      return (
+        <ImportStepFooter
+          primaryLabel="Done"
+          onPrimary={handleClose}
+          align="end"
+        />
+      )
+    }
+    return null
+  }
+
   return (
     <div
-      className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center px-4"
+      className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center sm:px-4"
       onClick={handleClose}
       role="presentation"
     >
       <div
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="import-csv-title"
-        className="bg-gray-100 dark:bg-gray-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl p-6 shadow-2xl shadow-black relative animate-fadeIn"
+        className="bg-gray-100 dark:bg-gray-800 w-full sm:max-w-2xl max-sm:min-h-[100dvh] sm:max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-xl shadow-2xl shadow-black relative animate-fadeIn"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-6">
-          <h2 id="import-csv-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Import from CSV
-          </h2>
-          <button
-            onClick={handleClose}
-            disabled={submitting}
-            className="p-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50"
-            aria-label="Close import"
-          >
-            <XMarkIcon className="w-6 h-6" aria-hidden="true" />
-          </button>
+        {/* Sticky header */}
+        <div className="flex-shrink-0 px-4 pt-4 sm:px-6 sm:pt-6 pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center mb-2">
+            <h2 id="import-csv-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Import from CSV
+            </h2>
+            <button
+              onClick={handleClose}
+              disabled={submitting}
+              className="p-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50"
+              aria-label="Close import"
+            >
+              <XMarkIcon className="w-6 h-6" aria-hidden="true" />
+            </button>
+          </div>
+          {step < 3 && <ImportStepBar current={step} />}
         </div>
 
-        <StepBar current={step} />
-
-        {/* STEP 1: Wallet */}
-        {step === 0 && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="block mb-1 font-medium text-gray-900 dark:text-gray-100">
-                Import into wallet
-              </label>
-              {wallets.length > 0 ? (
-                <select
-                  className={selectClass}
-                  value={walletId == null ? '' : walletId}
-                  onChange={(e) => setWalletId(e.target.value === '' ? null : Number(e.target.value))}
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 min-h-0">
+          {/* STEP 0: Wallet */}
+          {step === 0 && (
+            <div className="flex flex-col gap-4">
+              <ImportSectionCard title="Import into wallet">
+                {wallets.length > 0 ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Select wallet
+                      </label>
+                      <div className="relative">
+                        <select
+                          className={selectClass}
+                          value={walletId == null ? '' : walletId}
+                          onChange={(e) => setWalletId(e.target.value === '' ? null : Number(e.target.value))}
+                        >
+                          <option value="">Choose a wallet...</option>
+                          {wallets.map((w) => {
+                            const id = w.walletId ?? w.id
+                            const name = w.walletName ?? w.name ?? `Wallet ${id}`
+                            return (
+                              <option key={id} value={id}>{name}</option>
+                            )
+                          })}
+                        </select>
+                        <ChevronDownIcon
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none"
+                          aria-hidden
+                        />
+                      </div>
+                    </div>
+                    {currentWalletName && (
+                      <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                        Importing into <span className="font-semibold">{currentWalletName}</span>
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    You don&apos;t have any wallets yet. Create one to continue.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowAddWallet(true)}
+                  className="self-start text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  <option value="">Choose a wallet...</option>
-                  {wallets.map((w) => {
-                    const id = w.walletId ?? w.id
-                    const name = w.walletName ?? w.name ?? `Wallet ${id}`
-                    return (
-                      <option key={id} value={id}>{name}</option>
-                    )
-                  })}
-                </select>
-              ) : (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  You don&apos;t have any wallets yet. Create one to continue.
+                  + Add Wallet / Card
+                </button>
+              </ImportSectionCard>
+
+              <ImportSectionCard title="CSV file">
+                <ImportFileDropzone
+                  fileInputRef={fileInputRef}
+                  onChange={handleFile}
+                  fileName={fileName}
+                  rowCount={rows.length}
+                  parseError={parseError}
+                  maxRows={MAX_CSV_ROWS}
+                />
+              </ImportSectionCard>
+            </div>
+          )}
+
+          {/* STEP 1: Map fields */}
+          {step === 1 && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
+                <InformationCircleIcon className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <span>Categories are assigned automatically — no column mapping needed.</span>
+              </div>
+
+              <ImportSectionCard title="Columns">
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-900 dark:text-gray-100">Title column</label>
+                  <div className="relative">
+                    <select className={selectClass} value={mapping.title} onChange={(e) => setMapping((m) => ({ ...m, title: e.target.value }))}>
+                      <option value="">Select column...</option>
+                      {headers.map((h) => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                    <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" aria-hidden />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-900 dark:text-gray-100">Date column</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="relative">
+                      <select className={selectClass} value={mapping.date} onChange={(e) => setMapping((m) => ({ ...m, date: e.target.value }))}>
+                        <option value="">Select column...</option>
+                        {headers.map((h) => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                      <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" aria-hidden />
+                    </div>
+                    <div className="relative">
+                      <select className={selectClass} value={dateFormat} onChange={(e) => setDateFormat(e.target.value)} aria-label="Date format">
+                        {DATE_FORMATS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      </select>
+                      <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" aria-hidden />
+                    </div>
+                  </div>
+                </div>
+              </ImportSectionCard>
+
+              <ImportSectionCard title="Amount">
+                <div className="flex rounded-xl border border-gray-300 dark:border-gray-600 overflow-hidden" role="radiogroup" aria-label="Amount mapping mode">
+                  <label
+                    className={`flex-1 text-center text-sm py-2.5 px-3 cursor-pointer transition-colors ${
+                      amountMode === 'single'
+                        ? 'bg-emerald-500 text-white font-medium'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <input type="radio" name="amountMode" checked={amountMode === 'single'} onChange={() => setAmountMode('single')} className="sr-only" />
+                    Single column
+                  </label>
+                  <label
+                    className={`flex-1 text-center text-sm py-2.5 px-3 cursor-pointer transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                      amountMode === 'split'
+                        ? 'bg-emerald-500 text-white font-medium'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <input type="radio" name="amountMode" checked={amountMode === 'split'} onChange={() => setAmountMode('split')} className="sr-only" />
+                    Debit &amp; credit
+                  </label>
+                </div>
+
+                {amountMode === 'single' ? (
+                  <>
+                    <div className="relative">
+                      <select className={selectClass} value={mapping.amount} onChange={(e) => setMapping((m) => ({ ...m, amount: e.target.value }))}>
+                        <option value="">Select amount column...</option>
+                        {headers.map((h) => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                      <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" aria-hidden />
+                    </div>
+                    <div className="relative">
+                      <select className={selectClass} value={signConvention} onChange={(e) => setSignConvention(e.target.value)} aria-label="Sign convention">
+                        {SIGN_CONVENTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      </select>
+                      <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" aria-hidden />
+                    </div>
+                  </>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <span className="block mb-1 text-sm text-gray-600 dark:text-gray-400">Debit (expense)</span>
+                      <div className="relative">
+                        <select className={selectClass} value={mapping.debit} onChange={(e) => setMapping((m) => ({ ...m, debit: e.target.value }))}>
+                          <option value="">Select column...</option>
+                          {headers.map((h) => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                        <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" aria-hidden />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block mb-1 text-sm text-gray-600 dark:text-gray-400">Credit (income)</span>
+                      <div className="relative">
+                        <select className={selectClass} value={mapping.credit} onChange={(e) => setMapping((m) => ({ ...m, credit: e.target.value }))}>
+                          <option value="">Select column...</option>
+                          {headers.map((h) => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                        <ChevronDownIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" aria-hidden />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </ImportSectionCard>
+
+              {mappingValid && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 rounded-lg bg-gray-50 dark:bg-gray-900/50 px-3 py-2">
+                  Preview: {normalized.expenses.length} expense{normalized.expenses.length === 1 ? '' : 's'},{' '}
+                  {normalized.incomes.length} income{normalized.incomes.length === 1 ? '' : 's'},{' '}
+                  {normalized.invalid.length} invalid
                 </p>
               )}
             </div>
+          )}
 
-            <button
-              type="button"
-              onClick={() => setShowAddWallet(true)}
-              className="self-start text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
-            >
-              + Add Wallet / Card
-            </button>
+          {/* STEP 2: Review */}
+          {step === 2 && (
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="flex sm:flex-col items-center justify-between sm:justify-center rounded-lg bg-white dark:bg-gray-900 p-3 sm:text-center gap-2">
+                  <div className="text-2xl font-bold text-rose-500">{selectedExpenses.length}</div>
+                  <div className="text-xs text-gray-500">Expenses</div>
+                </div>
+                <div className="flex sm:flex-col items-center justify-between sm:justify-center rounded-lg bg-white dark:bg-gray-900 p-3 sm:text-center gap-2">
+                  <div className="text-2xl font-bold text-emerald-500">{selectedIncomes.length}</div>
+                  <div className="text-xs text-gray-500">Incomes</div>
+                </div>
+                <div className="flex sm:flex-col items-center justify-between sm:justify-center rounded-lg bg-white dark:bg-gray-900 p-3 sm:text-center gap-2">
+                  <div className="text-2xl font-bold text-amber-500">{normalized.invalid.length}</div>
+                  <div className="text-xs text-gray-500">Skipped (invalid)</div>
+                </div>
+              </div>
 
-            <div>
-              <label className="block mb-1 font-medium text-gray-900 dark:text-gray-100">
-                CSV file
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,text/csv"
-                onChange={handleFile}
-                className="block w-full text-sm text-gray-600 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-500 file:text-white hover:file:bg-emerald-600"
+              <div className={`rounded-lg px-3 py-3 text-sm ${netDelta < 0 ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'}`}>
+                <p>
+                  This import will change{' '}
+                  <span className="font-bold">{currentWalletName || 'the selected wallet'}</span>{' '}
+                  balance by{' '}
+                  <span className="text-base font-bold tabular-nums">
+                    {netDelta < 0 ? '-' : '+'}${Math.abs(netDelta).toFixed(2)}
+                  </span>
+                </p>
+                <span className="block text-gray-500 dark:text-gray-400 mt-1 text-xs">
+                  Duplicates already in this wallet will be skipped automatically.
+                </span>
+              </div>
+
+              {normalized.invalid.length > 0 && (
+                <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+                  <button
+                    type="button"
+                    onClick={() => setShowInvalidDetails((v) => !v)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-amber-800 dark:text-amber-200"
+                  >
+                    {normalized.invalid.length} invalid row{normalized.invalid.length === 1 ? '' : 's'} will not be imported
+                    <span className="text-xs">{showInvalidDetails ? 'Hide' : 'Show'}</span>
+                  </button>
+                  {showInvalidDetails && (
+                    <ul className="px-3 pb-2 text-xs text-amber-700 dark:text-amber-300 space-y-1 max-h-24 overflow-y-auto">
+                      {normalized.invalid.map((inv, i) => (
+                        <li key={i}>Row {inv.rowIndex + 2}: {inv.reason || 'could not parse'}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {allEntries.length > 0 && (
+                <div className="flex gap-2 text-sm">
+                  <button
+                    type="button"
+                    onClick={includeAll}
+                    className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
+                  >
+                    Include all
+                  </button>
+                  <span className="text-gray-300 dark:text-gray-600">|</span>
+                  <button
+                    type="button"
+                    onClick={excludeAll}
+                    className="text-gray-600 dark:text-gray-400 font-medium hover:underline"
+                  >
+                    Exclude all
+                  </button>
+                </div>
+              )}
+
+              <ImportReviewList
+                entries={allEntries}
+                keyOf={keyOf}
+                isIncluded={isIncluded}
+                toggleEntry={toggleEntry}
               />
-              {fileName && (
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Loaded <span className="font-medium">{fileName}</span> — {rows.length} row{rows.length === 1 ? '' : 's'} detected.
-                </p>
-              )}
-              {parseError && (
-                <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">{parseError}</p>
-              )}
-            </div>
 
-            <div className="flex justify-end gap-3 mt-2">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2.5 px-5 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={!walletId || rows.length === 0}
-                onClick={() => setStep(1)}
-                className="bg-emerald-500 text-white py-2.5 px-5 rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: Map fields */}
-        {step === 1 && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
-              <InformationCircleIcon className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
-              <span>Categories are detected automatically by our classifier — no need to map them.</span>
-            </div>
-
-            <div>
-              <label className="block mb-1 font-medium text-gray-900 dark:text-gray-100">Title column</label>
-              <select className={selectClass} value={mapping.title} onChange={(e) => setMapping((m) => ({ ...m, title: e.target.value }))}>
-                <option value="">Select column...</option>
-                {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="block mb-1 font-medium text-gray-900 dark:text-gray-100">Date column</label>
-              <div className="grid grid-cols-2 gap-3">
-                <select className={selectClass} value={mapping.date} onChange={(e) => setMapping((m) => ({ ...m, date: e.target.value }))}>
-                  <option value="">Select column...</option>
-                  {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                </select>
-                <select className={selectClass} value={dateFormat} onChange={(e) => setDateFormat(e.target.value)} aria-label="Date format">
-                  {DATE_FORMATS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <span className="block mb-1 font-medium text-gray-900 dark:text-gray-100">Amount</span>
-              <div className="flex gap-4 mb-2 text-sm">
-                <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="amountMode" checked={amountMode === 'single'} onChange={() => setAmountMode('single')} />
-                  Single signed column
-                </label>
-                <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="amountMode" checked={amountMode === 'split'} onChange={() => setAmountMode('split')} />
-                  Separate debit / credit
-                </label>
-              </div>
-
-              {amountMode === 'single' ? (
-                <>
-                  <select className={selectClass} value={mapping.amount} onChange={(e) => setMapping((m) => ({ ...m, amount: e.target.value }))}>
-                    <option value="">Select amount column...</option>
-                    {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                  <select className={`${selectClass} mt-3`} value={signConvention} onChange={(e) => setSignConvention(e.target.value)} aria-label="Sign convention">
-                    {SIGN_CONVENTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
-                </>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="block mb-1 text-sm text-gray-600 dark:text-gray-400">Debit (expense)</span>
-                    <select className={selectClass} value={mapping.debit} onChange={(e) => setMapping((m) => ({ ...m, debit: e.target.value }))}>
-                      <option value="">Select column...</option>
-                      {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <span className="block mb-1 text-sm text-gray-600 dark:text-gray-400">Credit (income)</span>
-                    <select className={selectClass} value={mapping.credit} onChange={(e) => setMapping((m) => ({ ...m, credit: e.target.value }))}>
-                      <option value="">Select column...</option>
-                      {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                    </select>
-                  </div>
+              {submitError && (
+                <div className="rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 px-3 py-2 text-sm text-rose-700 dark:text-rose-300" role="alert">
+                  {submitError}
                 </div>
               )}
             </div>
+          )}
 
-            <div className="flex justify-between gap-3 mt-2">
-              <button type="button" onClick={() => setStep(0)} className="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2.5 px-5 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700">
-                Back
-              </button>
-              <button
-                type="button"
-                disabled={!mappingValid}
-                onClick={() => setStep(2)}
-                className="bg-emerald-500 text-white py-2.5 px-5 rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: Review */}
-        {step === 2 && (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-lg bg-white dark:bg-gray-900 p-3">
-                <div className="text-2xl font-bold text-rose-500">{selectedExpenses.length}</div>
-                <div className="text-xs text-gray-500">Expenses</div>
-              </div>
-              <div className="rounded-lg bg-white dark:bg-gray-900 p-3">
-                <div className="text-2xl font-bold text-emerald-500">{selectedIncomes.length}</div>
-                <div className="text-xs text-gray-500">Incomes</div>
-              </div>
-              <div className="rounded-lg bg-white dark:bg-gray-900 p-3">
-                <div className="text-2xl font-bold text-amber-500">{normalized.invalid.length}</div>
-                <div className="text-xs text-gray-500">Skipped (invalid)</div>
-              </div>
-            </div>
-
-            <div className={`rounded-lg px-3 py-2 text-sm ${netDelta < 0 ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'}`}>
-              This import will change <span className="font-medium">{currentWalletName || 'the selected wallet'}</span> balance by{' '}
-              <span className="font-semibold">{netDelta < 0 ? '-' : '+'}${Math.abs(netDelta).toFixed(2)}</span>.
-              <span className="block text-gray-500 dark:text-gray-400 mt-0.5">Duplicates already in this wallet will be skipped automatically.</span>
-            </div>
-
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700 text-left">
-                  <tr>
-                    <th className="p-2 w-8"></th>
-                    <th className="p-2">Title</th>
-                    <th className="p-2">Date</th>
-                    <th className="p-2 text-right">Amount</th>
-                    <th className="p-2">Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...normalized.expenses, ...normalized.incomes].length === 0 && (
-                    <tr><td colSpan={5} className="p-4 text-center text-gray-500">No valid rows to import.</td></tr>
-                  )}
-                  {[...normalized.expenses, ...normalized.incomes].map((entry) => (
-                    <tr key={keyOf(entry)} className="border-t border-gray-200 dark:border-gray-700">
-                      <td className="p-2">
-                        <input type="checkbox" checked={isIncluded(entry)} onChange={() => toggleEntry(entry)} aria-label={`Include ${entry.title}`} />
-                      </td>
-                      <td className="p-2 text-gray-900 dark:text-gray-100">{entry.title}</td>
-                      <td className="p-2 text-gray-600 dark:text-gray-400">{entry.date}</td>
-                      <td className="p-2 text-right tabular-nums">${entry.amount.toFixed(2)}</td>
-                      <td className="p-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${entry.kind === 'expense' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'}`}>
-                          {entry.kind}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {submitError && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">{submitError}</p>
-            )}
-
-            <div className="flex justify-between gap-3 mt-2">
-              <button type="button" disabled={submitting} onClick={() => setStep(1)} className="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2.5 px-5 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50">
-                Back
-              </button>
-              <button
-                type="button"
-                disabled={submitting || (selectedExpenses.length === 0 && selectedIncomes.length === 0)}
-                onClick={handleSubmit}
-                className="inline-flex items-center gap-2 bg-emerald-500 text-white py-2.5 px-5 rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ArrowUpTrayIcon className="w-5 h-5" aria-hidden="true" />
-                {submitting ? 'Importing...' : `Import ${selectedExpenses.length + selectedIncomes.length} entr${selectedExpenses.length + selectedIncomes.length === 1 ? 'y' : 'ies'}`}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 4: Result */}
-        {step === 3 && result && (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col items-center text-center py-2">
-              <span className="flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500 text-white mb-3">
-                <CheckIcon className="w-8 h-8" aria-hidden="true" />
-              </span>
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">Import complete</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Added {result.expenseInserted} expense{result.expenseInserted === 1 ? '' : 's'} and {result.incomeInserted} income{result.incomeInserted === 1 ? '' : 's'}.
-              </p>
-            </div>
-
-            {result.skipped.length > 0 && (
-              <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
-                  {result.skipped.length} duplicate{result.skipped.length === 1 ? '' : 's'} skipped (already in this wallet):
+          {/* STEP 3: Result */}
+          {step === 3 && result && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col items-center text-center py-4">
+                <span className="flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500 text-white mb-4">
+                  <CheckIcon className="w-9 h-9" aria-hidden="true" />
+                </span>
+                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">Import complete</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Added {result.expenseInserted} expense{result.expenseInserted === 1 ? '' : 's'} and{' '}
+                  {result.incomeInserted} income{result.incomeInserted === 1 ? '' : 's'}.
                 </p>
-                <ul className="max-h-40 overflow-y-auto text-sm text-amber-700 dark:text-amber-300 space-y-1">
-                  {result.skipped.map((s, i) => (
-                    <li key={i} className="flex justify-between gap-3">
-                      <span className="truncate">{s.title}</span>
-                      <span className="whitespace-nowrap">{s.date} · ${Number(s.amount).toFixed(2)}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
-            )}
 
-            <div className="flex justify-end mt-2">
-              <button type="button" onClick={handleClose} className="bg-emerald-500 text-white py-2.5 px-5 rounded-xl font-medium hover:bg-emerald-600">
-                Done
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-lg bg-white dark:bg-gray-900 p-4 text-center border border-gray-200 dark:border-gray-700">
+                  <div className="text-2xl font-bold text-rose-500">{result.expenseInserted}</div>
+                  <div className="text-xs text-gray-500 mt-1">Expenses added</div>
+                </div>
+                <div className="rounded-lg bg-white dark:bg-gray-900 p-4 text-center border border-gray-200 dark:border-gray-700">
+                  <div className="text-2xl font-bold text-emerald-500">{result.incomeInserted}</div>
+                  <div className="text-xs text-gray-500 mt-1">Incomes added</div>
+                </div>
+              </div>
+
+              {result.skipped.length > 0 && (
+                <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                    {result.skipped.length} duplicate{result.skipped.length === 1 ? '' : 's'} skipped (already in this wallet):
+                  </p>
+                  <ul className="max-h-40 overflow-y-auto text-sm text-amber-700 dark:text-amber-300 space-y-2">
+                    {result.skipped.map((s, i) => (
+                      <li key={i} className="border-b border-amber-200/50 dark:border-amber-800/50 pb-2 last:border-0 last:pb-0">
+                        <p className="font-medium truncate">{s.title}</p>
+                        <p className="text-xs mt-0.5">{s.date} · ${Number(s.amount).toFixed(2)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
+          )}
+        </div>
+
+        {/* Sticky footer */}
+        {step <= 3 && (
+          <div className="flex-shrink-0 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {renderFooter()}
           </div>
         )}
       </div>

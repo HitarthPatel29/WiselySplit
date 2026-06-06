@@ -3,7 +3,9 @@ package ca.mohawkCollege.wiselySplitServer.controllers;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.JwtUtil;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.PasswordUtil;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
+import ca.mohawkCollege.wiselySplitServer.models.Role;
 import ca.mohawkCollege.wiselySplitServer.models.User;
+import ca.mohawkCollege.wiselySplitServer.models.dto.AdminUserView;
 import ca.mohawkCollege.wiselySplitServer.services.EmailServiceMailTrapAPI;
 import ca.mohawkCollege.wiselySplitServer.services.OtpService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -87,8 +89,11 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email and OTP are required"));
         }
 
-        if (otpService.validateOtp(email, otp)) {
-            Optional<User> userOpt = userDAO.findByEmail(email);
+        Optional<User> userOpt = userDAO.findByEmail(email);
+        // Only ADMIN / TEST_PROFILE may use the "000000" master OTP.
+        boolean allowMaster = userOpt.map(u -> Role.allowsMasterOtp(u.getRole())).orElse(false);
+
+        if (otpService.validateOtp(email, otp, allowMaster)) {
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "User not found"));
@@ -110,6 +115,24 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
         return ResponseEntity.ok(Map.of("message","Logged out (discard token on client)"));
+    }
+
+    /**
+     * Returns the authenticated caller's own profile + role.
+     * Used by the frontend to guard /admin routes and toggle admin UI.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> me(Authentication auth) {
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Authentication required"));
+        }
+        Optional<User> userOpt = userDAO.findByEmail(auth.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found"));
+        }
+        return ResponseEntity.ok(AdminUserView.from(userOpt.get()));
     }
 
     /**

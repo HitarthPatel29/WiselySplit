@@ -1,6 +1,7 @@
 package ca.mohawkCollege.wiselySplitServer.daos;
 
 import ca.mohawkCollege.wiselySplitServer.rowMappers.UserRowMapper;
+import ca.mohawkCollege.wiselySplitServer.models.Role;
 import ca.mohawkCollege.wiselySplitServer.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,7 +30,7 @@ public class UserDAO {
     }
 
     public int save(User user) {
-        String sql = "INSERT INTO User (Name, UserName, Email, PhoneNum, Password, ProfilePicture) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO User (Name, UserName, Email, PhoneNum, Password, ProfilePicture, Role) VALUES (?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -40,6 +41,7 @@ public class UserDAO {
             else ps.setNull(4, Types.BIGINT);
             ps.setString(5, user.getPassword());
             ps.setString(6, user.getProfilePicture());
+            ps.setString(7, Role.normalize(user.getRole()));
             return ps;
         }, keyHolder);
         return keyHolder.getKey().intValue();
@@ -87,6 +89,31 @@ public class UserDAO {
     public int updatePassword(int userId, String hashedPassword) {
         String sql = "UPDATE User SET Password = ? WHERE UserID = ?";
         return jdbcTemplate.update(sql, hashedPassword, userId);
+    }
+
+    /** Update a single account's RBAC role. */
+    public int updateRole(int userId, String role) {
+        String sql = "UPDATE User SET Role = ? WHERE UserID = ?";
+        return jdbcTemplate.update(sql, Role.normalize(role), userId);
+    }
+
+    /** All users with the given role. */
+    public List<User> findByRole(String role) {
+        String sql = "SELECT * FROM User WHERE Role = ?";
+        return jdbcTemplate.query(sql, new Object[]{Role.normalize(role)}, new UserRowMapper());
+    }
+
+    /** Count of users with the given role. */
+    public int countByRole(String role) {
+        String sql = "SELECT COUNT(*) FROM User WHERE Role = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, Role.normalize(role));
+        return count == null ? 0 : count;
+    }
+
+    /** Total number of users. */
+    public int countAll() {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM User", Integer.class);
+        return count == null ? 0 : count;
     }
 
     public List<Map<String, Object>> findFriendsForUser(int userId) {

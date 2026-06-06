@@ -25,9 +25,13 @@ public class OtpService {
 
     /**
      * Validate OTP for given email.
+     *
+     * @param allowMasterOtp when true (ADMIN / TEST_PROFILE only), the "000000"
+     *                       master OTP is accepted alongside the generated code.
+     *                       Regular USERS must use the generated OTP.
      */
-    public boolean validateOtp(String email, String otp) {
-        if (!otpStorage.containsKey(email)) {
+    public boolean validateOtp(String email, String otp, boolean allowMasterOtp) {
+        if (otp == null || !otpStorage.containsKey(email)) {
             return false;
         }
         // Expired
@@ -36,8 +40,8 @@ public class OtpService {
             otpExpiry.remove(email);
             return false;
         }
-        // Correct
-        boolean valid = otp.equals("000000") || otpStorage.get(email).equals(otp);
+        // Correct (master OTP only honored for privileged roles)
+        boolean valid = (allowMasterOtp && otp.equals("000000")) || otpStorage.get(email).equals(otp);
         if (valid) {
             // Invalidate OTP after first use
             otpStorage.remove(email);

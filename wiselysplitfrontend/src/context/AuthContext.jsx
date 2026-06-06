@@ -11,6 +11,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [friendsAndGroups, setFriendsAndGroups] = useState([])
   const [wallets, setWallets] = useState([])
+  // RBAC: role + profile are not in the JWT; they are loaded from /auth/me.
+  const [role, setRole] = useState(null)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [roleLoading, setRoleLoading] = useState(false)
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token') || sessionStorage.getItem('token')
@@ -31,6 +35,37 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false)
   }, [userId])
+
+  // Fetch the authenticated user's profile + RBAC role from the backend.
+  // The JWT only carries identity, so role is the source of truth from the DB.
+  useEffect(() => {
+    let cancelled = false
+    if (!token) {
+      setRole(null)
+      setCurrentUser(null)
+      setRoleLoading(false)
+      return
+    }
+    setRoleLoading(true)
+    api.get('/auth/me')
+      .then(({ data }) => {
+        if (cancelled) return
+        setCurrentUser(data)
+        setRole(data?.role || null)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        console.error('Failed to load current user role:', err)
+        setRole(null)
+        setCurrentUser(null)
+      })
+      .finally(() => {
+        if (!cancelled) setRoleLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token])
 
   // Fetch connections method
   const fetchConnections = useCallback(async () => {
@@ -95,10 +130,14 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('token')
     setToken(null)
     setUserId(null)
+    setRole(null)
+    setCurrentUser(null)
   }
 
+  const isAdmin = role === 'ADMIN'
+
   return (
-    <AuthContext.Provider value={{ token, userId, login, logout, loading, friendsAndGroups, setFriendsAndGroups, fetchConnections, wallets, setWallets, fetchWallets }}>
+    <AuthContext.Provider value={{ token, userId, login, logout, loading, friendsAndGroups, setFriendsAndGroups, fetchConnections, wallets, setWallets, fetchWallets, role, isAdmin, currentUser, roleLoading }}>
       {children}
     </AuthContext.Provider>
   )

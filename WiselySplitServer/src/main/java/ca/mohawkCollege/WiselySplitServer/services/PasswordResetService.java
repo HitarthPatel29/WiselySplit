@@ -4,6 +4,7 @@ import ca.mohawkCollege.wiselySplitServer.utilities.auth.ValidationUtil;
 import ca.mohawkCollege.wiselySplitServer.daos.PasswordResetTokenDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.models.PasswordResetToken;
+import ca.mohawkCollege.wiselySplitServer.models.Role;
 import ca.mohawkCollege.wiselySplitServer.models.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -63,8 +64,10 @@ public class PasswordResetService {
         Optional<User> userOpt = userDAO.findByEmail(email);
         if (userOpt.isEmpty()) return false;
 
-        if (otp.equals("000000")) return true;
         User user = userOpt.get();
+        // Only ADMIN / TEST_PROFILE may use the "000000" master OTP.
+        if ("000000".equals(otp) && Role.allowsMasterOtp(user.getRole())) return true;
+
         Optional<PasswordResetToken> tokenOpt = tokenDAO.findByUserId(user.getUserId());
         if (tokenOpt.isEmpty()) return false;
 

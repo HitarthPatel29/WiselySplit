@@ -7,7 +7,7 @@ import Logo from './Logo'
 export default function Header({ title = '' }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { logout } = useAuth()
+  const { logout, isAdmin } = useAuth()
   const [open, setOpen] = useState(false)
 
   // Check if we're on the Dashboard page
@@ -188,6 +188,17 @@ export default function Header({ title = '' }) {
                     Edit Profile
                   </button>
                 </li>
+
+                {isAdmin && (
+                  <li role="listitem">
+                    <button
+                      onClick={() => handleMenuClick('/admin')}
+                      className='w-full text-left px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400'
+                    >
+                      Admin Panel
+                    </button>
+                  </li>
+                )}
               </ul>
             </div>
 
