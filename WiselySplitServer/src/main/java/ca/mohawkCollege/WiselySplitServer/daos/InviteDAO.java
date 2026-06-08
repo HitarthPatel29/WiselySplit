@@ -67,13 +67,15 @@ public class InviteDAO {
 
     public List<Map<String, Object>> findAllForUser(int userId) {
         String sql = """
-            SELECT i.InviteID, i.SenderID, i.ReceiverID, i.ReceiverEmail,
+            SELECT i.InviteID, i.SenderID, i.ReceiverID, i.ReceiverEmail, i.GroupID,
                    i.Type, i.Status, i.CreatedAt, i.ExpiresAt,
                    s.Name AS SenderName, s.Email AS SenderEmail, s.ProfilePicture AS SenderPicture,
-                   r.Name AS ReceiverName, r.Email AS ReceiverEmailFull, r.ProfilePicture AS ReceiverPicture
+                   r.Name AS ReceiverName, r.ProfilePicture AS ReceiverPicture,
+                   g.GroupName AS GroupName, g.ProfilePicture AS GroupPicture
             FROM Invites i
             LEFT JOIN User s ON i.SenderID = s.UserID
             LEFT JOIN User r ON i.ReceiverID = r.UserID
+            LEFT JOIN ExpenseGroups g ON i.GroupID = g.GroupID
             WHERE i.SenderID = ? OR i.ReceiverID = ?
             ORDER BY i.CreatedAt DESC
         """;

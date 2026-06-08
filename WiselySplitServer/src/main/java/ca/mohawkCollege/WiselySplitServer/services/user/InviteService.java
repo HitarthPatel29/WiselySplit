@@ -45,16 +45,12 @@ public class InviteService {
         Optional<User> receiverOpt;
         String targetEmail = null;
 
-        if (isEmail) {
-            receiverOpt = userDAO.findByEmail(input.trim());
-            targetEmail = input.trim().toLowerCase();
+        receiverOpt = isEmail ? userDAO.findByEmail(input.trim()) : userDAO.findByUsername(input.trim());
+
+        if (receiverOpt.isPresent()) {
+            targetEmail = receiverOpt.get().getEmail();
         } else {
-            receiverOpt = userDAO.findByUsername(input.trim());
-            if (receiverOpt.isPresent()) {
-                targetEmail = receiverOpt.get().getEmail();
-            } else {
-                throw new IllegalArgumentException("User not found with this username.");
-            }
+            throw new IllegalArgumentException("User not found with this username.");
         }
 
         //  Prevent duplicate pending invites

@@ -1,25 +1,23 @@
 //InviteNotifications.jsx
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
-import BackButton from '../../components/IO/BackButton'
 import Header from '../../components/Header.jsx'
+import InviteCard from '../../components/invite/InviteCard.jsx'
 
 export default function InviteNotifications() {
   const { userId } = useAuth()
-  const navigate = useNavigate()
   const [invites, setInvites] = useState([])
-  const [fadingIds, setFadingIds] = useState([]) // 👈 Track fading cards
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [tab, setTab] = useState('received')
+  const [respondingId, setRespondingId] = useState(null)
 
   useEffect(() => {
     const fetchInvites = async () => {
       try {
         const res = await api.get(`/invite/user/${userId}`)
         setInvites(res.data || [])
-        if (res.data.length === 0) setMessage('No invites right now.')
       } catch (err) {
         console.error(err)
         setMessage(err.response?.data?.error || 'Failed to fetch invites.')
@@ -31,138 +29,136 @@ export default function InviteNotifications() {
   }, [userId])
 
   const handleRespond = async (inviteId, status) => {
-    try {
-      // Optimistically update UI right away
-      setInvites((prev) =>
-        prev.map((invite) =>
-          invite.InviteID === inviteId ? { ...invite, Status: status, justUpdated: true } : invite
-        )
+    const previous = invites
+    setRespondingId(inviteId)
+    // Optimistically update UI right away
+    setInvites((prev) =>
+      prev.map((invite) =>
+        invite.InviteID === inviteId ? { ...invite, Status: status } : invite
       )
+    )
 
-      // Send update to backend
+    try {
       await api.put(`/invite/${inviteId}/status`, { status })
-
-      // After animation (~2s), remove highlight
-      setTimeout(() => {
-        setInvites((prev) =>
-          prev.map((invite) =>
-            invite.InviteID === inviteId ? { ...invite, justUpdated: false } : invite
-          )
-        )
-      }, 2000)
     } catch (err) {
       console.error(err)
+      setInvites(previous) // revert on failure
       setMessage(err.response?.data?.error || 'Failed to update invite.')
+    } finally {
+      setRespondingId(null)
     }
   }
 
-  if (loading) return <div className="p-6 text-gray-500">Loading invites...</div>
+  const isPendingActive = (inv) => {
+    const status = (inv.Status || '').toUpperCase()
+    const daysLeft = Number(inv.daysLeft ?? 0)
+    return status === 'PENDING' && daysLeft > 0
+  }
 
-  return (
-    <div className='min-h-screen'>
-    <Header title='Invite Notifications' />
-    <div className="flex justify-center px-4 py-6">
-      <div className="w-full max-w-2xl space-y-5">
-        
-        
-        {message && (
-          <p className="mb-4 text-center text-sm text-gray-600">{message}</p>
-        )}
+  // Sort: actionable/pending first, then everything else (already CreatedAt DESC from API)
+  const sortInvites = (list) =>
+    [...list].sort((a, b) => Number(isPendingActive(b)) - Number(isPendingActive(a)))
 
-        <div className="space-y-4">
-          {invites.map((invite) => {
-            const isFading = fadingIds.includes(invite.InviteID)
-            const isSender = invite.SenderID === userId
-            const receiverExists = invite.ReceiverID !== null && invite.ReceiverName !== null
-            const otherUserName = isSender ? invite.ReceiverName : invite.SenderName
-            const otherUserPic = isSender ? invite.ReceiverPicture : invite.SenderPicture
-            const daysAgo = invite.daysAgo
-            const daysLeft = invite.daysLeft
-            const status = (invite.Status || '').toUpperCase()
+  const { received, sent } = useMemo(() => {
+    const received = sortInvites(invites.filter((i) => i.SenderID !== userId))
+    const sent = sortInvites(invites.filter((i) => i.SenderID === userId))
+    return { received, sent }
+  }, [invites, userId])
 
-            let displayMsg = ''
-            let statusColor = ''
-            let actionButtons = null
+  const activeList = tab === 'received' ? received : sent
 
-            if (!isSender && status === 'PENDING' && daysLeft > 0) {
-              displayMsg = `${invite.SenderName} invited you to share expenses.`
-              actionButtons = (
-                <div className="flex flex-wrap gap-3 mt-3">
-                  <button
-                    onClick={() => handleRespond(invite.InviteID, 'ACCEPTED')}
-                    className="px-4 py-1 rounded-lg border border-emerald-600 text-emerald-600 hover:bg-emerald-50 transition-colors"
-                  >
-                    Accept Invite
-                  </button>
-                  <button
-                    onClick={() => handleRespond(invite.InviteID, 'REJECTED')}
-                    className="px-4 py-1 rounded-lg border border-red-500 text-red-500 hover:bg-red-50 transition-colors"
-                  >
-                    Reject Invite
-                  </button>
-                </div>
-              )
-            } else if (isSender && status === 'PENDING' && daysLeft > 0 && receiverExists) {
-              displayMsg = `You invited ${invite.ReceiverName} to share expenses.`
-              statusColor = 'text-blue-500'
-            } else if (isSender && status === 'PENDING' && daysLeft > 0 && !receiverExists) {
-              displayMsg = `You invited ${invite.ReceiverEmail} (not yet on WiselySplit).`
-              statusColor = 'text-blue-500'
-            } else if (status === 'ACCEPTED') {
-              displayMsg = isSender
-                ? `${otherUserName || 'User'} accepted your invite.`
-                : `You accepted ${otherUserName || 'User'}'s invite.`
-              statusColor = 'text-emerald-600'
-            } else if (status === 'REJECTED') {
-              displayMsg = isSender
-                ? `${otherUserName || 'User'} rejected your invite.`
-                : `You rejected ${otherUserName || 'User'}'s invite.`
-              statusColor = 'text-red-500'
-            } else if (status === 'EXPIRED' || daysLeft <= 0) {
-              displayMsg = `Invite between you and ${otherUserName || 'User'} has expired.`
-              statusColor = 'text-gray-400'
-            }
-
-            return (
-              <div
-                key={invite.InviteID}
-                className={`flex flex-col sm:flex-row sm:items-start gap-4 p-4 rounded-xl bg-white dark:bg-gray-900 dark:border shadow-sm hover:shadow-md transition-all duration-500 ${
-                  isFading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-                }`}
-              >
-                <img
-                  src={
-                    otherUserPic ||
-                    'https://res.cloudinary.com/dwq5yfjsd/image/upload/v1758920140/default-avatar-profile_esweq0.webp'
-                  }
-                  alt={otherUserName}
-                  className="w-14 h-14 rounded-full object-cover border mx-auto sm:mx-0"
-                />
-
-                <div className="flex flex-col flex-grow text-center sm:text-left">
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{displayMsg}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {daysAgo}d ago
-                    {status === 'PENDING' && daysLeft > 0 && (
-                      <> • Invite expires in {daysLeft} days</>
-                    )}
-                    {status === 'PENDING' && daysLeft <= 0 && <> • Invite expired</>}
-                  </p>
-
-                  {actionButtons ? (
-                    actionButtons
-                  ) : (
-                    <p className={`mt-2 font-semibold ${statusColor}`}>
-                      {status === 'PENDING' ? 'Decision Pending' : status}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header title="Invite Notifications" />
+        <div
+          className="flex items-center justify-center p-6"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading invites"
+        >
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" aria-hidden="true"></div>
+            <p className="sr-only">Loading invites...</p>
+          </div>
         </div>
       </div>
-    </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen">
+      <Header title="Invite Notifications" />
+      <div className="flex justify-center px-4 py-6">
+        <div className="w-full max-w-2xl">
+          {/* Segmented tabs */}
+          <div
+            className="flex gap-2 p-1 rounded-xl bg-gray-100 dark:bg-gray-800 mb-5"
+            role="tablist"
+            aria-label="Invite categories"
+          >
+            <button
+              role="tab"
+              aria-selected={tab === 'received'}
+              onClick={() => setTab('received')}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+                tab === 'received'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              Received ({received.length})
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === 'sent'}
+              onClick={() => setTab('sent')}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+                tab === 'sent'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              Sent ({sent.length})
+            </button>
+          </div>
+
+          {message && (
+            <p
+              className="mb-4 text-center text-sm text-rose-600 dark:text-rose-400"
+              role="alert"
+              aria-live="polite"
+            >
+              {message}
+            </p>
+          )}
+
+          <div className="space-y-4" role="list">
+            {activeList.map((invite) => (
+              <div key={invite.InviteID} role="listitem">
+                <InviteCard
+                  invite={invite}
+                  currentUserId={userId}
+                  onRespond={handleRespond}
+                  respondingId={respondingId}
+                />
+              </div>
+            ))}
+
+            {activeList.length === 0 && (
+              <p
+                className="text-gray-500 dark:text-gray-400 text-center mt-10"
+                role="status"
+                aria-live="polite"
+              >
+                {tab === 'received'
+                  ? 'No invites received yet.'
+                  : "You haven't sent any invites."}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

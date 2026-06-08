@@ -143,29 +143,6 @@ function TileCard({
   )
 }
 
-function ListAvatar({ name, tone = 'emerald', size = 36, fallbackIcon: Icon }) {
-  const initials = (name || '?')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() || '')
-    .join('')
-  const palette = {
-    emerald: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
-    indigo: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
-    purple: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
-    amber: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
-  }[tone]
-  return (
-    <div
-      className={`rounded-full flex items-center justify-center font-semibold flex-shrink-0 ${palette}`}
-      style={{ width: size, height: size, fontSize: Math.max(11, size * 0.4) }}
-      aria-hidden="true"
-    >
-      {Icon ? <Icon className="w-1/2 h-1/2" /> : initials || '?'}
-    </div>
-  )
-}
 
 function HeroAddEntry({ userName, onClick }) {
   const firstName = (userName || '').split(' ')[0] || 'there'
@@ -338,103 +315,27 @@ function WalletsTile({
   )
 }
 
-function InvitesTile({ invites, onView }) {
-  return (
-    <TileCard
-      title="Invites"
-      icon={EnvelopeIcon}
-      badge={invites?.length}
-      action={onView}
-      actionLabel="View all"
-    >
-      {invites?.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          No pending invites.
-        </p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {invites?.slice(0, 2).map((inv) => (
-            <li
-              key={inv.id}
-              className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 dark:bg-gray-900/50"
-            >
-              <ListAvatar
-                name={inv.from}
-                tone={inv.type === 'group' ? 'purple' : 'indigo'}
-                size={32}
-                fallbackIcon={inv.type === 'group' ? UserGroupIcon : undefined}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                  {inv.from}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {inv.subtitle}
-                </p>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button
-                  className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                  aria-label={`Accept invite from ${inv.from}`}
-                >
-                  <CheckIcon className="w-3.5 h-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  className="p-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition focus:outline-none focus:ring-2 focus:ring-gray-400"
-                  aria-label={`Decline invite from ${inv.from}`}
-                >
-                  <XMarkIcon className="w-3.5 h-3.5" aria-hidden="true" />
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {invites?.length > 2 && (
-        <button
-          onClick={onView}
-          className="mt-3 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded px-1 py-0.5 text-left"
-        >
-          + {invites?.length - 2} more pending
-        </button>
-      )}
-    </TileCard>
-  )
-}
-
-function SendInviteTile({ onSend }) {
-  const [email, setEmail] = useState('')
+function SendInviteTile() {
+  const navigate = useNavigate()
   return (
     <TileCard title="Send Invite" icon={PaperAirplaneIcon}>
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
         Invite a friend to split expenses with you.
       </p>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          onSend?.(email)
-        }}
-        className="flex flex-col gap-2"
-      >
-        <label htmlFor="invite-email" className="sr-only">
-          Friend's email
-        </label>
-        <input
-          id="invite-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="friend@email.com"
-          className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition"
-        />
-        <button
-          type="submit"
-          className="w-full inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400"
-        >
-          <PaperAirplaneIcon className="w-4 h-4" aria-hidden="true" />
-          Send invite
-        </button>
-      </form>
+      <div className="flex flex-col gap-2">
+          <PrimaryButton
+            label="View Invites"
+            onClick={() => navigate('/dashboard/invites')}
+            className="flex-1"
+            ariaLabel="View your invites"
+          />
+          <PrimaryButton
+            label= "Send Invite"
+            onClick={() => navigate('/invite')}
+            className="flex-1"
+            ariaLabel="Send a friend invite"
+          />
+      </div>
     </TileCard>
   )
 }
@@ -539,7 +440,6 @@ export default function Dashboard() {
   const { friendsAndGroups, fetchConnections, userId, wallets, setWallets, fetchWallets } = useAuth()
   const [stripeAccountId, setStripeAccountId] = useState(null)
   const [user, setUser] = useState(null)
-  const [invites, setInvites] = useState(null)
   const [walletsLoading, setWalletsLoading] = useState(true)
   const [showAddWallet, setShowAddWallet] = useState(false)
   const [editWallet, setEditWallet] = useState(null)
@@ -548,7 +448,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (localStorage.getItem('firstLogin') === 'true') {
-      navigate('/invite')
+      navigate('/personalExpense')
     }
   }, [navigate])
 
@@ -665,8 +565,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <DashboardHeader user={user} pendingInvites={invites?.length} />
-
+      <DashboardHeader user={user} />
       <main
         id="main-content"
         className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8 space-y-5 sm:space-y-6"
@@ -719,21 +618,13 @@ export default function Dashboard() {
             className="flex flex-col gap-5 sm:gap-6"
             aria-label="Invites and account utilities"
           >
-            <InvitesTile
-              invites={invites}
-              onView={() => navigate('/dashboard/invites')}
-            />
-            <SendInviteTile onSend={() => navigate('/invite')} />
+            <SendInviteTile/>
             <StripeTile
               connected={!!stripeAccountId}
               onManage={() => navigate('/stripe/connect')}
             />
           </aside>
         </div>
-
-        <footer className="pt-2 pb-4 text-center text-xs text-gray-400 dark:text-gray-500">
-          Invites and profile use sample data — friends, groups, and wallets are live.
-        </footer>
       </main>
 
       <AddWallet
