@@ -10,8 +10,8 @@ import {
 import { withLandingAssets } from './landingAssets'
 
 /**
- * Asset paths are served from /public/landing/.
- * Set imageSrc / videoSrc when files are uploaded; null shows placeholder UI.
+ * Asset paths are served from /public/landing/ (see landingAssets.js).
+ * videoSrc for most features; imageSrc for Apple only. null shows placeholder UI.
  */
 export const LANDING_FEATURES = [
   {
@@ -21,11 +21,8 @@ export const LANDING_FEATURES = [
       'Split dinner with friends and track your own budget — without switching apps.',
     bullets: ['Friends & groups', 'Personal wallets', 'One dashboard'],
     icon: HomeIcon,
-    imageSrc: null,
-    imageSrcMobile: null,
     videoSrc: null,
-    videoSrcMobile: null,
-    posterSrc: null,
+    imageSrc: null,
     alt: 'WiselySplit dashboard showing friends, groups, and wallets together',
   },
   {
@@ -35,11 +32,8 @@ export const LANDING_FEATURES = [
       'Create as many wallets as you need. Expenses, income, and wallet-to-wallet transfers — each tracked independently.',
     bullets: ['Expense entries', 'Income tracking', 'Wallet transfers'],
     icon: WalletIcon,
-    imageSrc: null,
-    imageSrcMobile: null,
     videoSrc: null,
-    videoSrcMobile: null,
-    posterSrc: null,
+    imageSrc: null,
     alt: 'Wallet carousel with expense, income, and transfer entries',
   },
   {
@@ -49,11 +43,8 @@ export const LANDING_FEATURES = [
       'Equal split, custom amounts, or itemize the bill line by line. However the night went, WiselySplit handles it.',
     bullets: ['Equal or custom splits', 'Line-item itemization', 'Groups & friends'],
     icon: ScissorsIcon,
-    imageSrc: null,
-    imageSrcMobile: null,
     videoSrc: null,
-    videoSrcMobile: null,
-    posterSrc: null,
+    imageSrc: null,
     alt: 'Bill split flow with itemized line items',
   },
   {
@@ -63,11 +54,8 @@ export const LANDING_FEATURES = [
       'Already have history? Import CSV from your bank and start tracking in minutes.',
     bullets: ['Column mapping', 'Review before import', 'Auto-categorization'],
     icon: DocumentArrowUpIcon,
-    imageSrc: null,
-    imageSrcMobile: null,
     videoSrc: null,
-    videoSrcMobile: null,
-    posterSrc: null,
+    imageSrc: null,
     alt: 'CSV import wizard with field mapping and review',
   },
   {
@@ -77,11 +65,8 @@ export const LANDING_FEATURES = [
       'Connect Apple Pay through Shortcuts — not your bank password. Set your card name once; every tap logs automatically.',
     bullets: ['No bank linking', 'Apple Shortcuts', 'Instant expense logging'],
     icon: DevicePhoneMobileIcon,
-    imageSrc: null,
-    imageSrcMobile: null,
     videoSrc: null,
-    videoSrcMobile: null,
-    posterSrc: null,
+    imageSrc: null,
     alt: 'Add wallet modal showing Card Name field for Apple Automation',
     showAppleSteps: true,
   },
@@ -92,11 +77,8 @@ export const LANDING_FEATURES = [
       'Our on-server category model suggests labels as you type — and learns when you correct it.',
     bullets: ['Live predictions', 'Learns from feedback', 'Runs on our servers'],
     icon: SparklesIcon,
-    imageSrc: null,
-    imageSrcMobile: null,
     videoSrc: null,
-    videoSrcMobile: null,
-    posterSrc: null,
+    imageSrc: null,
     alt: 'Expense form with AI category suggestion chip',
   },
   {
@@ -106,11 +88,8 @@ export const LANDING_FEATURES = [
       'Monthly or yearly. Income or expenses. By category. Summaries that answer questions, not create more.',
     bullets: ['Monthly & yearly views', 'Category breakdown', 'Net balance at a glance'],
     icon: ChartPieIcon,
-    imageSrc: null,
-    imageSrcMobile: null,
     videoSrc: null,
-    videoSrcMobile: null,
-    posterSrc: null,
+    imageSrc: null,
     alt: 'Personal summary with donut chart and net balance',
   },
 ]

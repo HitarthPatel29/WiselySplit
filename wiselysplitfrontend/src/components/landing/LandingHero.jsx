@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import Logo, { DollarSlashMarkSvg } from '../Logo'
 import GlowPill from './GlowPill'
 import TrustStrip from './TrustStrip'
@@ -9,6 +9,9 @@ import useReducedMotion from '../../hooks/useReducedMotion'
 const EMERALD = '#10b981'
 const GLOW = 'url(#emeraldGlow)'
 const GLOW_STRONG = 'url(#emeraldGlowStrong)'
+
+const FAR_SPRING = { stiffness: 160, damping: 26 }
+const NEAR_SPRING = { stiffness: 200, damping: 28 }
 
 /* ---------- SVG building blocks (responsive, scale with viewBox) ---------- */
 
@@ -40,7 +43,7 @@ function Coin({ cx, cy, r, delay = 0, reducedMotion }) {
   const markSize = r * 0.7
   const content = (
     <>
-      <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke={EMERALD} strokeWidth="1.5" strokeOpacity="0.4" filter={GLOW} />
+      <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke={EMERALD} strokeWidth="1.5" strokeOpacity="0.5" filter={GLOW} />
       <circle cx={cx} cy={cy} r={r} fill="none" stroke={EMERALD} strokeWidth="2" strokeOpacity="0.7" filter={GLOW} />
       <DollarSlashMarkSvg cx={cx} cy={cy} size={markSize} color={EMERALD} filter={GLOW} />
     </>
@@ -75,6 +78,60 @@ function Twinkle({ cx, cy, r, delay = 0, reducedMotion }) {
   )
 }
 
+function BarChartGlyph({ x, y, width, height, bars, fillOpacity = 0, strokeOpacity = 0.45, delay = 0, reducedMotion }) {
+  const gap = width * 0.14
+  const barWidth = (width - gap * (bars.length - 1)) / bars.length
+  const baseline = y + height
+  const axisOpacity = strokeOpacity * 0.75
+
+  const content = (
+    <g>
+      <line
+        x1={x}
+        y1={baseline}
+        x2={x + width}
+        y2={baseline}
+        stroke={EMERALD}
+        strokeOpacity={axisOpacity}
+        strokeWidth="1.5"
+        filter={GLOW}
+      />
+      {bars.map((ratio, i) => {
+        const barH = height * ratio
+        const bx = x + i * (barWidth + gap)
+        const by = baseline - barH
+        return (
+          <rect
+            key={i}
+            x={bx}
+            y={by}
+            width={barWidth}
+            height={barH}
+            rx={Math.min(barWidth * 0.2, 3)}
+            fill={EMERALD}
+            fillOpacity={fillOpacity}
+            stroke={EMERALD}
+            strokeOpacity={strokeOpacity}
+            strokeWidth="1.5"
+            filter={GLOW}
+          />
+        )
+      })}
+    </g>
+  )
+
+  if (reducedMotion) return content
+
+  return (
+    <motion.g
+      animate={{ y: [0, -4, 0] }}
+      transition={{ duration: 6 + delay, repeat: Infinity, ease: 'easeInOut', delay }}
+    >
+      {content}
+    </motion.g>
+  )
+}
+
 function RotatingRing({ cx, cy, r, dash, duration, reverse, reducedMotion }) {
   const ring = (
     <circle
@@ -101,13 +158,21 @@ function RotatingRing({ cx, cy, r, dash, duration, reverse, reducedMotion }) {
   )
 }
 
-function BrandBackdrop({ reducedMotion, offset }) {
-  const far = reducedMotion
-    ? undefined
-    : { transform: `translate3d(${offset.x * 0.6}px, ${offset.y * 0.6}px, 0)`, transition: 'transform 0.25s ease-out' }
-  const near = reducedMotion
-    ? undefined
-    : { transform: `translate3d(${offset.x * 1.4}px, ${offset.y * 1.4}px, 0)`, transition: 'transform 0.18s ease-out' }
+function BrandBackdrop({ reducedMotion, mouseX, mouseY }) {
+  const farSmoothX = useSpring(mouseX, FAR_SPRING)
+  const farSmoothY = useSpring(mouseY, FAR_SPRING)
+  const nearSmoothX = useSpring(mouseX, NEAR_SPRING)
+  const nearSmoothY = useSpring(mouseY, NEAR_SPRING)
+
+  const farX = useTransform(farSmoothX, (v) => v * 0.6)
+  const farY = useTransform(farSmoothY, (v) => v * 0.6)
+  const nearX = useTransform(nearSmoothX, (v) => v * 1.4)
+  const nearY = useTransform(nearSmoothY, (v) => v * 1.4)
+
+  const FarLayer = reducedMotion ? 'g' : motion.g
+  const NearLayer = reducedMotion ? 'g' : motion.g
+  const farLayerStyle = reducedMotion ? undefined : { x: farX, y: farY, willChange: 'transform' }
+  const nearLayerStyle = reducedMotion ? undefined : { x: nearX, y: nearY, willChange: 'transform' }
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -129,7 +194,7 @@ function BrandBackdrop({ reducedMotion, offset }) {
         <EmeraldGlowDefs />
 
         {/* ---- far layer: large outlines + concentric circles ---- */}
-        <g style={far}>
+        <FarLayer style={farLayerStyle}>
           {/* top-left big circles */}
           <circle cx="120" cy="120" r="170" fill="none" stroke={EMERALD} strokeOpacity="0.35" strokeWidth="1.5" filter={GLOW} />
           <circle cx="120" cy="120" r="118" fill="none" stroke={EMERALD} strokeOpacity="0.4" strokeWidth="1.5" filter={GLOW} />
@@ -143,17 +208,17 @@ function BrandBackdrop({ reducedMotion, offset }) {
           {/* right-mid ring */}
           <RotatingRing cx="1140" cy="360" r="78" dash="3 12" duration={55} reducedMotion={reducedMotion} />
 
-        </g>
+        </FarLayer>
 
-        {/* ---- near layer: triangles, coins, dots, center split line ---- */}
-        <g style={near}>
+        {/* ---- near layer: bar charts, coins, dots, center split line ---- */}
+        <NearLayer style={nearLayerStyle}>
           {/* central dashed "split" line */}
           <line x1="600" y1="40" x2="600" y2="760" stroke={EMERALD} strokeOpacity="0.5" strokeWidth="1.5" strokeDasharray="2 12" filter={GLOW_STRONG} />
 
-          {/* triangles */}
-          <polygon points="985,70 1035,152 935,152" fill="none" stroke={EMERALD} strokeOpacity="0.45" strokeWidth="1.5" filter={GLOW} />
-          <polygon points="150,520 205,602 95,602" fill={EMERALD} fillOpacity="0.08" stroke={EMERALD} strokeOpacity="0.5" strokeWidth="1.5" filter={GLOW} />
-          <polygon points="1010,545 1058,618 962,618" fill={EMERALD} fillOpacity="0.06" stroke={EMERALD} strokeOpacity="0.4" strokeWidth="1.5" filter={GLOW} />
+          {/* bar charts */}
+          <BarChartGlyph x={935} y={70} width={100} height={82} bars={[0.45, 0.75, 0.55, 0.9]} strokeOpacity={0.45} delay={0} reducedMotion={reducedMotion} />
+          <BarChartGlyph x={95} y={520} width={110} height={82} bars={[0.7, 0.5, 0.85, 0.6]} fillOpacity={0.08} strokeOpacity={0.5} delay={0.8} reducedMotion={reducedMotion} />
+          <BarChartGlyph x={962} y={545} width={96} height={73} bars={[0.55, 0.8, 0.65]} fillOpacity={0.06} strokeOpacity={0.4} delay={1.4} reducedMotion={reducedMotion} />
 
           {/* coins */}
           <Coin cx="90" cy="300" r="26" delay={0} reducedMotion={reducedMotion} />
@@ -170,7 +235,7 @@ function BrandBackdrop({ reducedMotion, offset }) {
           <Twinkle cx="1080" cy="470" r="3" delay={1.2} reducedMotion={reducedMotion} />
 
       
-        </g>
+        </NearLayer>
       </svg>
     </div>
   )
@@ -194,25 +259,25 @@ function scrollToFeatures() {
 
 export default function LandingHero() {
   const reducedMotion = useReducedMotion()
-  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
 
   const onMouseMove = useCallback(
     (e) => {
       if (reducedMotion) return
-      const x = (e.clientX - window.innerWidth / 2) * 0.02
-      const y = (e.clientY - window.innerHeight / 2) * 0.02
-      setOffset({ x, y })
+      mouseX.set((e.clientX - window.innerWidth / 2) * 0.02)
+      mouseY.set((e.clientY - window.innerHeight / 2) * 0.02)
     },
-    [reducedMotion]
+    [reducedMotion, mouseX, mouseY]
   )
 
   return (
     <section
       className="relative overflow-hidden min-h-[88vh] md:min-h-screen flex flex-col px-4 pt-28 md:pt-32"
-      onMouseMove={onMouseMove}
+      onMouseMove={reducedMotion ? undefined : onMouseMove}
       aria-labelledby="hero-heading"
     >
-      <BrandBackdrop reducedMotion={reducedMotion} offset={offset} />
+      <BrandBackdrop reducedMotion={reducedMotion} mouseX={mouseX} mouseY={mouseY} />
 
       <motion.div
         className="relative z-10 flex-1 w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center gap-6 pb-8"
@@ -221,12 +286,12 @@ export default function LandingHero() {
         animate="visible"
       >
         {/* Brand logo pill */}
-        <motion.div variants={item}>
-          <GlowPill padding="px-6 py-4 sm:px-10 sm:py-6">
-            <div className="scale-100 sm:scale-100 md:scale-110 origin-center">
-              <Logo size={100} onDarkBackground={true}/>
-            </div>
-          </GlowPill>
+        <motion.div variants={item} className="w-full flex justify-center px-1">
+          <div className="scale-[0.62] sm:scale-[0.8] md:scale-100 lg:scale-110 origin-center">
+            <GlowPill padding="px-10 py-6">
+              <Logo size={100} onDarkBackground={true} />
+            </GlowPill>
+          </div>
         </motion.div>
 
         <motion.p variants={item} className="text-brand-slate text-xl sm:text-2xl">
@@ -259,7 +324,7 @@ export default function LandingHero() {
 
         <motion.div
           variants={item}
-          className="flex flex-col sm:flex-row gap-4 justify-center pt-2 w-full sm:w-auto"
+          className="flex flex-col sm:flex-row gap-4 justify-center pt-2 w-50 sm:w-auto"
         >
           <button
             type="button"

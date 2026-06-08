@@ -21,38 +21,22 @@ function Placeholder({ Icon, headline }) {
   )
 }
 
-export default function FeatureMedia({
-  imageSrc,
-  imageSrcMobile,
-  videoSrc,
-  videoSrcMobile,
-  posterSrc,
-  alt,
-  icon: Icon,
-  headline,
-}) {
+function videoMimeType(src) {
+  if (src.endsWith('.webm')) return 'video/webm'
+  if (src.endsWith('.mov')) return 'video/quicktime'
+  return 'video/mp4'
+}
+
+export default function FeatureMedia({ videoSrc, imageSrc, alt, icon: Icon, headline }) {
   const reducedMotion = useReducedMotion()
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 768 : false
-  )
-  const [videoFailed, setVideoFailed] = useState(false)
-  const [imageFailed, setImageFailed] = useState(false)
+  const [mediaFailed, setMediaFailed] = useState(false)
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
+    setMediaFailed(false)
+  }, [videoSrc, imageSrc])
 
-  useEffect(() => {
-    setVideoFailed(false)
-    setImageFailed(false)
-  }, [imageSrc, imageSrcMobile, videoSrc, videoSrcMobile])
-
-  const activeVideo = isMobile && videoSrcMobile ? videoSrcMobile : videoSrc
-  const activeImage = isMobile && imageSrcMobile ? imageSrcMobile : imageSrc
-  const showVideo = activeVideo && !videoFailed
-  const showImage = !showVideo && activeImage && !imageFailed
+  const showVideo = Boolean(videoSrc) && !mediaFailed
+  const showImage = !showVideo && Boolean(imageSrc) && !mediaFailed
 
   return (
     <motion.div
@@ -69,19 +53,18 @@ export default function FeatureMedia({
             muted
             loop
             playsInline
-            poster={posterSrc || activeImage || undefined}
             preload="metadata"
-            onError={() => setVideoFailed(true)}
+            onError={() => setMediaFailed(true)}
           >
-            <source src={activeVideo} type={activeVideo.endsWith('.webm') ? 'video/webm' : 'video/mp4'} />
+            <source src={videoSrc} type={videoMimeType(videoSrc)} />
           </video>
         ) : showImage ? (
           <img
-            src={activeImage}
+            src={imageSrc}
             alt={alt || headline}
             className="w-full aspect-video object-cover object-top"
             loading="lazy"
-            onError={() => setImageFailed(true)}
+            onError={() => setMediaFailed(true)}
           />
         ) : (
           <Placeholder Icon={Icon} headline={alt || headline} />

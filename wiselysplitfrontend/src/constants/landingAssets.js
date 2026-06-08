@@ -1,42 +1,32 @@
 /**
  * Landing page media paths (served from public/landing/).
- * Drop files into the matching folders; set USE_LANDING_ASSETS to true to enable.
+ * Drop files into public/landing/; set USE_LANDING_ASSETS to true to enable.
  */
 export const USE_LANDING_ASSETS = true
 
-const desktop = (folder, name) => `/landing/${folder}/desktop/${name}`
-const mobile = (folder, name) => `/landing/${folder}/mobile/${name}`
+const landing = (name) => `/landing/${name}`
 
 export const LANDING_ASSET_PATHS = {
   unified: {
-    imageSrc: desktop('screenshots', 'Shared+Personal.png'),
-    imageSrcMobile: desktop('screenshots', 'Shared+Personal.png'),
-    videoSrc: desktop('videos', 'Shared+Personal.mov'),
-    videoSrcMobile: desktop('videos', 'Shared+Personal.mov'),
-    posterSrc: desktop('screenshots', 'Shared+Personal.png'),
+    videoSrc: landing('Shared+Personal.webm'),
   },
   wallets: {
-    imageSrc: null,
-    videoSrc: desktop('videos', 'Wallet_Crousel.mov'),
-    videoSrcMobile: desktop('videos', 'Wallet_Crousel.mov'),
-    posterSrc: null,
+    videoSrc: landing('Wallet_Crousel.webm'),
   },
   split: {
-    videoSrc: desktop('videos', 'ExpenseSplit.mov'),
-    posterSrc: null,
+    videoSrc: landing('ExpenseSplit.webm'),
   },
   import: {
-    videoSrc: desktop('videos', 'CSV_Import.mov'),
+    videoSrc: landing('CSV_Import.webm'),
   },
   apple: {
-    imageSrc: desktop('screenshots', 'AppleAutomation.png'),
-    posterSrc: desktop('screenshots', 'AppleAutomation.png'),
+    imageSrc: landing('AppleAutomation.png'),
   },
   classifier: {
-    videoSrc: desktop('videos', 'ClassifierModel.mov'),
+    videoSrc: landing('ClassifierModel.webm'),
   },
   summary: {
-    videoSrc: desktop('videos', 'Summaries.mov'),
+    videoSrc: landing('Summaries.webm'),
   },
 }
 

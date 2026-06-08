@@ -49,25 +49,17 @@ export default function FeatureSection({ feature, index }) {
             </h2>
             <p className="text-lg text-brand-slate leading-relaxed">{feature.description}</p>
             {feature.bullets?.length > 0 && (
-              <ul className="space-y-2">
-                {feature.bullets.map((bullet) => (
-                  <li key={bullet} className="flex items-center gap-2 text-brand-slate">
-                    <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald shrink-0" />
-                    {bullet}
-                  </li>
-                ))}
-              </ul>
+              <p className="text-brand-slate">
+                {feature.bullets.join(' · ')}
+              </p>
             )}
             {feature.showAppleSteps && <AppleAutomationSteps />}
           </motion.div>
 
           <motion.div variants={fadeUp}>
             <FeatureMedia
-              imageSrc={feature.imageSrc}
-              imageSrcMobile={feature.imageSrcMobile}
               videoSrc={feature.videoSrc}
-              videoSrcMobile={feature.videoSrcMobile}
-              posterSrc={feature.posterSrc}
+              imageSrc={feature.imageSrc}
               alt={feature.alt}
               icon={Icon}
               headline={feature.headline}

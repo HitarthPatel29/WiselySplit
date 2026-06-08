@@ -6,7 +6,7 @@ const DOLLAR_PATH =
 const SLASH_PATH = 'M4.10876 14L9.46582 1H10.8178L5.46074 14H4.10876Z'
 
 /** SVG-native mark for use inside <svg> elements (e.g. landing page coins). */
-export function DollarSlashMarkSvg({ cx, cy, size, color = '#10b981', fillOpacity = 1, filter }) {
+export function DollarSlashMarkSvg({ cx, cy, size, color = '#10b981', filter }) {
   const iconPx = size * 1.6
   const dollarScale = iconPx / 24
   const slashScale = iconPx / 15
@@ -14,7 +14,7 @@ export function DollarSlashMarkSvg({ cx, cy, size, color = '#10b981', fillOpacit
   const y = cy - size * 0.9
 
   return (
-    <g filter={filter} opacity={fillOpacity}>
+    <g filter={filter}>
       <g transform={`translate(${x}, ${y}) scale(${dollarScale})`}>
         <path fill={color} fillRule="evenodd" d={DOLLAR_PATH} />
       </g>
@@ -25,7 +25,7 @@ export function DollarSlashMarkSvg({ cx, cy, size, color = '#10b981', fillOpacit
   )
 }
 
-export function DollarSlashMark({ size, svgColor }) {
+export function DollarSlashMark({ size, svgColor='#10b981'}) {
   return (
     <div
       style={{
@@ -42,7 +42,7 @@ export function DollarSlashMark({ size, svgColor }) {
         viewBox="0 0 24 24"
         style={{
           position: 'absolute',
-          top: 0 - size * 0.4,
+          top: 0 - size * 0.25,
           left: 0 - size * 0.35,
         }}
       >
@@ -54,7 +54,7 @@ export function DollarSlashMark({ size, svgColor }) {
         viewBox="0 0 15 15"
         style={{
           position: 'absolute',
-          top: 0 - size * 0.4,
+          top: 0 - size * 0.25,
           left: 0 - size * 0.35,
         }}
       >
