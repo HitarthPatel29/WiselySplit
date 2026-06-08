@@ -109,7 +109,9 @@ function AnimatedDollarSlashLogo({ onAnimationComplete }) {
     return () => clearTimeout(timer);
   }, [onAnimationComplete]);
 
+
   return (
+
     <div className='logo-root'>
       <style>{styles}</style>
       <div className='logo-container'>

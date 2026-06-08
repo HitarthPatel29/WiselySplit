@@ -7,7 +7,7 @@ export default function GlowPill({ children, className = '', rounded = 'rounded-
   return (
     <div className={`relative inline-flex ${className}`}>
       <div
-        className={`absolute -inset-1 ${rounded} bg-gradient-to-r from-brand-emerald/50 via-brand-emerald/20 to-brand-emerald/50 blur-lg opacity-80`}
+        className={`absolute -inset-1 ${rounded} bg-gradient-to-r from-emerald-500/50 via-emerald-500/20 to-emerald-500/50 blur-lg opacity-10`}
         aria-hidden="true"
       />
       <div

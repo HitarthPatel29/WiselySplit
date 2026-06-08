@@ -80,18 +80,6 @@
   }
 }
 
-/* Landing page: always dark brand theme, ignore system light/dark preference */
-html.landing-page,
-html.landing-page body {
-  background-color: #0b1220 !important;
-  color: #ffffff !important;
-  transition: none !important;
-}
-
-html.landing-page {
-  color-scheme: dark;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

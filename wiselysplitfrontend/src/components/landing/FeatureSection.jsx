@@ -35,21 +35,21 @@ export default function FeatureSection({ feature, index }) {
           }}
         >
           <motion.div variants={fadeUp} className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-emerald/10 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
-              {Icon && <Icon className="w-4 h-4 text-brand-emerald" />}
-              <span className="text-xs font-medium text-brand-emerald uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+              {Icon && <Icon className="w-4 h-4 text-emerald-500" />}
+              <span className="text-xs font-medium text-emerald-500 uppercase tracking-wider">
                 Feature {index + 1}
               </span>
             </div>
             <h2
               id={`${feature.id}-heading`}
-              className="text-3xl md:text-4xl font-bold text-white leading-tight"
+              className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white leading-tight"
             >
               {feature.headline}
             </h2>
-            <p className="text-lg text-brand-slate leading-relaxed">{feature.description}</p>
+            <p className="text-lg text-gray-600 dark:text-gray-200 leading-relaxed">{feature.description}</p>
             {feature.bullets?.length > 0 && (
-              <p className="text-brand-slate">
+              <p className="text-gray-600 dark:text-gray-200">
                 {feature.bullets.join(' · ')}
               </p>
             )}

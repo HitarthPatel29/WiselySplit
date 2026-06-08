@@ -1,7 +1,6 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import useLandingThemeLock from '../hooks/useLandingThemeLock'
 import LandingNav from '../components/landing/LandingNav'
 import LandingHero from '../components/landing/LandingHero'
 import FeatureSection from '../components/landing/FeatureSection'
@@ -11,12 +10,11 @@ import { LANDING_FEATURES_WITH_ASSETS } from '../constants/landingFeatures'
 
 export default function Landing() {
   const { token, loading } = useAuth()
-  useLandingThemeLock()
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-brand-navy flex items-center justify-center" role="status">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-emerald" />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300" role="status">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
         <span className="sr-only">Loading...</span>
       </div>
     )
@@ -27,7 +25,7 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-navy text-white font-landing antialiased [color-scheme:dark]">
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white font-landing antialiased transition-colors duration-300">
       <LandingNav />
       <main id="main-content">
         <LandingHero />

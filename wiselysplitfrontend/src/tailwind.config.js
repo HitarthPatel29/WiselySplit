@@ -6,13 +6,6 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
-        'brand-navy': '#0b1220',
-        'brand-navy-light': '#111827',
-        'brand-emerald': '#10b981',
-        'brand-emerald-dark': '#059669',
-        'brand-slate': '#94a3b8',
-      },
       fontFamily: {
         landing: ['Inter', 'system-ui', 'sans-serif'],
       },

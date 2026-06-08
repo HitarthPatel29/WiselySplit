@@ -29,9 +29,9 @@ export default function TrustStrip() {
             {TRUST_ITEMS.map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 text-brand-slate text-base sm:text-lg md:text-xl"
+                className="flex items-center gap-3 text-gray-600 dark:text-gray-200 text-base sm:text-lg md:text-xl"
               >
-                <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-brand-emerald shrink-0" />
+                <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-500 shrink-0" />
                 <span>{label}</span>
               </div>
             ))}

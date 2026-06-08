@@ -21,7 +21,7 @@ export default function LandingCta() {
         >
           <div className="absolute inset-0 opacity-20 pointer-events-none">
             <div className="absolute top-0 left-1/4 w-64 h-64 rounded-full bg-white/30 blur-3xl" />
-            <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full bg-brand-navy/20 blur-2xl" />
+            <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full bg-gray-900/20 blur-2xl" />
           </div>
           <div className="relative z-10">
             <h2 id="cta-heading" className="text-3xl md:text-4xl font-bold text-gray-100 mb-3">
@@ -32,7 +32,7 @@ export default function LandingCta() {
             </p>
             <Link
               to="/signup"
-              className="inline-flex items-center justify-center min-h-[48px] px-10 py-3 rounded-full bg-gray-100 text-emerald-500 font-semibold text-base hover:bg-brand-navy-light transition-colors shadow-xl"
+              className="inline-flex items-center justify-center min-h-[48px] px-10 py-3 rounded-full bg-gray-100 text-emerald-500 font-semibold text-base hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors shadow-xl"
             >
               Create Free Account
             </Link>

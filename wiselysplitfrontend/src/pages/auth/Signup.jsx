@@ -17,7 +17,6 @@ export default function Signup() {
     name: '',
     userName: '',
     email: '',
-    phoneNum: '',
     password: '',
     confirm: '',
     profilePicture: null
@@ -181,7 +180,6 @@ export default function Signup() {
       formData.append("name", form.name);
       formData.append("userName", form.userName);
       formData.append("email", form.email);
-      formData.append("phoneNum", form.phoneNum);
       formData.append("password", form.password);
       if (form.profilePicture) {
         formData.append("profilePicture", form.profilePicture);
@@ -210,9 +208,9 @@ export default function Signup() {
       </div>
 
       {step === 1 && (
-        <form onSubmit={handleStep1} className='flex flex-col gap-4' aria-label="Account creation form - Step 1">
+        <form onSubmit={handleStep1} className='flex flex-col gap-4 sm:gap-2 md:gap-4' aria-label="Account creation form - Step 1">
           {/* Full name + Username */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-2 md:gap-4'>
             <TextInput id='name' label='Full name' placeholder='Jane Doe' autoComplete='name' value={form.name} onChange={update} required={true} />
             <div className='flex flex-col gap-1'>
               <label 
@@ -255,9 +253,7 @@ export default function Signup() {
             </div>
           </div>
 
-          {/* Phone + Email */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <TextInput id='phoneNum' label='Phone Number' type='tel' placeholder='+1 234 567 8901' autoComplete='tel' value={form.phoneNum} onChange={update} required={false} />
+          {/* Email */}
             <div className='flex flex-col gap-1'>
               <label 
                 htmlFor='email' 
@@ -297,7 +293,6 @@ export default function Signup() {
                 </p>
               )}
             </div>
-          </div>
 
           <PasswordInput id='password' name='password' label='Password' value={form.password} onChange={update} showStrength={true} autoComplete='new-password' required={true} />
           <PasswordInput id='confirm' name='confirm' label='Confirm password' value={form.confirm} onChange={update} autoComplete='new-password' required={true} />
