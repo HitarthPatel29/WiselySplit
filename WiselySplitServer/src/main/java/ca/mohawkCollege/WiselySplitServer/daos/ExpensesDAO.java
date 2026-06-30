@@ -1,7 +1,7 @@
 package ca.mohawkCollege.wiselySplitServer.daos;
 
-import ca.mohawkCollege.wiselySplitServer.models.IncomeImportDTO;
-import ca.mohawkCollege.wiselySplitServer.models.PersonalExpenseImportDTO;
+import ca.mohawkCollege.wiselySplitServer.models.dtos.IncomeImportDTO;
+import ca.mohawkCollege.wiselySplitServer.models.dtos.PersonalExpenseImportDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;

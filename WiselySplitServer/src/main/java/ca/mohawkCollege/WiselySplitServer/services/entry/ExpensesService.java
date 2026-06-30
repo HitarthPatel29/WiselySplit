@@ -4,7 +4,7 @@ import ca.mohawkCollege.wiselySplitServer.daos.ExpensesDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.PaymentDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.WalletDAO;
-import ca.mohawkCollege.wiselySplitServer.models.PersonalExpenseImportDTO;
+import ca.mohawkCollege.wiselySplitServer.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawkCollege.wiselySplitServer.models.User;
 import ca.mohawkCollege.wiselySplitServer.services.classification.ClassificationService;
 import ca.mohawkCollege.wiselySplitServer.services.classification.FeedbackService;

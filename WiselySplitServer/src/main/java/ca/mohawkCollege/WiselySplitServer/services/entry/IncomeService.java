@@ -2,7 +2,7 @@ package ca.mohawkCollege.wiselySplitServer.services.entry;
 
 import ca.mohawkCollege.wiselySplitServer.daos.ExpensesDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.WalletDAO;
-import ca.mohawkCollege.wiselySplitServer.models.IncomeImportDTO;
+import ca.mohawkCollege.wiselySplitServer.models.dtos.IncomeImportDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

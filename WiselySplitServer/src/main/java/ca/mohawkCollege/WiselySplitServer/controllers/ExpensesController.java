@@ -1,6 +1,6 @@
 package ca.mohawkCollege.wiselySplitServer.controllers;
 
-import ca.mohawkCollege.wiselySplitServer.models.PersonalExpenseImportDTO;
+import ca.mohawkCollege.wiselySplitServer.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawkCollege.wiselySplitServer.services.entry.ExpensesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

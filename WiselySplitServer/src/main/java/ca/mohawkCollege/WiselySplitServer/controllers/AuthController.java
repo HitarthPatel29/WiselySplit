@@ -5,7 +5,7 @@ import ca.mohawkCollege.wiselySplitServer.utilities.auth.PasswordUtil;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.models.Role;
 import ca.mohawkCollege.wiselySplitServer.models.User;
-import ca.mohawkCollege.wiselySplitServer.models.dto.AdminUserView;
+import ca.mohawkCollege.wiselySplitServer.models.dtos.AdminUserView;
 import ca.mohawkCollege.wiselySplitServer.services.EmailServiceMailTrapAPI;
 import ca.mohawkCollege.wiselySplitServer.services.OtpService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;

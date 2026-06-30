@@ -2,7 +2,7 @@ package ca.mohawkCollege.wiselySplitServer.controllers;
 
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.models.User;
-import ca.mohawkCollege.wiselySplitServer.models.dto.AdminUserView;
+import ca.mohawkCollege.wiselySplitServer.models.dtos.AdminUserView;
 import ca.mohawkCollege.wiselySplitServer.services.AdminService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

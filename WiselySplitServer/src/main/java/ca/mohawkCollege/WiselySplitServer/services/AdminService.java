@@ -6,7 +6,7 @@ import ca.mohawkCollege.wiselySplitServer.exceptions.DuplicateUserException;
 import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
 import ca.mohawkCollege.wiselySplitServer.models.Role;
 import ca.mohawkCollege.wiselySplitServer.models.User;
-import ca.mohawkCollege.wiselySplitServer.models.dto.AdminUserView;
+import ca.mohawkCollege.wiselySplitServer.models.dtos.AdminUserView;
 import ca.mohawkCollege.wiselySplitServer.services.user.UserService;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.PasswordUtil;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.ValidationUtil;

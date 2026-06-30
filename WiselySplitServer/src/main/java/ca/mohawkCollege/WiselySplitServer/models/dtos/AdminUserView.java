@@ -1,4 +1,4 @@
-package ca.mohawkCollege.wiselySplitServer.models.dto;
+package ca.mohawkCollege.wiselySplitServer.models.dtos;
 
 import ca.mohawkCollege.wiselySplitServer.models.Role;
 import ca.mohawkCollege.wiselySplitServer.models.User;
