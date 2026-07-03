@@ -21,7 +21,6 @@ public class User {
     @Email(message = "Email must be valid")
     private String email;
 
-    @NotNull(message = "Phone number cannot be null")
     private Long phoneNum;
 
     @NotBlank(message = "Password cannot be empty")
