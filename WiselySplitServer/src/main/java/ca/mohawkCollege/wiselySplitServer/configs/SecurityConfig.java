@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll() // email availability check
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll() // Stripe webhook
                         .requestMatchers(HttpMethod.POST, "/api/expenses/personal/automation").permitAll() // Expenses Entry Automation API
+                        .requestMatchers(HttpMethod.POST, "/api/jpa/users").permitAll() // signup with JPA
                         // --- RBAC: admin-only surfaces ---
                         .requestMatchers("/api/admin/**").hasRole("ADMIN") // account management
                         // classifier: predict + feedback are part of the normal expense flow
