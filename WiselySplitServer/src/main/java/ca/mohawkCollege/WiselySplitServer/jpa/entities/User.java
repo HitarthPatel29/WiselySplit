@@ -9,6 +9,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -18,7 +22,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "UserID", columnDefinition = "BIGINT")
-    private Integer userId;
+    private Long userId;
 
     @NotBlank(message = "Name cannot be empty")
     @Size(min = 2, max = 255, message = "Name must be between 2 and 255 characters")
@@ -36,7 +40,7 @@ public class User {
     private String email;
 
     @Column(name = "PhoneNum", columnDefinition = "BIGINT")
-    private Integer phoneNum;
+    private Long phoneNum;
 
     @NotBlank(message = "Password cannot be empty")
     @Size(min = 8, message = "Password must be at least 8 characters long")
@@ -51,4 +55,17 @@ public class User {
 
     @Column(name = "Role", columnDefinition = "VARCHAR")
     private String role = Role.DEFAULT;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.DETACH, orphanRemoval = true)
+    private List<Wallet> wallets;
+
+    @ManyToMany
+    @JoinTable(
+            name = "GroupParticipants",           // the actual join table
+            joinColumns = @JoinColumn(name = "UserID"),        // FK pointing back to THIS entity
+            inverseJoinColumns = @JoinColumn(name = "GroupID") // FK pointing to the OTHER entity
+    )
+    private Set<ExpenseGroup> groups = new HashSet<>();
+
+
 }
