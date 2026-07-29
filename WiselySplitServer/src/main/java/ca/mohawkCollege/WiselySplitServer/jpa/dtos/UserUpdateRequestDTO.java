@@ -1,6 +1,5 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.dtos;
 
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -13,9 +12,8 @@ import org.springframework.stereotype.Component;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
-
-    private Integer userId;
+public class UserUpdateRequestDTO {
+    private Long userId;
 
     @NotBlank(message = "Name cannot be empty")
     @Size(min = 2, max = 255, message = "Name must be between 2 and 255 characters")
@@ -29,7 +27,7 @@ public class UserDTO {
     @Email(message = "Not a valid email!")
     private String email;
 
-    private Integer phoneNum;
+    private Long phoneNum;
 
     private String profilePicture;
 }

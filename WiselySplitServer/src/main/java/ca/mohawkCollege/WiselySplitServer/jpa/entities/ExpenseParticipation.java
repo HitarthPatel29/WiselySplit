@@ -11,17 +11,18 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "ExpenseParticipation")
 public class ExpenseParticipation {
     @EmbeddedId
     private ExpenseParticipationId id = new ExpenseParticipationId();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("ExpenseId")
+    @MapsId("expenseId")
     @JoinColumn(name = "ExpenseID", nullable = false)
     private Expense expense;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("UserId")
+    @MapsId("userId")
     @JoinColumn(name = "UserID", nullable = false)
     private User user;
 

@@ -1,6 +1,7 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.controllers;
 
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserResponseDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserUpdateRequestDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.services.UserService;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
 import ca.mohawkCollege.wiselySplitServer.services.user.ImageUploadService;
@@ -27,7 +28,7 @@ public class UserControllerJPA {
             @RequestParam("name") String name,
             @RequestParam("userName") String userName,
             @RequestParam("email") String email,
-            @RequestParam(value = "phoneNum", required = false) Integer phoneNum,
+            @RequestParam(value = "phoneNum", required = false) Long phoneNum,
             @RequestParam("password") String password,
             @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
         try {
@@ -46,7 +47,7 @@ public class UserControllerJPA {
             }
 
             // Save with default avatar if no picture
-            UserDTO created = userService.createUser(user);
+            UserResponseDTO created = userService.createUser(user);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
 
         } catch (IllegalArgumentException e) {
@@ -61,21 +62,21 @@ public class UserControllerJPA {
 
     // Get User by ID
     @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable int id) {
-        UserDTO userDTO = userService.getUserById(id);
-        return ResponseEntity.ok(userDTO);
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
+        UserResponseDTO userResponseDTO = userService.getUserById(id);
+        return ResponseEntity.ok(userResponseDTO);
     }
 
     // Get User by Email
     @GetMapping("/email/{email}")
-    public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
-        UserDTO userDTO = userService.getUserByEmail(email);
-        return ResponseEntity.ok(userDTO);
+    public ResponseEntity<UserResponseDTO> getUserByEmail(@PathVariable String email) {
+        UserResponseDTO userResponseDTO = userService.getUserByEmail(email);
+        return ResponseEntity.ok(userResponseDTO);
     }
 
     @GetMapping("/{id}/check-username")
-    public ResponseEntity<?> checkUsername(@PathVariable int id, @RequestParam("username") String userName) {
-        UserDTO existing = userService.getUserById(id);
+    public ResponseEntity<?> checkUsername(@PathVariable Long id, @RequestParam("username") String userName) {
+        UserResponseDTO existing = userService.getUserById(id);
         // Username uniqueness (excluding current user)
         if (!existing.getUserName().equalsIgnoreCase(userName) && userService.checkUserNameExists(userName)) {
             return ResponseEntity.ok(Map.of("available", false));
@@ -86,8 +87,8 @@ public class UserControllerJPA {
     }
 
     @GetMapping("/{id}/check-email")
-    public ResponseEntity<?> checkEmail(@PathVariable int id, @RequestParam("email") String email) {
-        UserDTO existing = userService.getUserById(id);
+    public ResponseEntity<?> checkEmail(@PathVariable Long id, @RequestParam("email") String email) {
+        UserResponseDTO existing = userService.getUserById(id);
 
         // Email uniqueness (excluding current user)
         if (!existing.getEmail().equalsIgnoreCase(email) && userService.checkEmailExists(email)) {
@@ -112,7 +113,7 @@ public class UserControllerJPA {
     // Update User
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     public ResponseEntity<?> updateUser(
-            @PathVariable int id,
+            @PathVariable long id,
             @RequestParam("name") String name,
             @RequestParam("userName") String userName,
             @RequestParam("email") String email,
@@ -120,21 +121,11 @@ public class UserControllerJPA {
             @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
         try {
             // Generate new User DTO from updated fields
-            UserDTO userDTO = new UserDTO();
-            userDTO.setUserId(id);
-            userDTO.setName(name);
-            userDTO.setUserName(userName);
-            userDTO.setEmail(email);
-            //userDTO.setPhoneNum(phoneNum);
+            String url = (profilePicture != null && !profilePicture.isEmpty()) ? imageUploadService.uploadProfilePicture(profilePicture): null;
 
-            // Handle profile picture
-            if (profilePicture != null && !profilePicture.isEmpty()) {
-                String url = imageUploadService.uploadProfilePicture(profilePicture);
-                userDTO.setProfilePicture(url);
-            }
-
-            UserDTO updatedUserDTO = userService.updateUser(userDTO);
-            return ResponseEntity.ok(updatedUserDTO);
+            UserUpdateRequestDTO userUpdateRequestDTO = new UserUpdateRequestDTO( id, name, userName, email, phoneNum, url );
+            UserResponseDTO updatedUserResponseDTO = userService.updateUser(userUpdateRequestDTO);
+            return ResponseEntity.ok(updatedUserResponseDTO);
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -145,20 +136,20 @@ public class UserControllerJPA {
 
     // Delete User
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable int id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build(); // 204
     }
 
     // Get All Users
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        List<UserDTO> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+        List<UserResponseDTO> userResponseDTOs = userService.getAllUsers();
+        return ResponseEntity.ok(userResponseDTOs);
     }
 
     @GetMapping("/{userId}/connections")
-    public ResponseEntity<?> getConnections(@PathVariable int userId) {
+    public ResponseEntity<?> getConnections(@PathVariable Long userId) {
         try {
             return ResponseEntity.ok(userService.getUserConnections(userId));
         } catch (Exception e) {

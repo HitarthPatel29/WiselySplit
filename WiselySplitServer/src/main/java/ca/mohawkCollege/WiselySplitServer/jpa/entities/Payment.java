@@ -11,12 +11,13 @@ import java.sql.Timestamp;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "Payments")
 
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "GroupName", columnDefinition = "INT")
-    private Integer paymentId;
+    @Column(name = "PaymentID", columnDefinition = "INT")
+    private Long paymentId;
 
     @Column(name = "Amount", precision = 10, scale = 2)
     private BigDecimal amount;

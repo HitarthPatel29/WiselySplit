@@ -18,7 +18,7 @@ public class ExpenseGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "GroupID", columnDefinition = "INT")
-    private Integer groupId;
+    private Long groupId;
 
     @Column(name = "GroupName", columnDefinition = "VARCHAR")
     private String groupName;

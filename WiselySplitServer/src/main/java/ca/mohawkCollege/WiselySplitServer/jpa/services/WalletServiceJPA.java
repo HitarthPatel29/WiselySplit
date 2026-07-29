@@ -1,22 +1,17 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.services;
 
-import ca.mohawkCollege.wiselySplitServer.exceptions.DuplicateUserException;
-import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.WalletDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Wallet;
 import ca.mohawkCollege.wiselySplitServer.jpa.repositories.WalletRepo;
-import ca.mohawkCollege.wiselySplitServer.utilities.auth.ValidationUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Service
-public class WalletService {
+public class WalletServiceJPA {
 
     @Autowired
     private WalletRepo walletRepo;
@@ -30,8 +25,8 @@ public class WalletService {
             walletToUpdate.setColor(walletDTO.getColor());
 
             //swapping new InitialBalance with Old InitialBalance in balance
-            double balanceWithOutInitialBalance = walletToUpdate.getBalance()-walletToUpdate.getInitialBalance();
-            double balanceWithNewInitialBalance = balanceWithOutInitialBalance + walletDTO.getInitialBalance();
+            BigDecimal balanceWithOutInitialBalance = walletToUpdate.getBalance().subtract(walletToUpdate.getInitialBalance());
+            BigDecimal balanceWithNewInitialBalance = balanceWithOutInitialBalance.add(walletDTO.getInitialBalance());
             walletToUpdate.setBalance(balanceWithNewInitialBalance);
 
             walletToUpdate.setInitialBalance(walletDTO.getInitialBalance());

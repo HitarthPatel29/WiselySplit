@@ -3,7 +3,10 @@ package ca.mohawkCollege.wiselySplitServer.jpa.services;
 import ca.mohawkCollege.wiselySplitServer.daos.InviteDAO;
 import ca.mohawkCollege.wiselySplitServer.exceptions.DuplicateUserException;
 import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserResponseDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserUpdateRequestDTO;
+
+import ca.mohawkCollege.wiselySplitServer.jpa.repositories.InviteRepo;
 import ca.mohawkCollege.wiselySplitServer.jpa.repositories.UserRepo;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
 import jakarta.transaction.Transactional;
@@ -24,16 +27,17 @@ public class UserService {
     private InviteDAO inviteDAO;
     @Value("${cloudinary.default_photo_link}")
     private String DEFAULT_AVATAR_URL;
-
-    public UserDTO getUserByEmail(String email){
+    @Autowired
+    private InviteServiceJpa inviteService;
+    public UserResponseDTO getUserByEmail(String email){
         User userByEmail = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User with email " + email + " not found"));
-        return userToUserDTO(userByEmail);
+        return userToUserResponseDTO(userByEmail);
     }
-    public UserDTO getUserById(int id){
+    public UserResponseDTO getUserById(Long id){
         User userById = userRepo.findById(id).orElseThrow(() -> new UserNotFoundException("User with ID: "+id+" not found!" ));
-        return userToUserDTO(userById);
+        return userToUserResponseDTO(userById);
     }
-    public UserDTO createUser(User user){
+    public UserResponseDTO createUser(User user){
         if (user.getProfilePicture() == null || user.getProfilePicture().isEmpty())
             user.setProfilePicture(DEFAULT_AVATAR_URL);
 
@@ -48,79 +52,101 @@ public class UserService {
         try {
             user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
             User savedUser = userRepo.save(user);
-            inviteDAO.linkInvitesToUser(user.getEmail(), savedUser.getUserId()); //sets UserID for all external Email Invites
-            return userToUserDTO(savedUser);
+            inviteDAO.linkInvitesToUser(user.getEmail(), Math.toIntExact(savedUser.getUserId())); //sets UserID for all external Email Invites
+            return userToUserResponseDTO(savedUser);
         } catch (DataIntegrityViolationException ex) {
             throw new DuplicateUserException("Username or Email already exists");
         }
     }
 
     /**
-     * gets the UserDTO, Updates the User and returns the DTO of updatedUser
-     * @param userDTO
+     * gets the UserUpdateRequestDTO, Updates the User and returns the DTO of updatedUser
+     * @param userUpdateRequestDTO
      * @return updatedDTO
      */
     @Transactional
-    public UserDTO updateUser(UserDTO userDTO){
-        User userToUpdate = userRepo.findById(userDTO.getUserId())
-                .orElseThrow(() -> new UserNotFoundException("User with ID " + userDTO.getUserId() + " not found"));
+    public UserResponseDTO updateUser(UserUpdateRequestDTO userUpdateRequestDTO){
+        User exsistingUser = userRepo.findById(userUpdateRequestDTO.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + userUpdateRequestDTO.getUserId() + " not found"));
 
         // Email validation
-        if (!ValidationUtil.isValidEmail(userDTO.getEmail()))  throw new IllegalArgumentException("Invalid email format");
+        if (!ValidationUtil.isValidEmail(userUpdateRequestDTO.getEmail()))  throw new IllegalArgumentException("Invalid email format");
 
         // Duplicate User Validations
-        if (checkEmailExists(userDTO.getEmail())) throw new DuplicateUserException("This Email is already attached with an Existing Account");
-        if (checkUserNameExists(userDTO.getUserName())) throw new DuplicateUserException("Username Not Available, Choose a Unique UserName");
+        // checks if it is not updated, if Updated check in DB, if not
+        if (!exsistingUser.getEmail().equals(userUpdateRequestDTO.getEmail()) && checkEmailExists(userUpdateRequestDTO.getEmail()))
+            throw new DuplicateUserException("This Email is already attached with an Existing Account");
+        if (!exsistingUser.getUserName().equals(userUpdateRequestDTO.getUserName()) && checkUserNameExists(userUpdateRequestDTO.getUserName()))
+            throw new DuplicateUserException("Username Not Available, Choose a Unique UserName");
 
-        userToUpdate.setName(userDTO.getName());
-        userToUpdate.setUserName(userDTO.getUserName());
-        userToUpdate.setEmail(userDTO.getEmail());
-        userToUpdate.setPhoneNum(userDTO.getPhoneNum());
+        exsistingUser.setName(userUpdateRequestDTO.getName());
+        exsistingUser.setUserName(userUpdateRequestDTO.getUserName());
+        exsistingUser.setEmail(userUpdateRequestDTO.getEmail());
+        exsistingUser.setPhoneNum(userUpdateRequestDTO.getPhoneNum());
 
         //if not URL -> set the Default URL
-        String profilePictureURL = null != userDTO.getProfilePicture() ? DEFAULT_AVATAR_URL : userDTO.getProfilePicture();
-        userToUpdate.setProfilePicture(profilePictureURL);
+        String profilePictureURL = null == userUpdateRequestDTO.getProfilePicture() ? DEFAULT_AVATAR_URL : userUpdateRequestDTO.getProfilePicture();
+        exsistingUser.setProfilePicture(profilePictureURL);
 
         try {
-            User updatedUser = userRepo.save(userToUpdate);
-            return userToUserDTO(updatedUser);
+            User updatedUser = userRepo.save(exsistingUser);
+            return userToUserResponseDTO(updatedUser);
         } catch (DataIntegrityViolationException ex) {
             throw new DuplicateUserException("Username or Email already exists");
         }
     }
-    public void deleteUser(int id){
+    public void deleteUser(Long id){
         userRepo.deleteById(id);
     }
-    public List<UserDTO> getAllUsers(){
+    public List<UserResponseDTO> getAllUsers(){
          List<User> userList = userRepo.findAll();
-         List<UserDTO> userDTOList = userList.stream().map(this::userToUserDTO).toList();
-         return userDTOList;
+         List<UserResponseDTO> UserResponseDTOList = userList.stream().map(this::userToUserResponseDTO).toList();
+         return UserResponseDTOList;
     }
 
-    public Map<String, Object> getUserConnections(int userId){
-        return null;
+    @Transactional()
+    public Map<String, Object> getUserConnections(Long userId){
+        User user = userRepo.findByIdWithGroupsAndParticipants(userId)
+                .orElseThrow(()-> new UserNotFoundException("User with id: " + userId + " not found"));
+
+        List<Map<String, Object>> groupsOfUser = user.getGroups().stream()
+                .map(g -> Map.of(
+                        "groupId", g.getGroupId(),
+                        "groupName", g.getGroupName(),
+                        "groupType", g.getGroupType(),
+                        "profilePicture", g.getProfilePicture(),
+                        "participants", g.getParticipants().stream()
+                                .map(p -> Map.of(
+                                        "userId", p.getUserId(),
+                                        "name", p.getName(),
+                                        "userName", p.getUserName(),
+                                        "profilePicture", p.getProfilePicture()
+                                )).toList()
+                )).toList();
+
+        List<Map<String, Object>> friendsOfUser = inviteService.getFriendsOfUser(user);
+
+        return Map.of("groups", groupsOfUser, "friends", friendsOfUser);
     }
 
-    public boolean checkUserNameExists(String username){
-        return userRepo.findByUserName(username).isPresent();
-    }
-    public boolean checkEmailExists(String email){
-        return userRepo.findByEmail(email).isPresent();
-    }
+    public boolean checkUserNameExists(String username) { return userRepo.findByUserName(username).isPresent(); }
+
+    public boolean checkEmailExists(String email){ return userRepo.findByEmail(email).isPresent(); }
 
     /**
-     * This is a helper method that converts User to UserDTO
+     * This is a helper method that converts User to UserResponseDTO
      * @param user
-     * @return new userDTO
+     * @return new UserResponseDTO
      */
-    public UserDTO userToUserDTO(User user) {
-        return new UserDTO(
+    public UserResponseDTO userToUserResponseDTO(User user) {
+        return new UserResponseDTO(
                 user.getUserId(),
                 user.getName(),
                 user.getUserName(),
                 user.getEmail(),
                 user.getPhoneNum(),
-                user.getProfilePicture()
+                user.getProfilePicture(),
+                user.getStripeAccountId()
         );
     }
 

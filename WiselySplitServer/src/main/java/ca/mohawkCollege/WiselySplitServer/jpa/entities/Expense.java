@@ -39,7 +39,6 @@ public class Expense {
     @JoinColumn(name = "PayerID", nullable = false)
     private User payer;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "GroupID", nullable = true)
     private ExpenseGroup expenseGroup;

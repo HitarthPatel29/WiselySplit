@@ -5,16 +5,16 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @Table(name = "User")
 public class User {
@@ -59,6 +59,9 @@ public class User {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.DETACH, orphanRemoval = true)
     private List<Wallet> wallets;
 
+    @OneToMany(mappedBy = "sender", fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<Invite> invites;
+
     @ManyToMany
     @JoinTable(
             name = "GroupParticipants",           // the actual join table
@@ -67,5 +70,16 @@ public class User {
     )
     private Set<ExpenseGroup> groups = new HashSet<>();
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(userId, user.userId);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId);
+    }
 }
