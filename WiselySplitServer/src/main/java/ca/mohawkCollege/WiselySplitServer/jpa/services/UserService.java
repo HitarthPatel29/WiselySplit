@@ -3,21 +3,19 @@ package ca.mohawkCollege.wiselySplitServer.jpa.services;
 import ca.mohawkCollege.wiselySplitServer.daos.InviteDAO;
 import ca.mohawkCollege.wiselySplitServer.exceptions.DuplicateUserException;
 import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserResponseDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserUpdateRequestDTO;
-
-import ca.mohawkCollege.wiselySplitServer.jpa.repositories.InviteRepo;
-import ca.mohawkCollege.wiselySplitServer.jpa.repositories.UserRepo;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.*;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
+import ca.mohawkCollege.wiselySplitServer.jpa.repositories.UserRepo;
+import ca.mohawkCollege.wiselySplitServer.utilities.auth.PasswordUtil;
+import ca.mohawkCollege.wiselySplitServer.utilities.auth.ValidationUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import ca.mohawkCollege.wiselySplitServer.utilities.auth.*;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class UserService {
@@ -104,29 +102,28 @@ public class UserService {
          return UserResponseDTOList;
     }
 
+    public record ConnectionListDTO(List<UserResponseForListDTO> friends, List<GroupResponseForListDTO> groups){}
     @Transactional()
-    public Map<String, Object> getUserConnections(Long userId){
+    public ConnectionListDTO getUserConnections(Long userId){
         User user = userRepo.findByIdWithGroupsAndParticipants(userId)
                 .orElseThrow(()-> new UserNotFoundException("User with id: " + userId + " not found"));
 
-        List<Map<String, Object>> groupsOfUser = user.getGroups().stream()
-                .map(g -> Map.of(
-                        "groupId", g.getGroupId(),
-                        "groupName", g.getGroupName(),
-                        "groupType", g.getGroupType(),
-                        "profilePicture", g.getProfilePicture(),
-                        "participants", g.getParticipants().stream()
-                                .map(p -> Map.of(
-                                        "userId", p.getUserId(),
-                                        "name", p.getName(),
-                                        "userName", p.getUserName(),
-                                        "profilePicture", p.getProfilePicture()
+        List<GroupResponseForListDTO> groupsOfUser = user.getGroups().stream()
+                .map(group -> new GroupResponseForListDTO(
+                        group.getGroupId(),
+                        group.getGroupName(),
+                        group.getGroupType(),
+                        group.getProfilePicture(),
+                        group.getParticipants().stream()
+                                .map(p -> new UserResponseForListDTO(
+                                        p.getUserId(), p.getName(), p.getUserName(), p.getProfilePicture()
                                 )).toList()
-                )).toList();
+                        )
+                ).toList();
 
-        List<Map<String, Object>> friendsOfUser = inviteService.getFriendsOfUser(user);
+        List<UserResponseForListDTO> friendsOfUser = inviteService.getFriendsOfUser(user);
 
-        return Map.of("groups", groupsOfUser, "friends", friendsOfUser);
+        return new ConnectionListDTO(friendsOfUser, groupsOfUser);
     }
 
     public boolean checkUserNameExists(String username) { return userRepo.findByUserName(username).isPresent(); }
