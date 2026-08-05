@@ -60,7 +60,10 @@ public class User {
     private List<Wallet> wallets;
 
     @OneToMany(mappedBy = "sender", fetch = FetchType.LAZY, orphanRemoval = true)
-    private List<Invite> invites;
+    private List<Invite> invitesSent;
+
+    @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<Invite> invitesReceived;
 
     @ManyToMany
     @JoinTable(
