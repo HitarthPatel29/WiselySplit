@@ -38,7 +38,7 @@ public class StripeService {
      * Create a Stripe Connect account for a user (recipient)
      * Returns the account link for onboarding
      */
-    public Map<String, Object> createConnectAccount(int userId, String email) throws StripeException {
+    public Map<String, Object> createConnectAccount(long userId, String email) throws StripeException {
         AccountCreateParams params = AccountCreateParams.builder()
                 .setType(AccountCreateParams.Type.EXPRESS)
                 .setCountry("US") // Change to your default country
@@ -87,8 +87,8 @@ public class StripeService {
      */
     public Map<String, Object> createPaymentIntent(
             double amount,
-            int payerId,
-            int receiverId,
+            long payerId,
+            long receiverId,
             String receiverStripeAccountId
     ) throws StripeException {
         if (receiverStripeAccountId == null || receiverStripeAccountId.isEmpty()) {
@@ -118,7 +118,7 @@ public class StripeService {
         String paymentIntentId = paymentIntent.getId();
 
         // Now create the database record with the PaymentIntent ID
-        Integer paymentId = paymentDAO.addPayment(
+        Long paymentId = paymentDAO.addPayment(
                 amount,
                 payerId,
                 receiverId,
@@ -158,7 +158,7 @@ public class StripeService {
         paymentDAO.findPaymentByStripePaymentIntentId(paymentIntentId)
                 .ifPresent(payment -> {
                     paymentDAO.updatePayment(
-                            ((Number) payment.get("paymentId")).intValue(),
+                            ((Number) payment.get("paymentId")).longValue(),
                             paymentIntentId,
                             null,
                             status
@@ -211,7 +211,7 @@ public class StripeService {
         paymentDAO.findPaymentByStripePaymentIntentId(paymentIntentId)
                 .ifPresent(payment -> {
                     paymentDAO.updatePayment(
-                            ((Number) payment.get("paymentId")).intValue(),
+                            ((Number) payment.get("paymentId")).longValue(),
                             paymentIntentId,
                             null,
                             status
@@ -234,7 +234,7 @@ public class StripeService {
         paymentDAO.findPaymentByStripePaymentIntentId(paymentIntentId)
                 .ifPresent(payment -> {
                     paymentDAO.updatePayment(
-                            ((Number) payment.get("paymentId")).intValue(),
+                            ((Number) payment.get("paymentId")).longValue(),
                             paymentIntentId,
                             null,
                             status
@@ -258,7 +258,7 @@ public class StripeService {
             paymentDAO.findPaymentByStripePaymentIntentId(paymentIntentId)
                     .ifPresent(payment -> {
                         paymentDAO.updatePayment(
-                                ((Number) payment.get("paymentId")).intValue(),
+                                ((Number) payment.get("paymentId")).longValue(),
                                 paymentIntentId,
                                 transferId,
                                 payment.get("status").toString()
@@ -283,7 +283,7 @@ public class StripeService {
             paymentDAO.findPaymentByStripePaymentIntentId(paymentIntentId)
                     .ifPresent(payment -> {
                         paymentDAO.updatePayment(
-                                ((Number) payment.get("paymentId")).intValue(),
+                                ((Number) payment.get("paymentId")).longValue(),
                                 paymentIntentId,
                                 transferId,
                                 "COMPLETED"
@@ -295,7 +295,7 @@ public class StripeService {
     /**
      * Get payment status
      */
-    public Map<String, Object> getPaymentStatus(int paymentId) {
+    public Map<String, Object> getPaymentStatus(long paymentId) {
         return paymentDAO.findPaymentById(paymentId)
                 .map(payment -> Map.of(
                         "paymentId", payment.get("paymentId"),

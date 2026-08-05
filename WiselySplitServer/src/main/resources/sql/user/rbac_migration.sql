@@ -12,11 +12,11 @@ UPDATE User SET Role = 'ADMIN' WHERE Email = 'admin@wiselysplit.xyz';
 
 -- 3. Admin audit log: records privileged admin actions (role changes, CRUD, resets).
 CREATE TABLE IF NOT EXISTS admin_audit (
-    Id           INT PRIMARY KEY AUTO_INCREMENT,
-    ActorUserId  INT          NULL,
+    Id           BIGINT PRIMARY KEY AUTO_INCREMENT,
+    ActorUserId  BIGINT       NULL,
     ActorEmail   VARCHAR(255) NULL,
     Action       VARCHAR(64)  NOT NULL,
-    TargetUserId INT          NULL,
+    TargetUserId BIGINT       NULL,
     Details      VARCHAR(512) NULL,
     CreatedAt    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_admin_audit_created (CreatedAt DESC),

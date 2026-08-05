@@ -57,7 +57,7 @@ public class ClassificationController {
             String title = (String) payload.get("title");
             String predicted = (String) payload.get("predicted");
             String finalLabel = (String) payload.get("final");
-            Integer userId = payload.get("userId") instanceof Number n ? n.intValue() : null;
+            Long userId = payload.get("userId") instanceof Number n ? n.longValue() : null;
             feedbackService.recordFeedback(title, predicted, finalLabel, userId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {

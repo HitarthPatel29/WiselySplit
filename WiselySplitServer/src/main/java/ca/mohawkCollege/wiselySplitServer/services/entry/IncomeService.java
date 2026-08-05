@@ -27,10 +27,10 @@ public class IncomeService {
             String date = (String) payload.get("date");
             String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int userId = ((Number) payload.get("userId")).intValue();
-            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
+            long userId = ((Number) payload.get("userId")).longValue();
+            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
 
-            int incomeId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "income", null);
+            long incomeId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "income", null);
 
             //Update wallet Balance
             if (null != walletId) walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.INCOME);
@@ -60,8 +60,8 @@ public class IncomeService {
 
         int inserted = 0;
         List<Map<String, Object>> skipped = new ArrayList<>();
-        Map<Integer, Double> walletSums = new HashMap<>();
-        Map<Integer, Integer> walletUser = new HashMap<>();
+        Map<Long, Double> walletSums = new HashMap<>();
+        Map<Long, Long> walletUser = new HashMap<>();
 
         for (int i = 0; i < rows.size(); i++) {
             IncomeImportDTO r = rows.get(i);
@@ -81,7 +81,7 @@ public class IncomeService {
             }
         }
 
-        for (Map.Entry<Integer, Double> e : walletSums.entrySet()) {
+        for (Map.Entry<Long, Double> e : walletSums.entrySet()) {
             walletDAO.updateWalletBalance(walletUser.get(e.getKey()), e.getKey(), e.getValue(),
                     WalletDAO.WalletBalanceUpdateMode.INCOME);
         }
@@ -90,26 +90,26 @@ public class IncomeService {
     }
 
     /**  Fetch single income details */
-    public Map<String, Object> getIncomeDetails(int incomeId) {
+    public Map<String, Object> getIncomeDetails(long incomeId) {
         return expensesDAO.findExpenseById(incomeId);
     }
 
     /**  Delete income */
-    public void deleteIncome(int incomeId) {
+    public void deleteIncome(long incomeId) {
         walletDAO.updateWalletBalanceForEntryDelete(incomeId, WalletDAO.WalletBalanceUpdateMode.INCOME);
         expensesDAO.deleteExpense(incomeId);
     }
 
     @Transactional
-    public Map<String, Object> updateIncome(int incomeId, Map<String, Object> payload) {
+    public Map<String, Object> updateIncome(long incomeId, Map<String, Object> payload) {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
             String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int userId = ((Number) payload.get("userId")).intValue();
+            long userId = ((Number) payload.get("userId")).longValue();
 
-            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
+            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
 
             //Deducts old income amount and Adds new income amount
             if (null != walletId) walletDAO.updateWalletBalanceForEntryUpdate(userId, walletId, incomeId, amount, WalletDAO.WalletBalanceUpdateMode.INCOME);

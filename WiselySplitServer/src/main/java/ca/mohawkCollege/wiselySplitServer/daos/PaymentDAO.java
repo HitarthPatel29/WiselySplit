@@ -18,10 +18,10 @@ public class PaymentDAO {
     private JdbcTemplate jdbcTemplate;
 
     /** Insert Payment with Stripe fields and return PaymentID */
-    public Integer addPayment(
+    public Long addPayment(
             double amount,
-            Integer payerId,
-            Integer receiverId,
+            Long payerId,
+            Long receiverId,
             String stripePaymentIntentId,
             String stripeTransferId,
             String status
@@ -35,8 +35,8 @@ public class PaymentDAO {
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setDouble(1, amount);
-            ps.setInt(2, payerId);
-            ps.setInt(3, receiverId);
+            ps.setLong(2, payerId);
+            ps.setLong(3, receiverId);
             if (stripePaymentIntentId != null) {
                 ps.setString(4, stripePaymentIntentId);
             } else {
@@ -51,12 +51,12 @@ public class PaymentDAO {
             return ps;
         }, keyHolder);
 
-        return keyHolder.getKey() != null ? keyHolder.getKey().intValue() : null;
+        return keyHolder.getKey() != null ? keyHolder.getKey().longValue() : null;
     }
 
     /** Update Payment with Stripe fields */
     public void updatePayment(
-            int paymentId,
+            long paymentId,
             String stripePaymentIntentId,
             String stripeTransferId,
             String status
@@ -80,13 +80,13 @@ public class PaymentDAO {
                 ps.setNull(2, Types.VARCHAR);
             }
             ps.setString(3, status);
-            ps.setInt(4, paymentId);
+            ps.setLong(4, paymentId);
             return ps;
         });
     }
 
     /** Find Payment by ID */
-    public Optional<Map<String, Object>> findPaymentById(int paymentId) {
+    public Optional<Map<String, Object>> findPaymentById(long paymentId) {
         String sql = """
             SELECT 
                 PaymentID AS paymentId,

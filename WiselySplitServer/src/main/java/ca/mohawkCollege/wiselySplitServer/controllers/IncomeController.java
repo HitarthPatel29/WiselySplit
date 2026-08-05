@@ -60,7 +60,7 @@ public class IncomeController {
 
     /** GET Income details */
     @GetMapping("/{incomeId}")
-    public ResponseEntity<?> getIncome(@PathVariable int incomeId) {
+    public ResponseEntity<?> getIncome(@PathVariable long incomeId) {
         try {
             return ResponseEntity.ok(incomeService.getIncomeDetails(incomeId));
         } catch (Exception e) {
@@ -72,7 +72,7 @@ public class IncomeController {
 
     /**  DELETE Income */
     @DeleteMapping("/{incomeId}")
-    public ResponseEntity<?> deleteIncome(@PathVariable int incomeId) {
+    public ResponseEntity<?> deleteIncome(@PathVariable long incomeId) {
         try {
             incomeService.deleteIncome(incomeId);
             return ResponseEntity.ok(Map.of("message", "Income deleted successfully"));
@@ -85,7 +85,7 @@ public class IncomeController {
 
     /* UPDATE Income */
     @PutMapping("/{incomeId}")
-    public ResponseEntity<?> updateIncome(@PathVariable int incomeId, @RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> updateIncome(@PathVariable long incomeId, @RequestBody Map<String, Object> payload) {
         try {
             Map<String, Object> result = incomeService.updateIncome(incomeId, payload);
             return ResponseEntity.ok(result);

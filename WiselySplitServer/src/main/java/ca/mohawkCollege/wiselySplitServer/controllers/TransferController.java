@@ -33,7 +33,7 @@ public class TransferController {
 
     /** GET Transfer details */
     @GetMapping("/{transferId}")
-    public ResponseEntity<?> getTransfer(@PathVariable int transferId) {
+    public ResponseEntity<?> getTransfer(@PathVariable long transferId) {
         try {
             return ResponseEntity.ok(transferService.getTransferDetails(transferId));
         } catch (Exception e) {
@@ -45,7 +45,7 @@ public class TransferController {
 
     /**  DELETE Transfer */
     @DeleteMapping("/{transferId}")
-    public ResponseEntity<?> deleteTransfer(@PathVariable int transferId) {
+    public ResponseEntity<?> deleteTransfer(@PathVariable long transferId) {
         try {
             transferService.deleteTransfer(transferId);
             return ResponseEntity.ok(Map.of("message", "Transfer deleted successfully"));
@@ -58,7 +58,7 @@ public class TransferController {
 
     /* UPDATE Transfer */
     @PutMapping("/{transferId}")
-    public ResponseEntity<?> updateTransfer(@PathVariable int transferId, @RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> updateTransfer(@PathVariable long transferId, @RequestBody Map<String, Object> payload) {
         try {
             Map<String, Object> result = transferService.updateTransfer(transferId, payload);
             return ResponseEntity.ok(result);

@@ -64,7 +64,7 @@ public class UserController {
 
     // Get User by ID
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable int id) {
+    public ResponseEntity<User> getUserById(@PathVariable long id) {
         User user = userService.getUserById(id).get();
         return ResponseEntity.ok(user);
     }
@@ -77,7 +77,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/check-username")
-    public ResponseEntity<?> checkUsername(@PathVariable int id, @RequestParam("username") String userName) {
+    public ResponseEntity<?> checkUsername(@PathVariable long id, @RequestParam("username") String userName) {
         User existing = userService.getUserById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -91,7 +91,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/check-email")
-    public ResponseEntity<?> checkEmail(@PathVariable int id, @RequestParam("email") String email) {
+    public ResponseEntity<?> checkEmail(@PathVariable long id, @RequestParam("email") String email) {
         User existing = userService.getUserById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -126,7 +126,7 @@ public class UserController {
     // Update User
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     public ResponseEntity<?> updateUser(
-            @PathVariable int id,
+            @PathVariable long id,
             @RequestParam("name") String name,
             @RequestParam("userName") String userName,
             @RequestParam("email") String email,
@@ -182,7 +182,7 @@ public class UserController {
 
     // Delete User
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable int id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build(); // 204
     }
@@ -195,7 +195,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/connections")
-    public ResponseEntity<?> getConnections(@PathVariable int userId) {
+    public ResponseEntity<?> getConnections(@PathVariable long userId) {
         try {
             return ResponseEntity.ok(userService.getUserConnections(userId));
         } catch (Exception e) {

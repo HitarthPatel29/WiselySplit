@@ -19,12 +19,12 @@ public class FriendsService {
     @Autowired
     private UserDAO userDAO;
 
-    public List<Map<String, Object>> getFriendsWithBalances(int userId) {
+    public List<Map<String, Object>> getFriendsWithBalances(long userId) {
         List<Map<String, Object>> results = friendsDAO.findFriendsBalances(userId);
         return results;
     }
 
-    public Map<String, Object> getSharedExpensesBetween(int userId, int friendId) {
+    public Map<String, Object> getSharedExpensesBetween(long userId, long friendId) {
         // 1. Fetch all shared expenses
         List<Map<String, Object>> expenses = friendsDAO.findSharedExpenses(userId, friendId);
 
@@ -58,10 +58,10 @@ public class FriendsService {
                     List<Map<String, Object>> splitDetails = (List<Map<String, Object>>) e.get("splitDetails");
 
                     // when user paid
-                    if (((Number) e.get("payerId")).intValue() == userId)
+                    if (((Number) e.get("payerId")).longValue() == userId)
                         /* gets friend's share by filtering SplitDetails with friendId, if not found returns 0.00 */
                          return splitDetails.stream()
-                                .filter(sd -> ((Number) sd.get("userId")).intValue() == friendId)
+                                .filter(sd -> ((Number) sd.get("userId")).longValue() == friendId)
                                 .map(sd -> ((Number) sd.get("amount")).doubleValue())
                                 .findFirst()
                                 .orElse(0.0);
@@ -69,7 +69,7 @@ public class FriendsService {
                     else
                         /* gets user's share by filtering SplitDetails with userId, if not found returns 0.00 */
                         return -splitDetails.stream()
-                                .filter(sd -> ((Number) sd.get("userId")).intValue() == userId)
+                                .filter(sd -> ((Number) sd.get("userId")).longValue() == userId)
                                 .map(sd -> ((Number) sd.get("amount")).doubleValue())
                                 .findFirst()
                                 .orElse(0.0);

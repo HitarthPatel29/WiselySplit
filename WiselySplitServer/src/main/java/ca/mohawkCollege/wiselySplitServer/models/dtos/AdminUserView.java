@@ -8,7 +8,7 @@ import ca.mohawkCollege.wiselySplitServer.models.User;
  * Deliberately excludes the password hash.
  */
 public record AdminUserView(
-        int userId,
+        long userId,
         String name,
         String userName,
         String email,

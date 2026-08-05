@@ -3,10 +3,10 @@ package ca.mohawkCollege.wiselySplitServer.models;
 import java.sql.Timestamp;
 
 public class Payment {
-    private int paymentId;
+    private long paymentId;
     private double amount;
-    private int payerId;
-    private int receiverId;
+    private long payerId;
+    private long receiverId;
     private Timestamp paymentDate;
     private String stripePaymentIntentId;
     private String stripeTransferId;
@@ -14,7 +14,7 @@ public class Payment {
 
     public Payment() {}
 
-    public Payment(int paymentId, double amount, int payerId, int receiverId, Timestamp paymentDate,
+    public Payment(long paymentId, double amount, long payerId, long receiverId, Timestamp paymentDate,
                    String stripePaymentIntentId, String stripeTransferId, String status) {
         this.paymentId = paymentId;
         this.amount = amount;
@@ -27,17 +27,17 @@ public class Payment {
     }
 
     // Getters and Setters
-    public int getPaymentId() { return paymentId; }
-    public void setPaymentId(int paymentId) { this.paymentId = paymentId; }
+    public long getPaymentId() { return paymentId; }
+    public void setPaymentId(long paymentId) { this.paymentId = paymentId; }
 
     public double getAmount() { return amount; }
     public void setAmount(double amount) { this.amount = amount; }
 
-    public int getPayerId() { return payerId; }
-    public void setPayerId(int payerId) { this.payerId = payerId; }
+    public long getPayerId() { return payerId; }
+    public void setPayerId(long payerId) { this.payerId = payerId; }
 
-    public int getReceiverId() { return receiverId; }
-    public void setReceiverId(int receiverId) { this.receiverId = receiverId; }
+    public long getReceiverId() { return receiverId; }
+    public void setReceiverId(long receiverId) { this.receiverId = receiverId; }
 
     public Timestamp getPaymentDate() { return paymentDate; }
     public void setPaymentDate(Timestamp paymentDate) { this.paymentDate = paymentDate; }

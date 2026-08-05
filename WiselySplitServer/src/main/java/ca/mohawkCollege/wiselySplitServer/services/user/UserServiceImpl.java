@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Optional<User> getUserById(int id) {
+    public Optional<User> getUserById(long id) {
         return userDAO.findById(id)
                 .map(Optional::of)
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
@@ -110,7 +110,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(int id) {
+    public void deleteUser(long id) {
         // check if user exists before deleting
         userDAO.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
@@ -123,19 +123,19 @@ public class UserServiceImpl implements UserService {
         return userDAO.findAll();
     }
 
-    public Map<String, Object> getUserConnections(int userId) {
+    public Map<String, Object> getUserConnections(long userId) {
         List<Map<String, Object>> friends = userDAO.findFriendsForUser(userId);
         List<Map<String, Object>> groups = userDAO.findGroupsForUser(userId);
 
         // Format groups to include member lists
         List<Map<String, Object>> formattedGroups = new ArrayList<>();
         for (Map<String, Object> g : groups) {
-            int groupId = ((Number) g.get("GroupID")).intValue();
+            long groupId = ((Number) g.get("GroupID")).longValue();
             List<Map<String, Object>> members = userDAO.findMembersInGroup(groupId);
 
             // Replace current user’s name with “You”
             for (Map<String, Object> m : members) {
-                int mId = ((Number) m.get("UserID")).intValue();
+                long mId = ((Number) m.get("UserID")).longValue();
                 if (mId == userId) {
                     m.put("name", "You");
                 }

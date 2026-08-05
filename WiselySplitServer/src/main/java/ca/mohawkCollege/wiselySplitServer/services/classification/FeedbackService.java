@@ -52,7 +52,7 @@ public class FeedbackService {
      * No-operations if title or finalLabel is missing.
      * counts the user_corrected feedback and initializes retraining when RETRAIN_THRESHOLD reached
      */
-    public void recordFeedback(String title, String predictedLabel, String finalLabel, Integer userId) {
+    public void recordFeedback(String title, String predictedLabel, String finalLabel, Long userId) {
         if (title == null || title.isBlank() || finalLabel == null || finalLabel.isBlank()) return;
 
         String source = (predictedLabel != null && predictedLabel.equalsIgnoreCase(finalLabel))

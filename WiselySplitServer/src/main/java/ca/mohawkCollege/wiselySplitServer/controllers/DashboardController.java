@@ -11,7 +11,7 @@ import java.util.Map;
 public class DashboardController {
 
     @GetMapping("/{userId}")
-    public ResponseEntity<Map<String, Object>> getDashboard(@PathVariable int userId) {
+    public ResponseEntity<Map<String, Object>> getDashboard(@PathVariable long userId) {
         // TODO: Fetch user expenses/groups summary from DB
         Map<String, Object> response = new HashMap<>();
         response.put("userId", userId);

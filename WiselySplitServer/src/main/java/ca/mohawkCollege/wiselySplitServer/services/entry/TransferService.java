@@ -23,15 +23,15 @@ public class TransferService {
             String date = (String) payload.get("date");
             String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int userId = ((Number) payload.get("userId")).intValue();
-            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
-            Integer toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).intValue() : null;
+            long userId = ((Number) payload.get("userId")).longValue();
+            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
+            Long toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).longValue() : null;
 
             if (null != walletId && null != toWalletId ){
                 walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
                 walletDAO.updateWalletBalance(userId, toWalletId, amount, WalletDAO.WalletBalanceUpdateMode.INCOME);
             }
-            int transferId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "transfer", toWalletId);
+            long transferId = expensesDAO.insertPersonalExpense(title, date, type, amount, userId, walletId, "transfer", toWalletId);
 
             return Map.of("success", true, "transferId", transferId, "message", "Personal entry created successfully");
         } catch (Exception e) {
@@ -41,27 +41,27 @@ public class TransferService {
 
 
     /**  Fetch single transfer details */
-    public Map<String, Object> getTransferDetails(int transferId) {
+    public Map<String, Object> getTransferDetails(long transferId) {
         return expensesDAO.findExpenseById(transferId);
     }
 
     /**  Delete transfer */
-    public void deleteTransfer(int transferId) {
+    public void deleteTransfer(long transferId) {
         walletDAO.updateWalletBalanceForTransferDelete(transferId);
         expensesDAO.deleteExpense(transferId);
     }
 
     @Transactional
-    public Map<String, Object> updateTransfer(int transferId, Map<String, Object> payload) {
+    public Map<String, Object> updateTransfer(long transferId, Map<String, Object> payload) {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
             String type = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int userId = ((Number) payload.get("userId")).intValue();
+            long userId = ((Number) payload.get("userId")).longValue();
 
-            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
-            Integer toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).intValue() : null;
+            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
+            Long toWalletId = payload.get("toWalletId") != null ? ((Number) payload.get("toWalletId")).longValue() : null;
 
             if (null != walletId && null != toWalletId ){
                 walletDAO.updateWalletBalanceForEntryUpdate(userId, walletId, transferId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);

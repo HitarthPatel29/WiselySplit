@@ -19,7 +19,7 @@ public class GroupsDAO {
     @Autowired
     private ExpensesDAO expensesDAO;
 
-    public int insertGroup(String name, String type, String profilePicture) {
+    public long insertGroup(String name, String type, String profilePicture) {
         String sql = "INSERT INTO ExpenseGroups (GroupName, GroupType, ProfilePicture) VALUES (?, ?, ?)";
         jdbcTemplate.update(sql, name, type, profilePicture);
 
@@ -31,15 +31,15 @@ public class GroupsDAO {
             ps.setString(3, profilePicture);
             return ps;
         }, keyHolder);
-        return keyHolder.getKey().intValue();
+        return keyHolder.getKey().longValue();
     }
 
-    public void addParticipant(int groupId, int userId) {
+    public void addParticipant(long groupId, long userId) {
         String sql = "INSERT INTO GroupParticipants (GroupID, UserID) VALUES (?, ?)";
         jdbcTemplate.update(sql, groupId, userId);
     }
 
-    public List<Map<String, Object>> findGroupsForUser(int userId) {
+    public List<Map<String, Object>> findGroupsForUser(long userId) {
         String sql = """
             SELECT 
                 g.GroupID AS groupId,
@@ -63,12 +63,12 @@ public class GroupsDAO {
         """;
         return jdbcTemplate.queryForList(sql, userId, userId, userId, userId, userId);
     }
-    public Map<String, Object> findGroupInfo(int groupId) {
+    public Map<String, Object> findGroupInfo(long groupId) {
         String sql = "SELECT GroupID AS groupId, GroupName AS groupName, GroupType AS groupType, ProfilePicture AS profilePicture FROM ExpenseGroups WHERE GroupID = ?";
         return jdbcTemplate.queryForMap(sql, groupId);
     }
 
-    public List<Map<String, Object>> findGroupExpenses(int groupId, int userId) {
+    public List<Map<String, Object>> findGroupExpenses(long groupId, long userId) {
         String sql = """
                 SELECT
                     e.ExpenseID AS expenseId,
@@ -91,12 +91,12 @@ public class GroupsDAO {
 
         List<Map<String,Object>> list = jdbcTemplate.queryForList(sql, groupId);
         for (Map<String,Object> expense: list) {
-            expense.put("splitDetails", expensesDAO.findExpenseParticipants((Integer) expense.get("expenseId")));
+            expense.put("splitDetails", expensesDAO.findExpenseParticipants(((Number) expense.get("expenseId")).longValue()));
         }
         return list;
     }
     //  update group (partial: name, type, photo)
-    public void updateGroup(int groupId, String name, String type, String profilePicture) {
+    public void updateGroup(long groupId, String name, String type, String profilePicture) {
         String sql;
         if (profilePicture == null){
             sql = "UPDATE ExpenseGroups SET GroupName = ?, GroupType = ? WHERE GroupID = ?";
@@ -107,7 +107,7 @@ public class GroupsDAO {
         }
 
     }
-    public List<Map<String, Object>> findGroupParticipantsWithBalances(int groupId, int currentUserId) {
+    public List<Map<String, Object>> findGroupParticipantsWithBalances(long groupId, long currentUserId) {
         String sql = """
             SELECT
                 u.UserID AS userId,
@@ -134,14 +134,14 @@ public class GroupsDAO {
         """;
         return jdbcTemplate.queryForList( sql, currentUserId, currentUserId, groupId, groupId, currentUserId);
     }
-    public boolean isUserInGroup(int groupId, int userId) {
+    public boolean isUserInGroup(long groupId, long userId) {
         String sql = "SELECT COUNT(*) FROM GroupParticipants WHERE GroupID = ? AND UserID = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, groupId, userId);
         return count != null && count > 0;
     }
 
     /* compute a user's net balance in a given group (same logic as findGroupsForUser but per-group)*/
-    public double getUserNetBalanceInGroup(int groupId, int userId) {
+    public double getUserNetBalanceInGroup(long groupId, long userId) {
         String sql = """
         SELECT COALESCE(SUM(
             CASE
@@ -164,19 +164,19 @@ public class GroupsDAO {
     }
 
      /*remove a participant from a group*/
-    public void removeParticipant(int groupId, int userId) {
+    public void removeParticipant(long groupId, long userId) {
         String sql = "DELETE FROM GroupParticipants WHERE GroupID = ? AND UserID = ?";
         jdbcTemplate.update(sql, groupId, userId);
     }
 
       /*get all participant IDs of a group*/
-    public List<Integer> findParticipantIds(int groupId) {
+    public List<Long> findParticipantIds(long groupId) {
         String sql = "SELECT UserID FROM GroupParticipants WHERE GroupID = ?";
-        return jdbcTemplate.queryForList(sql, Integer.class, groupId);
+        return jdbcTemplate.queryForList(sql, Long.class, groupId);
     }
 
     /*delete a group and related data*/
-    public void deleteGroup(int groupId) {
+    public void deleteGroup(long groupId) {
         // Adjust order depending on your foreign key constraints (or use ON DELETE CASCADE)
 
         // Delete participation rows for expenses in this group

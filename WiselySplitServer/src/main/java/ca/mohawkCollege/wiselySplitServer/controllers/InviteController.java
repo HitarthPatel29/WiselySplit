@@ -18,9 +18,9 @@ public class InviteController {
 
     @PostMapping("/send")
     public ResponseEntity<?> sendInvite(@RequestBody Map<String, Object> body) {
-        int senderId = (int) body.get("senderId");
+        long senderId = ((Number) body.get("senderId")).longValue();
         String target = (String) body.get("target");
-        Integer groupId = (body.get("groupId") != null) ? (Integer) body.get("groupId") : null;
+        Long groupId = (body.get("groupId") != null) ? ((Number) body.get("groupId")).longValue() : null;
 
         try {
             String message = inviteService.sendInvite(senderId, target, groupId);
@@ -31,14 +31,14 @@ public class InviteController {
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateInviteStatus(@PathVariable int id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> updateInviteStatus(@PathVariable long id, @RequestBody Map<String, String> body) {
         String status = body.get("status");
         inviteService.updateInviteStatus(id, status);
         return ResponseEntity.ok(Map.of("message", "Status updated to " + status));
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getInvitesForUser(@PathVariable int userId) {
+    public ResponseEntity<?> getInvitesForUser(@PathVariable long userId) {
         try {
             List<Map<String, Object>> invites = inviteService.getAllInvitesForUser(userId);
             return ResponseEntity.ok(invites);

@@ -39,7 +39,7 @@ public class ExpensesService {
      * Best-effort: send a feedback row to the classifier, so it can learn from
      * what the user actually saved. Never throws into the expense flow.
      */
-    private void sendClassifierFeedback(Map<String, Object> payload, String title, String finalCategory, Integer userId) {
+    private void sendClassifierFeedback(Map<String, Object> payload, String title, String finalCategory, Long userId) {
         try {
             if (title == null || finalCategory == null) return;
             // ignore non-expense entries (income / transfer) — they aren't categorized by the model
@@ -62,17 +62,17 @@ public class ExpensesService {
             String date = (String) payload.get("date");
             String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int payerId = ((Number) payload.get("payerId")).intValue();
+            long payerId = ((Number) payload.get("payerId")).longValue();
 
             String shareWithType = (String) payload.get("shareWithType");
-            Integer groupId = ("group".equalsIgnoreCase(shareWithType) && payload.get("shareWithId") != null) ? ((Number) payload.get("shareWithId")).intValue() : null;
+            Long groupId = ("group".equalsIgnoreCase(shareWithType) && payload.get("shareWithId") != null) ? ((Number) payload.get("shareWithId")).longValue() : null;
 
             boolean isSettleUp = Boolean.TRUE.equals(payload.get("isSettleUp"));
-            Integer paymentId = payload.get("paymentId") != null ? ((Number) payload.get("paymentId")).intValue() : null;
-            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
+            Long paymentId = payload.get("paymentId") != null ? ((Number) payload.get("paymentId")).longValue() : null;
+            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
 
             // Insert into Expenses table
-            int expenseId = expensesDAO.insertSharedExpense(title, date, category, amount, payerId, groupId, isSettleUp, paymentId, walletId);
+            long expenseId = expensesDAO.insertSharedExpense(title, date, category, amount, payerId, groupId, isSettleUp, paymentId, walletId);
 
             //Update wallet Balance
             if (null != walletId) walletDAO.updateWalletBalance(payerId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
@@ -80,7 +80,7 @@ public class ExpensesService {
             // Insert participants
             List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
             for (Map<String, Object> m : participants) {
-                int userId = ((Number) m.get("userId")).intValue();
+                long userId = ((Number) m.get("userId")).longValue();
                 double contribution = ((Number) m.get("amount")).doubleValue();
                 double contributionPortion = ((Number) m.get("portion")).doubleValue();
                 if (contribution > 0) {
@@ -102,10 +102,10 @@ public class ExpensesService {
             String date = (String) payload.get("date");
             String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int userId = ((Number) payload.get("payerId")).intValue();
-            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
+            long userId = ((Number) payload.get("payerId")).longValue();
+            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
 
-            int expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
+            long expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
 
             //Update wallet Balance
             if (null != walletId) walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
@@ -151,8 +151,8 @@ public class ExpensesService {
 
         int inserted = 0;
         List<Map<String, Object>> skipped = new ArrayList<>();
-        Map<Integer, Double> walletSums = new HashMap<>();
-        Map<Integer, Integer> walletUser = new HashMap<>();
+        Map<Long, Double> walletSums = new HashMap<>();
+        Map<Long, Long> walletUser = new HashMap<>();
 
         for (int i = 0; i < rows.size(); i++) {
             PersonalExpenseImportDTO r = rows.get(i);
@@ -173,7 +173,7 @@ public class ExpensesService {
         }
 
         // One wallet-balance update per wallet for the inserted (non-duplicate) rows.
-        for (Map.Entry<Integer, Double> e : walletSums.entrySet()) {
+        for (Map.Entry<Long, Double> e : walletSums.entrySet()) {
             walletDAO.updateWalletBalance(walletUser.get(e.getKey()), e.getKey(), e.getValue(),
                     WalletDAO.WalletBalanceUpdateMode.EXPENSE);
         }
@@ -198,19 +198,19 @@ public class ExpensesService {
 
             // Find user by email. If user not found, throw an error
             Optional<User> user = userDAO.findByEmail(userEmail);
-            int userId = (user.orElseThrow(()-> new RuntimeException("User not found")).getUserId());
+            long userId = (user.orElseThrow(()-> new RuntimeException("User not found")).getUserId());
 
             // Find wallet by name. If wallet not found, throw an error
-            int walletId;
+            long walletId;
             try {
                 Map<String, Object> walletMap = walletDAO.getWalletId(walletName, userId);
-                walletId = ((Number) walletMap.get("walletId")).intValue();
+                walletId = ((Number) walletMap.get("walletId")).longValue();
             }catch (EmptyResultDataAccessException erdae){
                 throw new NullPointerException("Error finding wallet name: " + walletName);
             }
 
             // Insert personal expense
-            int expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
+            long expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
 
             //Update wallet Balance
             walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
@@ -241,11 +241,11 @@ public class ExpensesService {
     public Map<String, Object> createPayment(Map<String, Object> payload) {
         try {
             double amount = ((Number) payload.get("amount")).doubleValue();
-            Integer payerId = ((Number) payload.get("payerId")).intValue();
-            Integer receiverId = ((Number) payload.get("receiverId")).intValue();
+            Long payerId = ((Number) payload.get("payerId")).longValue();
+            Long receiverId = ((Number) payload.get("receiverId")).longValue();
 
             // Use PaymentDAO instead of ExpensesDAO to properly handle Stripe fields
-            Integer paymentId = paymentDAO.addPayment(
+            Long paymentId = paymentDAO.addPayment(
                 amount, 
                 payerId, 
                 receiverId, 
@@ -264,7 +264,7 @@ public class ExpensesService {
         }
     }
 
-    public Map<String, Object> getPersonalSummary(int userId, String startDate, String endDate) {
+    public Map<String, Object> getPersonalSummary(long userId, String startDate, String endDate) {
 
         List<Map<String, Object>> rows =
                 expensesDAO.fetchPersonalSummary(userId, startDate, endDate);
@@ -288,7 +288,7 @@ public class ExpensesService {
     }
 
     /**  Fetch single expense details */
-    public Map<String, Object> getExpenseDetails(int expenseId) {
+    public Map<String, Object> getExpenseDetails(long expenseId) {
         Map<String, Object> expense = expensesDAO.findExpenseById(expenseId);
         if ( ! ((boolean) expense.get("isPersonal")) ) {
             List<Map<String, Object>> participants = expensesDAO.findExpenseParticipants(expenseId);
@@ -298,37 +298,37 @@ public class ExpensesService {
     }
 
     /** Fetch Shared + Personal Expenses (Grouped by Wallet) */
-    public List<Map<String, Object>> getExpensesGroupedByWallet(int userId){
+    public List<Map<String, Object>> getExpensesGroupedByWallet(long userId){
         List<Map<String, Object>> wallets = walletDAO.getWallets(userId);
         for (Map<String, Object> wallet : wallets){
-            wallet.put("expenses", expensesDAO.getExpenseForWallet(userId, ((Number) wallet.get("walletId")).intValue() ));
+            wallet.put("expenses", expensesDAO.getExpenseForWallet(userId, ((Number) wallet.get("walletId")).longValue() ));
         }
         return wallets;
     }
 
     /**  Delete expense */
-    public void deleteExpense(int expenseId) {
+    public void deleteExpense(long expenseId) {
         walletDAO.updateWalletBalanceForEntryDelete(expenseId, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
         expensesDAO.deleteExpense(expenseId);
     }
 
     @Transactional
-    public Map<String, Object> updateExpense(int expenseId, Map<String, Object> payload) {
+    public Map<String, Object> updateExpense(long expenseId, Map<String, Object> payload) {
         try {
             String title = (String) payload.get("title");
             String date = (String) payload.get("date");
             String category = (String) payload.get("category");
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int payerId = ((Number) payload.get("payerId")).intValue();
+            long payerId = ((Number) payload.get("payerId")).longValue();
             String shareWithType = (String) payload.get("shareWithType");
 
-            Integer groupId = null;
+            Long groupId = null;
             if ("group".equalsIgnoreCase(shareWithType) && payload.get("shareWithId") != null) {
-                groupId = ((Number) payload.get("shareWithId")).intValue();
+                groupId = ((Number) payload.get("shareWithId")).longValue();
             }
 
             Boolean isPersonal = ((Boolean) payload.get("isPersonal")).booleanValue();
-            Integer walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).intValue() : null;
+            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
 
             //Update wallet Balance
             if (null != walletId) walletDAO.updateWalletBalanceForEntryUpdate(payerId, walletId, expenseId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
@@ -341,7 +341,7 @@ public class ExpensesService {
                 expensesDAO.deleteExpenseParticipation(expenseId);
                 List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
                 for (Map<String, Object> m : participants) {
-                    int userId = ((Number) m.get("userId")).intValue();
+                    long userId = ((Number) m.get("userId")).longValue();
                     double contribution = ((Number) m.get("amount")).doubleValue();
                     double contributionPortion = ((Number) m.get("portion")).doubleValue();
                     if (contribution > 0) {

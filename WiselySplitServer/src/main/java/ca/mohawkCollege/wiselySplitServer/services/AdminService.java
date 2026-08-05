@@ -69,7 +69,7 @@ public class AdminService {
         return body;
     }
 
-    public AdminUserView getAccount(int id) {
+    public AdminUserView getAccount(long id) {
         User user = userDAO.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
         return AdminUserView.from(user);
@@ -100,7 +100,7 @@ public class AdminService {
     // -------------------------------------------------------------- mutate
 
     /** Manual account creation by an admin. Reuses standard validation + hashing. */
-    public AdminUserView createAccount(Map<String, Object> payload, Integer actorId, String actorEmail) {
+    public AdminUserView createAccount(Map<String, Object> payload, Long actorId, String actorEmail) {
         User user = new User();
         user.setName(asString(payload.get("name")));
         user.setUserName(asString(payload.get("userName")));
@@ -125,7 +125,7 @@ public class AdminService {
     }
 
     /** Update mutable profile fields, and optionally role/password, of any account. */
-    public AdminUserView updateAccount(int id, Map<String, Object> payload, Integer actorId, String actorEmail) {
+    public AdminUserView updateAccount(long id, Map<String, Object> payload, Long actorId, String actorEmail) {
         User existing = userDAO.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
 
@@ -182,7 +182,7 @@ public class AdminService {
     }
 
     /** Change a single account's role (covers "make any account a TestProfile"). */
-    public AdminUserView changeRole(int id, String newRole, Integer actorId, String actorEmail) {
+    public AdminUserView changeRole(long id, String newRole, Long actorId, String actorEmail) {
         User target = userDAO.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
 
@@ -193,7 +193,7 @@ public class AdminService {
         return AdminUserView.from(userDAO.findById(id).orElseThrow());
     }
 
-    public void resetPassword(int id, String newPassword, Integer actorId, String actorEmail) {
+    public void resetPassword(long id, String newPassword, Long actorId, String actorEmail) {
         userDAO.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
         if (newPassword == null || !ValidationUtil.isStrongPassword(newPassword)) {
@@ -203,7 +203,7 @@ public class AdminService {
         auditDAO.record(actorId, actorEmail, "RESET_PASSWORD", id, "Admin reset password");
     }
 
-    public void deleteAccount(int id, Integer actorId, String actorEmail) {
+    public void deleteAccount(long id, Long actorId, String actorEmail) {
         User target = userDAO.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + id + " not found"));
 
@@ -226,7 +226,7 @@ public class AdminService {
     // -------------------------------------------------------------- helpers
 
     /** Shared role-change guardrails used by both changeRole and updateAccount. */
-    private void applyRoleChange(User target, String rawRole, Integer actorId) {
+    private void applyRoleChange(User target, String rawRole, Long actorId) {
         if (!Role.isValid(rawRole == null ? null : rawRole.trim().toUpperCase())) {
             throw new IllegalArgumentException("Invalid role. Must be one of ADMIN, TEST_PROFILE, USER");
         }

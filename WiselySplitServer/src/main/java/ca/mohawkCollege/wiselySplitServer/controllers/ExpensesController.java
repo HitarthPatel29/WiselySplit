@@ -120,7 +120,7 @@ public class ExpensesController {
 
     /** GET Expense details */
     @GetMapping("/{expenseId}")
-    public ResponseEntity<?> getExpense(@PathVariable int expenseId) {
+    public ResponseEntity<?> getExpense(@PathVariable long expenseId) {
         try {
             return ResponseEntity.ok(expensesService.getExpenseDetails(expenseId));
         } catch (Exception e) {
@@ -131,7 +131,7 @@ public class ExpensesController {
     }
 
     @GetMapping("/group-by-wallets/{userId}")
-    public ResponseEntity<?> getExpensesGroupedByWallets(@PathVariable int userId) {
+    public ResponseEntity<?> getExpensesGroupedByWallets(@PathVariable long userId) {
         try {
             return ResponseEntity.ok(expensesService.getExpensesGroupedByWallet(userId));
         } catch (Exception e) {
@@ -144,7 +144,7 @@ public class ExpensesController {
     /** PERSONAL SUMMARY for given date-range (default 1 month) */
     @GetMapping("/{userId}/personal-summary")
     public ResponseEntity<?> getPersonalSummary(
-            @PathVariable int userId,
+            @PathVariable long userId,
             @RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate) {
 
@@ -163,7 +163,7 @@ public class ExpensesController {
 
     /**  DELETE Expense */
     @DeleteMapping("/{expenseId}")
-    public ResponseEntity<?> deleteExpense(@PathVariable int expenseId) {
+    public ResponseEntity<?> deleteExpense(@PathVariable long expenseId) {
         try {
             expensesService.deleteExpense(expenseId);
             return ResponseEntity.ok(Map.of("message", "Expense deleted successfully"));
@@ -176,7 +176,7 @@ public class ExpensesController {
 
     /* UPDATE Expense */
     @PutMapping("/{expenseId}")
-    public ResponseEntity<?> updateExpense(@PathVariable int expenseId, @RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> updateExpense(@PathVariable long expenseId, @RequestBody Map<String, Object> payload) {
         try {
             Map<String, Object> result = expensesService.updateExpense(expenseId, payload);
             return ResponseEntity.ok(result);

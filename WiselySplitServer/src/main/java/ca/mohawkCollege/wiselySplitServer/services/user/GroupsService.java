@@ -26,7 +26,7 @@ public class GroupsService {
     private ImageUploadService imageUploadService;
 
     @Transactional
-    public Map<String, Object> createGroup(String name, String type, int creatorId, MultipartFile photo) {
+    public Map<String, Object> createGroup(String name, String type, long creatorId, MultipartFile photo) {
         if (name == null || name.trim().isEmpty())
             throw new IllegalArgumentException("Group name is required.");
 
@@ -45,7 +45,7 @@ public class GroupsService {
             throw new RuntimeException("Photo upload failed: " + e.getMessage());
         }
 
-        int groupId = groupsDAO.insertGroup(name.trim(), type, profilePicture);
+        long groupId = groupsDAO.insertGroup(name.trim(), type, profilePicture);
         groupsDAO.addParticipant(groupId, creatorId);
 
         return Map.of(
@@ -56,7 +56,7 @@ public class GroupsService {
                 "profilePicture", profilePicture
         );
     }
-    public List<Map<String, Object>> getGroupsForUser(int userId) {
+    public List<Map<String, Object>> getGroupsForUser(long userId) {
         // (existing)
         List<Map<String, Object>> groups = groupsDAO.findGroupsForUser(userId);
         for (Map<String, Object> g : groups) {
@@ -68,7 +68,7 @@ public class GroupsService {
         return groups;
     }
 
-    public Map<String, Object> getGroupDetails(int groupId, int userId) {
+    public Map<String, Object> getGroupDetails(long groupId, long userId) {
         Map<String, Object> groupInfo = groupsDAO.findGroupInfo(groupId);                    // includes type now
         List<Map<String, Object>> expenses = groupsDAO.findGroupExpenses(groupId, userId);
         List<Map<String, Object>> participants = groupsDAO.findGroupParticipantsWithBalances(groupId, userId);
@@ -82,7 +82,7 @@ public class GroupsService {
 
     // Update group (name, type, optional photo)
     @Transactional
-    public Map<String, Object> updateGroup(int groupId, String name, String type, MultipartFile photo) {
+    public Map<String, Object> updateGroup(long groupId, String name, String type, MultipartFile photo) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Group name is required.");
         }
@@ -119,7 +119,7 @@ public class GroupsService {
 
     // Leave group: only if user's net balance in group is 0
     @Transactional
-    public void leaveGroup(int groupId, int userId) {
+    public void leaveGroup(long groupId, long userId) {
         if (!groupsDAO.isUserInGroup(groupId, userId)) {
             throw new IllegalArgumentException("You are not a member of this group.");
         }
@@ -134,15 +134,15 @@ public class GroupsService {
 
     // Delete group: only if all members are settled
     @Transactional
-    public void deleteGroup(int groupId, int userId) {
+    public void deleteGroup(long groupId, long userId) {
         if (!groupsDAO.isUserInGroup(groupId, userId)) {
             throw new IllegalArgumentException("You are not a member of this group.");
         }
 
         // Optional: if you add an "owner" field, enforce only owner can delete here
 
-        List<Integer> participantIds = groupsDAO.findParticipantIds(groupId);
-        for (Integer participantId : participantIds) {
+        List<Long> participantIds = groupsDAO.findParticipantIds(groupId);
+        for (Long participantId : participantIds) {
             double net = groupsDAO.getUserNetBalanceInGroup(groupId, participantId);
             if (Math.abs(net) > 0.009) {
                 throw new IllegalStateException("Cannot delete group; not all balances are settled.");
