@@ -13,8 +13,8 @@ public class PersonalExpenseImportDTO {
     private String title;
     private String date;
     private double amount;
-    private int payerId;
-    private Integer walletId;
+    private long payerId;
+    private Long walletId;
 
     public PersonalExpenseImportDTO() {}
 
@@ -27,9 +27,9 @@ public class PersonalExpenseImportDTO {
     public double getAmount() { return amount; }
     public void setAmount(double amount) { this.amount = amount; }
 
-    public int getPayerId() { return payerId; }
-    public void setPayerId(int payerId) { this.payerId = payerId; }
+    public long getPayerId() { return payerId; }
+    public void setPayerId(long payerId) { this.payerId = payerId; }
 
-    public Integer getWalletId() { return walletId; }
-    public void setWalletId(Integer walletId) { this.walletId = walletId; }
+    public Long getWalletId() { return walletId; }
+    public void setWalletId(Long walletId) { this.walletId = walletId; }
 }

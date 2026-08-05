@@ -21,7 +21,7 @@ public class GroupsController {
     private InviteService inviteService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getGroupsForUser(@PathVariable int userId) {
+    public ResponseEntity<?> getGroupsForUser(@PathVariable long userId) {
         try {
             List<Map<String, Object>> groups = groupsService.getGroupsForUser(userId);
             return ResponseEntity.ok(groups);
@@ -33,8 +33,8 @@ public class GroupsController {
     }
     @GetMapping("/{groupId}/details")
     public ResponseEntity<?> getGroupDetails(
-            @PathVariable int groupId,
-            @RequestParam int userId) {
+            @PathVariable long groupId,
+            @RequestParam long userId) {
         try {
             Map<String, Object> groupData = groupsService.getGroupDetails(groupId, userId);
             return ResponseEntity.ok(groupData);
@@ -48,7 +48,7 @@ public class GroupsController {
     public ResponseEntity<?> createGroup(
             @RequestParam("name") String name,
             @RequestParam("type") String type,
-            @RequestParam("creatorId") int creatorId,
+            @RequestParam("creatorId") long creatorId,
             @RequestPart(value = "photo", required = false) MultipartFile photo
     ) {
         try {
@@ -66,7 +66,7 @@ public class GroupsController {
     // Update group info + optional photo (combined endpoint)
     @PutMapping(value = "/{groupId}", consumes = "multipart/form-data")
     public ResponseEntity<?> updateGroup(
-            @PathVariable int groupId,
+            @PathVariable long groupId,
             @RequestParam("name") String name,
             @RequestParam("type") String type,
             @RequestPart(value = "photo", required = false) MultipartFile photo
@@ -86,8 +86,8 @@ public class GroupsController {
     // Leave a group
     @PostMapping("/{groupId}/leave")
     public ResponseEntity<?> leaveGroup(
-            @PathVariable int groupId,
-            @RequestParam int userId
+            @PathVariable long groupId,
+            @RequestParam long userId
     ) {
         try {
             groupsService.leaveGroup(groupId, userId);
@@ -106,8 +106,8 @@ public class GroupsController {
     // Delete a group
     @DeleteMapping("/{groupId}")
     public ResponseEntity<?> deleteGroup(
-            @PathVariable int groupId,
-            @RequestParam int userId
+            @PathVariable long groupId,
+            @RequestParam long userId
     ) {
         try {
             groupsService.deleteGroup(groupId, userId);
@@ -125,11 +125,11 @@ public class GroupsController {
 
     @PostMapping("/{groupId}/invite")
     public ResponseEntity<?> inviteToGroup(
-            @PathVariable int groupId,
+            @PathVariable long groupId,
             @RequestBody Map<String, Object> body
     ) {
         try {
-            int senderId = (int) body.get("senderId");
+            long senderId = ((Number) body.get("senderId")).longValue();
             String target = (String) body.get("target");
             String message = inviteService.sendInvite(senderId, target, groupId);
 

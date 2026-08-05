@@ -31,7 +31,7 @@ public class InviteService {
     @Value("${frontend.hosting_url}")
     private String hostingURL;
 
-    public String sendInvite(int senderId, String input, Integer groupId) {
+    public String sendInvite(long senderId, String input, Long groupId) {
         Optional<User> senderOpt = userDAO.findById(senderId);
         if (senderOpt.isEmpty()) {
             throw new IllegalArgumentException("Invalid sender ID");
@@ -112,7 +112,7 @@ public class InviteService {
         }
     }
 
-    public void updateInviteStatus(int inviteId, String status) {
+    public void updateInviteStatus(long inviteId, String status) {
         inviteDAO.updateStatus(inviteId, status);
 
         // If invite accepted and type = GROUP, add user to group
@@ -124,8 +124,8 @@ public class InviteService {
                 Object groupObj = invite.get("GroupID");
 
                 if (receiverObj != null && groupObj != null) {
-                    int receiverId = ((Number) receiverObj).intValue();
-                    int groupId = ((Number) groupObj).intValue();
+                    long receiverId = ((Number) receiverObj).longValue();
+                    long groupId = ((Number) groupObj).longValue();
                     groupsDAO.addParticipant(groupId, receiverId);
                 }
             } else if (invite != null && "USER".equalsIgnoreCase((String) invite.get("Type"))) {
@@ -134,10 +134,10 @@ public class InviteService {
                 Object senderObj = invite.get("SenderID");
 
                 if (receiverObj != null && senderObj != null) {
-                    int receiverId = ((Number) receiverObj).intValue();
-                    int senderID = ((Number) senderObj).intValue();
+                    long receiverId = ((Number) receiverObj).longValue();
+                    long senderID = ((Number) senderObj).longValue();
                     System.out.println("reached here");
-                    int expenseId = expensesDAO.insertSharedExpense("Fugazi Expense", java.time.LocalDate.now().toString(), "Fugazi", 0, senderID, null, false, null, null);
+                    long expenseId = expensesDAO.insertSharedExpense("Fugazi Expense", java.time.LocalDate.now().toString(), "Fugazi", 0, senderID, null, false, null, null);
 
                     // Insert participants (both sides)
                     System.out.println(expenseId);
@@ -148,7 +148,7 @@ public class InviteService {
         }
     }
 
-    public List<Map<String, Object>> getAllInvitesForUser(int userId) {
+    public List<Map<String, Object>> getAllInvitesForUser(long userId) {
 
         //Update Invite Status for all the Expired rows in the DB.
         inviteDAO.markExpiredInvites();

@@ -21,11 +21,11 @@ public class TrainingDataDAO {
     public void ensureSchema() {
         jdbcTemplate.execute("""
             CREATE TABLE IF NOT EXISTS training_data (
-                Id        INT PRIMARY KEY AUTO_INCREMENT,
+                Id        BIGINT PRIMARY KEY AUTO_INCREMENT,
                 Title     VARCHAR(255) NOT NULL,
                 Label     VARCHAR(64)  NOT NULL,
                 Source    ENUM('seed','user_confirmed','user_corrected') NOT NULL DEFAULT 'user_confirmed',
-                UserID    INT NULL,
+                UserID    BIGINT NULL,
                 CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_training_label (Label),
                 INDEX idx_training_created (CreatedAt)
@@ -33,7 +33,7 @@ public class TrainingDataDAO {
         """);
     }
 
-    public void insertRow(String title, String label, String source, Integer userId) {
+    public void insertRow(String title, String label, String source, Long userId) {
         jdbcTemplate.update(
                 "INSERT INTO training_data (Title, Label, Source, UserID) VALUES (?, ?, ?, ?)",
                 title, label, source, userId

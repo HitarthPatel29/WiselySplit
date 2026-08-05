@@ -14,7 +14,7 @@ public class WalletService {
     private WalletDAO walletDAO;
 
     @Transactional
-    public Map<String, Object> createWallet(int userId, Map<String, Object> payload) {
+    public Map<String, Object> createWallet(long userId, Map<String, Object> payload) {
         try {
             String walletName = (String) payload.get("walletName");
             double walletBalance = ((Number) payload.get("walletBalance")).doubleValue();
@@ -22,7 +22,7 @@ public class WalletService {
             String walletColor = (String) payload.get("walletColor");
 
             // Insert into Expenses table
-            int walletId = walletDAO.insertWallet(userId, walletName, walletBalance, cardName, walletColor);
+            long walletId = walletDAO.insertWallet(userId, walletName, walletBalance, cardName, walletColor);
 
             return Map.of("success", true, "walletId", walletId, "message", "New Wallet created successfully");
         } catch (Exception e) {
@@ -30,11 +30,11 @@ public class WalletService {
         }
     }
 
-    public List<Map<String, Object>> getWallets(int userId) {
+    public List<Map<String, Object>> getWallets(long userId) {
         return walletDAO.getWallets(userId);
     }
 
-    public Map<String, Object> updateWallet(int userId, int walletId, Map<String, Object> payload) {
+    public Map<String, Object> updateWallet(long userId, long walletId, Map<String, Object> payload) {
         try{
             String walletName = (String) payload.get("walletName");
             double initialBalance = ((Number) payload.get("initialBalance")).doubleValue();
@@ -49,7 +49,7 @@ public class WalletService {
         }
     }
 
-    public void deleteWallet(int userId, int walletId) {
+    public void deleteWallet(long userId, long walletId) {
         walletDAO.deleteWallet(userId, walletId);
     }
 

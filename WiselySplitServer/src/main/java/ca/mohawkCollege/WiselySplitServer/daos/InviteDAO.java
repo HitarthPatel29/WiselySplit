@@ -29,13 +29,13 @@ public class InviteDAO {
                 invite.getExpiresAt());
     }
 
-    public Map<String, Object> findById(int inviteId) {
+    public Map<String, Object> findById(long inviteId) {
         String sql = "SELECT * FROM Invites WHERE InviteID = ?";
         List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, inviteId);
         return list.isEmpty() ? null : list.get(0);
     }
 
-    public List<Invite> findByReceiverId(int receiverId) {
+    public List<Invite> findByReceiverId(long receiverId) {
         String sql = "SELECT * FROM Invites WHERE ReceiverID = ?";
         return jdbcTemplate.query(sql, new InviteRowMapper(), receiverId);
     }
@@ -45,7 +45,7 @@ public class InviteDAO {
         return jdbcTemplate.query(sql, new InviteRowMapper(), email);
     }
 
-    public boolean existsPending(int senderId, String email, Integer groupId) {
+    public boolean existsPending(long senderId, String email, Long groupId) {
         String sql = """
             SELECT COUNT(*) FROM Invites
             WHERE SenderID=? AND ReceiverEmail=? AND COALESCE(GroupID,0)=COALESCE(?,0)
@@ -55,17 +55,17 @@ public class InviteDAO {
         return count != null && count > 0;
     }
 
-    public void linkInvitesToUser(String email, int userId) {
+    public void linkInvitesToUser(String email, long userId) {
         String sql = "UPDATE Invites SET ReceiverID=? WHERE ReceiverEmail=? AND ReceiverID IS NULL";
         jdbcTemplate.update(sql, userId, email);
     }
 
-    public void updateStatus(int inviteId, String status) {
+    public void updateStatus(long inviteId, String status) {
         String sql = "UPDATE Invites SET Status=? WHERE InviteID=?";
         jdbcTemplate.update(sql, status, inviteId);
     }
 
-    public List<Map<String, Object>> findAllForUser(int userId) {
+    public List<Map<String, Object>> findAllForUser(long userId) {
         String sql = """
             SELECT i.InviteID, i.SenderID, i.ReceiverID, i.ReceiverEmail, i.GroupID,
                    i.Type, i.Status, i.CreatedAt, i.ExpiresAt,

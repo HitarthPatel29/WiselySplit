@@ -23,7 +23,7 @@ public class JwtUtil {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(int userId, String email) {
+    public String generateToken(long userId, String email) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
@@ -53,7 +53,7 @@ public class JwtUtil {
         }
     }
 
-    public String generateResetToken(int userId) {
+    public String generateResetToken(long userId) {
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
                 .claim("type", "reset_password")
@@ -62,7 +62,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    public int validateResetToken(String token) {
+    public long validateResetToken(String token) {
         Claims claims = Jwts.parser()
                 .setSigningKey(key)
                 .parseClaimsJws(token)
@@ -71,6 +71,6 @@ public class JwtUtil {
         if (!"reset_password".equals(claims.get("type"))) {
             throw new RuntimeException("Invalid token type");
         }
-        return Integer.parseInt(claims.getSubject()); // return userId
+        return Long.parseLong(claims.getSubject()); // return userId
     }
 }

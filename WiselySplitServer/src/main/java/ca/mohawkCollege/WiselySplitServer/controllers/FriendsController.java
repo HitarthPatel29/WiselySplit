@@ -19,7 +19,7 @@ public class FriendsController {
     private FriendsService friendsService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getFriendsList(@PathVariable int userId) {
+    public ResponseEntity<?> getFriendsList(@PathVariable long userId) {
         try {
             List<Map<String, Object>> friends = friendsService.getFriendsWithBalances(userId);
             return ResponseEntity.ok(friends);
@@ -30,8 +30,8 @@ public class FriendsController {
 
     @GetMapping("/{userId}/{friendId}")
     public ResponseEntity<?> getSharedExpenses(
-            @PathVariable int userId,
-            @PathVariable int friendId) {
+            @PathVariable long userId,
+            @PathVariable long friendId) {
         try {
             Map<String, Object> result = friendsService.getSharedExpensesBetween(userId, friendId);
             return ResponseEntity.ok(result);

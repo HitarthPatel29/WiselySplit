@@ -23,22 +23,22 @@ public class WalletDAO {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public int insertWallet(Integer userId, String walletName, double initialBalance, String cardName, String walletColor) {
+    public long insertWallet(Long userId, String walletName, double initialBalance, String cardName, String walletColor) {
         String sql = "INSERT INTO Wallets (UserID, Name, InitialBalance, CardName, Color) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setInt(1, userId);
+            ps.setLong(1, userId);
             ps.setString(2, walletName);
             ps.setDouble(3, initialBalance);
             ps.setString(4, cardName);
             ps.setString(5, walletColor);
             return ps;
         }, keyHolder);
-        return keyHolder.getKey().intValue();
+        return keyHolder.getKey().longValue();
     }
 
-    public void updateWalletBalance(Integer userId, Integer walletId, double amount, WalletBalanceUpdateMode mode){
+    public void updateWalletBalance(Long userId, Long walletId, double amount, WalletBalanceUpdateMode mode){
         String sql = "";
         switch (mode) {
             case INCOME -> sql = "UPDATE Wallets SET Balance = Balance + ? WHERE WalletID = ? AND UserID = ?";
@@ -46,7 +46,7 @@ public class WalletDAO {
         }
         jdbcTemplate.update(sql, amount, walletId, userId);
     }
-    public void updateWalletBalanceForEntryUpdate(Integer userId, Integer walletId, Integer entryId, double amount, WalletBalanceUpdateMode mode){
+    public void updateWalletBalanceForEntryUpdate(Long userId, Long walletId, Long entryId, double amount, WalletBalanceUpdateMode mode){
         String sql = "";
         switch (mode) {
             case INCOME -> sql = "UPDATE Wallets SET Balance = Balance - (SELECT amount FROM Expenses WHERE expenseID = ?) + ? WHERE WalletID = ? AND UserID = ?";
@@ -54,7 +54,7 @@ public class WalletDAO {
         }
         jdbcTemplate.update(sql, entryId, amount, walletId, userId);
     }
-    public void updateWalletBalanceForEntryDelete(Integer entryId, WalletBalanceUpdateMode mode){
+    public void updateWalletBalanceForEntryDelete(Long entryId, WalletBalanceUpdateMode mode){
         String sql = "";
         switch (mode) {
             case INCOME -> sql = "UPDATE Wallets SET Balance = Balance - (SELECT amount FROM Expenses WHERE expenseID = ?) WHERE WalletID = (SELECT walletID FROM Expenses WHERE expenseID = ?)";
@@ -62,7 +62,7 @@ public class WalletDAO {
         }
         jdbcTemplate.update(sql, entryId, entryId);
     }
-    public void updateWalletBalanceForTransferDelete(Integer entryId){
+    public void updateWalletBalanceForTransferDelete(Long entryId){
         String sql = """
                         UPDATE Wallets w
                         JOIN Entry e
@@ -77,7 +77,7 @@ public class WalletDAO {
         jdbcTemplate.update(sql, entryId);
     }
 
-    public List<Map<String, Object>> getWallets(int userId) {
+    public List<Map<String, Object>> getWallets(long userId) {
         String sql = """
             SELECT
                 w.WalletID AS walletId,
@@ -93,7 +93,7 @@ public class WalletDAO {
     }
 
     /** Get WalletID by matching cardName while ignoring spaces and letter casing*/
-    public Map<String, Object> getWalletId(String walletName, int userId){
+    public Map<String, Object> getWalletId(String walletName, long userId){
         String sql = """
                 SELECT
                     w.WalletID AS walletId
@@ -103,12 +103,12 @@ public class WalletDAO {
         return jdbcTemplate.queryForMap(sql, walletName, userId);
     }
 
-    public void updateWallet(int userId, int walletId, String walletName, double initialBalance, String cardName, String walletColor) {
+    public void updateWallet(long userId, long walletId, String walletName, double initialBalance, String cardName, String walletColor) {
         String sql = "UPDATE Wallets SET Name=?, Balance=Balance-InitialBalance+?, InitialBalance=?, CardName=?, Color=? WHERE WalletID=? AND UserID=?";
         jdbcTemplate.update(sql, walletName, initialBalance, initialBalance, cardName, walletColor, walletId, userId);
     }
 
-    public void deleteWallet(int userId, int walletId) {
+    public void deleteWallet(long userId, long walletId) {
         jdbcTemplate.update("DELETE FROM Wallets WHERE WalletID = ? AND UserID = ?", walletId, userId);
     }
 }

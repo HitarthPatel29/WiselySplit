@@ -43,7 +43,7 @@ public class AdminController {
     }
 
     @GetMapping("/accounts/{id}")
-    public ResponseEntity<AdminUserView> getAccount(@PathVariable int id) {
+    public ResponseEntity<AdminUserView> getAccount(@PathVariable long id) {
         return ResponseEntity.ok(adminService.getAccount(id));
     }
 
@@ -56,7 +56,7 @@ public class AdminController {
     }
 
     @PutMapping("/accounts/{id}")
-    public ResponseEntity<AdminUserView> updateAccount(@PathVariable int id,
+    public ResponseEntity<AdminUserView> updateAccount(@PathVariable long id,
                                                        @RequestBody Map<String, Object> payload,
                                                        Authentication auth) {
         User actor = currentUser(auth);
@@ -64,7 +64,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/accounts/{id}")
-    public ResponseEntity<Void> deleteAccount(@PathVariable int id, Authentication auth) {
+    public ResponseEntity<Void> deleteAccount(@PathVariable long id, Authentication auth) {
         User actor = currentUser(auth);
         adminService.deleteAccount(id, actorId(actor), actorEmail(actor));
         return ResponseEntity.noContent().build();
@@ -72,7 +72,7 @@ public class AdminController {
 
     /** Set an account's role (e.g. promote a user to TEST_PROFILE or ADMIN). */
     @PatchMapping("/accounts/{id}/role")
-    public ResponseEntity<AdminUserView> changeRole(@PathVariable int id,
+    public ResponseEntity<AdminUserView> changeRole(@PathVariable long id,
                                                     @RequestBody Map<String, String> body,
                                                     Authentication auth) {
         User actor = currentUser(auth);
@@ -80,7 +80,7 @@ public class AdminController {
     }
 
     @PostMapping("/accounts/{id}/reset-password")
-    public ResponseEntity<Map<String, String>> resetPassword(@PathVariable int id,
+    public ResponseEntity<Map<String, String>> resetPassword(@PathVariable long id,
                                                              @RequestBody Map<String, String> body,
                                                              Authentication auth) {
         User actor = currentUser(auth);
@@ -107,7 +107,7 @@ public class AdminController {
         return opt.orElse(null);
     }
 
-    private Integer actorId(User actor) {
+    private Long actorId(User actor) {
         return actor == null ? null : actor.getUserId();
     }
 

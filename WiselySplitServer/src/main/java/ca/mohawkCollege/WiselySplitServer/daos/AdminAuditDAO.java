@@ -21,7 +21,7 @@ public class AdminAuditDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void record(Integer actorUserId, String actorEmail, String action, Integer targetUserId, String details) {
+    public void record(Long actorUserId, String actorEmail, String action, Long targetUserId, String details) {
         String sql = "INSERT INTO admin_audit (ActorUserId, ActorEmail, Action, TargetUserId, Details) VALUES (?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql, actorUserId, actorEmail, action, targetUserId, details);
     }

@@ -86,7 +86,7 @@ public class PasswordResetService {
         return true; // success
     }
 
-    public boolean resetPassword(int userID, String newPassword) {
+    public boolean resetPassword(long userID, String newPassword) {
         if (!ValidationUtil.isStrongPassword(newPassword)) {
             throw new IllegalArgumentException("Weak password – must include upper, lower, digit, special and be 8+ chars");
         }

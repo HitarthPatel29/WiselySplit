@@ -70,7 +70,7 @@ public class PasswordResetController {
         String resetToken = body.get("resetToken");
         String newPassword = body.get("newPassword");
 
-        int userId = jwtUtil.validateResetToken(resetToken);
+        long userId = jwtUtil.validateResetToken(resetToken);
         boolean ok = passwordResetService.resetPassword(userId, newPassword);
 
         Map<String, String> response = new HashMap<>();

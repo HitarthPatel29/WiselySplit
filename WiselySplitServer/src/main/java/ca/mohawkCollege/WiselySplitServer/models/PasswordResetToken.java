@@ -3,8 +3,8 @@ package ca.mohawkCollege.wiselySplitServer.models;
 import java.time.LocalDateTime;
 
 public class PasswordResetToken {
-    private int id;
-    private int userId;
+    private long id;
+    private long userId;
     private String otpHash;
     private LocalDateTime expiresAt;
     private LocalDateTime createdAt;
@@ -12,11 +12,11 @@ public class PasswordResetToken {
     private LocalDateTime consumedAt;
 
     // --- Getters and Setters ---
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
 
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
 
     public String getOtpHash() { return otpHash; }
     public void setOtpHash(String otpHash) { this.otpHash = otpHash; }

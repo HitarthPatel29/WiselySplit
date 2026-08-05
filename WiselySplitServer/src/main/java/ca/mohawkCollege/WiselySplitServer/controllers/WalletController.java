@@ -16,13 +16,13 @@ public class WalletController {
 
     /* Get all Wallets */
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getWallets(@PathVariable int userId) {
+    public ResponseEntity<List<Map<String, Object>>> getWallets(@PathVariable long userId) {
         List<Map<String, Object>> wallets = walletService.getWallets(userId);
         return ResponseEntity.ok(wallets);
     }
 
     @PostMapping
-    public ResponseEntity<?> createWallet(@PathVariable int userId, @RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> createWallet(@PathVariable long userId, @RequestBody Map<String, Object> payload) {
         try {
             Map<String, Object> result = walletService.createWallet(userId, payload);
             return ResponseEntity.ok(result);
@@ -34,7 +34,7 @@ public class WalletController {
     }
 
     @PutMapping("/{walletId}")
-    public ResponseEntity<?> updateExpense(@PathVariable int userId, @PathVariable int walletId, @RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> updateExpense(@PathVariable long userId, @PathVariable long walletId, @RequestBody Map<String, Object> payload) {
         try {
             Map<String, Object> result = walletService.updateWallet(userId, walletId, payload);
             return ResponseEntity.ok(result);
@@ -45,7 +45,7 @@ public class WalletController {
     }
 
     @DeleteMapping("/{walletId}")
-    public ResponseEntity<Void> deleteWallet( @PathVariable int userId, @PathVariable int walletId) {
+    public ResponseEntity<Void> deleteWallet( @PathVariable long userId, @PathVariable long walletId) {
         walletService.deleteWallet(userId, walletId);
         return ResponseEntity.noContent().build();
     }

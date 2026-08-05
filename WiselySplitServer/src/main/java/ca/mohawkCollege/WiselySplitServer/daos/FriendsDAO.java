@@ -16,7 +16,7 @@ public class FriendsDAO {
     @Autowired
     private ExpensesDAO expensesDAO;
 
-    public List<Map<String, Object>> findFriendsBalances(int userId) {
+    public List<Map<String, Object>> findFriendsBalances(long userId) {
         String sql = """
             SELECT 
                 u.UserID   AS friendId,
@@ -56,7 +56,7 @@ public class FriendsDAO {
         }
     }
 
-    public List<Map<String, Object>> findSharedExpenses(int userId, int friendId) {
+    public List<Map<String, Object>> findSharedExpenses(long userId, long friendId) {
         String sql = """
             SELECT 
                 e.ExpenseID AS expenseId,
@@ -82,7 +82,7 @@ public class FriendsDAO {
 
         List<Map<String, Object>> expenseList = jdbcTemplate.queryForList(sql, userId, friendId, friendId, userId);
         for (Map<String,Object> expense: expenseList) {
-            expense.put("splitDetails", expensesDAO.findExpenseParticipants((Integer) expense.get("expenseId")));
+            expense.put("splitDetails", expensesDAO.findExpenseParticipants(((Number) expense.get("expenseId")).longValue()));
         }
         return expenseList;
     }

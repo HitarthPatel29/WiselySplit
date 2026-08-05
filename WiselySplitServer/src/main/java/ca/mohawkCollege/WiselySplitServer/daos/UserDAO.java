@@ -29,7 +29,7 @@ public class UserDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public int save(User user) {
+    public long save(User user) {
         String sql = "INSERT INTO User (Name, UserName, Email, PhoneNum, Password, ProfilePicture, Role) VALUES (?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
@@ -44,7 +44,7 @@ public class UserDAO {
             ps.setString(7, Role.normalize(user.getRole()));
             return ps;
         }, keyHolder);
-        return keyHolder.getKey().intValue();
+        return keyHolder.getKey().longValue();
     }
 
     public Optional<User> findByEmail(String email) {
@@ -53,7 +53,7 @@ public class UserDAO {
                 .stream().findFirst();
     }
 
-    public Optional<User> findById(int id) {
+    public Optional<User> findById(long id) {
         String sql = "SELECT * FROM User WHERE UserID = ?";
         return jdbcTemplate.query(sql, new Object[]{id}, new UserRowMapper())
                 .stream().findFirst();
@@ -76,7 +76,7 @@ public class UserDAO {
                 user.getUserId());
     }
 
-    public int delete(int id) {
+    public int delete(long id) {
         String sql = "DELETE FROM User WHERE UserID = ?";
         return jdbcTemplate.update(sql, id);
     }
@@ -86,13 +86,13 @@ public class UserDAO {
         return jdbcTemplate.query(sql, new UserRowMapper());
     }
 
-    public int updatePassword(int userId, String hashedPassword) {
+    public int updatePassword(long userId, String hashedPassword) {
         String sql = "UPDATE User SET Password = ? WHERE UserID = ?";
         return jdbcTemplate.update(sql, hashedPassword, userId);
     }
 
     /** Update a single account's RBAC role. */
-    public int updateRole(int userId, String role) {
+    public int updateRole(long userId, String role) {
         String sql = "UPDATE User SET Role = ? WHERE UserID = ?";
         return jdbcTemplate.update(sql, Role.normalize(role), userId);
     }
@@ -116,7 +116,7 @@ public class UserDAO {
         return count == null ? 0 : count;
     }
 
-    public List<Map<String, Object>> findFriendsForUser(int userId) {
+    public List<Map<String, Object>> findFriendsForUser(long userId) {
         String sql = """
             SELECT DISTINCT u.UserID AS userId, u.Name AS name, u.ProfilePicture AS profilePicture
             FROM User u
@@ -138,7 +138,7 @@ public class UserDAO {
     }
 
     /** All groups user participates in */
-    public List<Map<String, Object>> findGroupsForUser(int userId) {
+    public List<Map<String, Object>> findGroupsForUser(long userId) {
         String sql = """
             SELECT g.GroupID AS groupId, g.GroupName AS groupName, g.ProfilePicture AS profilePicture
             FROM ExpenseGroups g
@@ -150,7 +150,7 @@ public class UserDAO {
     }
 
     /** Members of a specific group */
-    public List<Map<String, Object>> findMembersInGroup(int groupId) {
+    public List<Map<String, Object>> findMembersInGroup(long groupId) {
         String sql = """
             SELECT u.UserID, u.Name
             FROM GroupParticipants gp
@@ -162,13 +162,13 @@ public class UserDAO {
     }
 
     /** Update Stripe Account ID for a user */
-    public int updateStripeAccountId(int userId, String stripeAccountId) {
+    public int updateStripeAccountId(long userId, String stripeAccountId) {
         String sql = "UPDATE User SET StripeAccountId = ? WHERE UserID = ?";
         return jdbcTemplate.update(sql, stripeAccountId, userId);
     }
 
     /** Get Stripe Account ID for a user */
-    public Optional<String> getStripeAccountId(int userId) {
+    public Optional<String> getStripeAccountId(long userId) {
         String sql = "SELECT StripeAccountId FROM User WHERE UserID = ?";
         try {
             String accountId = jdbcTemplate.queryForObject(sql, String.class, userId);

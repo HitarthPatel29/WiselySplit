@@ -32,7 +32,7 @@ public class PaymentController {
     @PostMapping("/connect/create")
     public ResponseEntity<?> createConnectAccount(@RequestBody Map<String, Object> payload) {
         try {
-            int userId = ((Number) payload.get("userId")).intValue();
+            long userId = ((Number) payload.get("userId")).longValue();
             String email = (String) payload.get("email");
 
             if (email == null || email.isEmpty()) {
@@ -65,8 +65,8 @@ public class PaymentController {
         try {
             // No longer need paymentId - we'll create it after PaymentIntent
             double amount = ((Number) payload.get("amount")).doubleValue();
-            int payerId = ((Number) payload.get("payerId")).intValue();
-            int receiverId = ((Number) payload.get("receiverId")).intValue();
+            long payerId = ((Number) payload.get("payerId")).longValue();
+            long receiverId = ((Number) payload.get("receiverId")).longValue();
 
             // Get receiver's Stripe account ID
             String receiverStripeAccountId = userDAO.getStripeAccountId(receiverId)
@@ -115,7 +115,7 @@ public class PaymentController {
      * GET /api/payments/{paymentId}/status
      */
     @GetMapping("/{paymentId}/status")
-    public ResponseEntity<?> getPaymentStatus(@PathVariable int paymentId) {
+    public ResponseEntity<?> getPaymentStatus(@PathVariable long paymentId) {
         try {
             Map<String, Object> result = stripeService.getPaymentStatus(paymentId);
             return ResponseEntity.ok(result);

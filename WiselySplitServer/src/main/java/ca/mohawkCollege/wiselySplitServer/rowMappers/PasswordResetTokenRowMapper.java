@@ -10,8 +10,8 @@ public class PasswordResetTokenRowMapper implements RowMapper<PasswordResetToken
     @Override
     public PasswordResetToken mapRow(ResultSet rs, int rowNum) throws SQLException {
         PasswordResetToken token = new PasswordResetToken();
-        token.setId(rs.getInt("id"));
-        token.setUserId(rs.getInt("user_id"));
+        token.setId(rs.getLong("id"));
+        token.setUserId(rs.getLong("user_id"));
         token.setOtpHash(rs.getString("otp_hash"));
         token.setExpiresAt(rs.getTimestamp("expires_at").toLocalDateTime());
         token.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());

@@ -22,16 +22,16 @@ public class ExpensesDAO {
     private JdbcTemplate jdbcTemplate;
 
     /** Insert Expense and return ExpenseID */
-    public int insertSharedExpense(
+    public long insertSharedExpense(
             String title,
             String date,
             String type,
             double amount,
-            int payerId,
-            Integer groupId,
+            long payerId,
+            Long groupId,
             boolean isSettleUp,
-            Integer paymentId,
-            Integer walletId
+            Long paymentId,
+            Long walletId
     ) {
         String sql = """
             INSERT INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, GroupID, IsSettleUp, PaymentID, WalletID)
@@ -45,28 +45,28 @@ public class ExpensesDAO {
             ps.setString(2, date);
             ps.setString(3, type);
             ps.setDouble(4, amount);
-            ps.setInt(5, payerId);
-            if (groupId != null) ps.setInt(6, groupId);
-            else ps.setNull(6, Types.INTEGER);
+            ps.setLong(5, payerId);
+            if (groupId != null) ps.setLong(6, groupId);
+            else ps.setNull(6, Types.BIGINT);
             ps.setBoolean(7, isSettleUp);
-            if (paymentId != null) ps.setInt(8, paymentId);
-            else ps.setNull(8, Types.INTEGER);
-            if (walletId != null) ps.setInt(9, walletId);
-            else ps.setNull(9, Types.INTEGER);
+            if (paymentId != null) ps.setLong(8, paymentId);
+            else ps.setNull(8, Types.BIGINT);
+            if (walletId != null) ps.setLong(9, walletId);
+            else ps.setNull(9, Types.BIGINT);
             return ps;
         }, keyHolder);
-        return keyHolder.getKey().intValue();
+        return keyHolder.getKey().longValue();
     }
 
-    public int insertPersonalExpense(
+    public long insertPersonalExpense(
             String title,
             String date,
             String type,
             double amount,
-            int userId,
-            Integer walletId,
+            long userId,
+            Long walletId,
             String entryKind,
-            Integer toWalletId
+            Long toWalletId
     ) {
         String sql = """
             INSERT INTO Expenses (ExpenseTitle, ExpenseDate, ExpenseType, Amount, PayerID, IsPersonal, WalletID, EntryKind, ToWalletID)
@@ -82,20 +82,20 @@ public class ExpensesDAO {
             ps.setString(2, date);
             ps.setString(3, type);
             ps.setDouble(4, amount);
-            ps.setInt(5, userId);
+            ps.setLong(5, userId);
             ps.setBoolean(6, true);
-            if (walletId != null) ps.setInt(7, walletId);
-            else ps.setNull(7, Types.INTEGER);
+            if (walletId != null) ps.setLong(7, walletId);
+            else ps.setNull(7, Types.BIGINT);
             ps.setString(8, kind);
-            if (toWalletId != null) ps.setInt(9, toWalletId);
-            else ps.setNull(9, Types.INTEGER);
+            if (toWalletId != null) ps.setLong(9, toWalletId);
+            else ps.setNull(9, Types.BIGINT);
             return ps;
         }, keyHolder);
-        return keyHolder.getKey().intValue();
+        return keyHolder.getKey().longValue();
     }
 
     /**  Insert ExpenseParticipation records */
-    public void insertExpenseParticipation(int expenseId, int userId, double contribution, double contributionPortion) {
+    public void insertExpenseParticipation(long expenseId, long userId, double contribution, double contributionPortion) {
         jdbcTemplate.update(
                 "INSERT INTO ExpenseParticipation (ExpenseID, UserID, Contribution, ContributionPortion) VALUES (?, ?, ?, ?)",
                 expenseId, userId, contribution, contributionPortion
@@ -103,7 +103,7 @@ public class ExpensesDAO {
     }
 
     /**  Fetch Expense details */
-    public Map<String, Object> findExpenseById(int expenseId) {
+    public Map<String, Object> findExpenseById(long expenseId) {
         String sql = """
             SELECT 
                 e.ExpenseID AS expenseId,
@@ -128,7 +128,7 @@ public class ExpensesDAO {
     }
 
     /**  Fetch Expense participants */
-    public List<Map<String, Object>> findExpenseParticipants(int expenseId) {
+    public List<Map<String, Object>> findExpenseParticipants(long expenseId) {
         String sql = """
             SELECT 
                 u.UserID AS userId,
@@ -143,7 +143,7 @@ public class ExpensesDAO {
     }
 
     /** Personal Summary (Option 3: dateRange from backend, rest of filtering on FE) */
-    public List<Map<String, Object>> fetchPersonalSummary(int userId, String startDate, String endDate) {
+    public List<Map<String, Object>> fetchPersonalSummary(long userId, String startDate, String endDate) {
 
         String sql = """
         SELECT 
@@ -190,22 +190,22 @@ public class ExpensesDAO {
     }
 
     /**  Delete Expense + participation records */
-    public void deleteExpense(int expenseId) {
+    public void deleteExpense(long expenseId) {
         jdbcTemplate.update("DELETE FROM ExpenseParticipation WHERE ExpenseID = ?", expenseId);
         jdbcTemplate.update("DELETE FROM Expenses WHERE ExpenseID = ?", expenseId);
     }
 
-    public void updateExpense(int expenseId, String title, String date, String type, double amount, int payerId, Integer groupId, boolean isPersonal, Integer walletId, String entryKind, Integer toWalletId) {
+    public void updateExpense(long expenseId, String title, String date, String type, double amount, long payerId, Long groupId, boolean isPersonal, Long walletId, String entryKind, Long toWalletId) {
         String sql = "UPDATE Expenses SET ExpenseTitle=?, ExpenseDate=?, ExpenseType=?, Amount=?, PayerID=?, GroupID=?, IsPersonal=?, WalletID=?, EntryKind=?, ToWalletID=? WHERE ExpenseID=?";
         String kind = (entryKind != null) ? entryKind : "expense";
         jdbcTemplate.update(sql, title, date, type, amount, payerId, groupId, isPersonal, walletId, kind, toWalletId, expenseId);
     }
 
-    public void deleteExpenseParticipation(int expenseId) {
+    public void deleteExpenseParticipation(long expenseId) {
         jdbcTemplate.update("DELETE FROM ExpenseParticipation WHERE ExpenseID = ?", expenseId);
     }
 
-    public List<Map<String, Object>> getExpenseForWallet(int userId, int walletId) {
+    public List<Map<String, Object>> getExpenseForWallet(long userId, long walletId) {
         String sql = """
             SELECT
                 e.ExpenseID AS expenseId,
@@ -239,7 +239,7 @@ public class ExpensesDAO {
         List<Map<String,Object>> list = jdbcTemplate.queryForList(sql, walletId, walletId, userId, walletId, walletId);
         for (Map<String,Object> expense: list) {
             if (!(boolean) expense.get("isPersonal"))
-                expense.put("splitDetails", findExpenseParticipants((Integer) expense.get("expenseId")));
+                expense.put("splitDetails", findExpenseParticipants(((Number) expense.get("expenseId")).longValue()));
         }
         return list;
     }
@@ -265,9 +265,9 @@ public class ExpensesDAO {
                 ps.setString(2, r.getDate());
                 ps.setString(3, categories.get(i));
                 ps.setDouble(4, r.getAmount());
-                ps.setInt(5, r.getPayerId());
-                if (r.getWalletId() != null) ps.setInt(6, r.getWalletId());
-                else ps.setNull(6, Types.INTEGER);
+                ps.setLong(5, r.getPayerId());
+                if (r.getWalletId() != null) ps.setLong(6, r.getWalletId());
+                else ps.setNull(6, Types.BIGINT);
             }
 
             @Override
@@ -294,9 +294,9 @@ public class ExpensesDAO {
                 ps.setString(2, r.getDate());
                 ps.setString(3, "");
                 ps.setDouble(4, r.getAmount());
-                ps.setInt(5, r.getUserId());
-                if (r.getWalletId() != null) ps.setInt(6, r.getWalletId());
-                else ps.setNull(6, Types.INTEGER);
+                ps.setLong(5, r.getUserId());
+                if (r.getWalletId() != null) ps.setLong(6, r.getWalletId());
+                else ps.setNull(6, Types.BIGINT);
             }
 
             @Override

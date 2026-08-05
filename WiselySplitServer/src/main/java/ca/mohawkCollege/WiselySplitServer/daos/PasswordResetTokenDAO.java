@@ -27,19 +27,19 @@ public class PasswordResetTokenDAO {
                 token.getConsumedAt());
     }
 
-    public Optional<PasswordResetToken> findByUserId(int userId) {
+    public Optional<PasswordResetToken> findByUserId(long userId) {
         String sql = "SELECT * FROM password_reset_tokens WHERE user_id = ? ORDER BY created_at DESC LIMIT 1";
         return jdbcTemplate.query(sql, new PasswordResetTokenRowMapper(), userId)
                 .stream()
                 .findFirst();
     }
 
-    public void markConsumed(int id) {
+    public void markConsumed(long id) {
         String sql = "UPDATE password_reset_tokens SET consumed_at = NOW() WHERE id = ?";
         jdbcTemplate.update(sql, id);
     }
 
-    public void incrementAttempts(int id) {
+    public void incrementAttempts(long id) {
         String sql = "UPDATE password_reset_tokens SET attempts = attempts + 1 WHERE id = ?";
         jdbcTemplate.update(sql, id);
     }

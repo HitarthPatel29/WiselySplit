@@ -9,11 +9,13 @@ public class InviteRowMapper implements RowMapper<Invite> {
     @Override
     public Invite mapRow(ResultSet rs, int rowNum) throws SQLException {
         Invite i = new Invite();
-        i.setInviteId(rs.getInt("InviteID"));
-        i.setSenderId(rs.getInt("SenderID"));
-        i.setReceiverId((Integer) rs.getObject("ReceiverID"));
+        i.setInviteId(rs.getLong("InviteID"));
+        i.setSenderId(rs.getLong("SenderID"));
+        long receiverId = rs.getLong("ReceiverID");
+        i.setReceiverId(rs.wasNull() ? null : receiverId);
         i.setReceiverEmail(rs.getString("ReceiverEmail"));
-        i.setGroupId((Integer) rs.getObject("GroupID"));
+        long groupId = rs.getLong("GroupID");
+        i.setGroupId(rs.wasNull() ? null : groupId);
         i.setType(rs.getString("Type"));
         i.setStatus(rs.getString("Status"));
         i.setCreatedAt(rs.getTimestamp("CreatedAt"));

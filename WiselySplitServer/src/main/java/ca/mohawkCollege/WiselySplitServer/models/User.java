@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 public class User {
 
-    private int userId;  // PK
+    private long userId;  // PK
 
     @NotBlank(message = "Name cannot be empty")
     @Size(min = 2, max = 255, message = "Name must be between 2 and 255 characters")
@@ -37,7 +37,7 @@ public class User {
     // --- Constructors ---
     public User() {}
 
-    public User(int userId, String name, String userName, String email, Long phoneNum, String password, String profilePicture) {
+    public User(long userId, String name, String userName, String email, Long phoneNum, String password, String profilePicture) {
         this.userId = userId;
         this.name = name;
         this.userName = userName;
@@ -47,7 +47,7 @@ public class User {
         this.profilePicture = profilePicture;
     }
 
-    public User(int userId, String name, String userName, String email, Long phoneNum, String password, String profilePicture, String stripeAccountId) {
+    public User(long userId, String name, String userName, String email, Long phoneNum, String password, String profilePicture, String stripeAccountId) {
         this.userId = userId;
         this.name = name;
         this.userName = userName;
@@ -59,8 +59,8 @@ public class User {
     }
 
     // --- Getters & Setters ---
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

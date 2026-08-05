@@ -11,8 +11,8 @@ public class IncomeImportDTO {
     private String title;
     private String date;
     private double amount;
-    private int userId;
-    private Integer walletId;
+    private long userId;
+    private Long walletId;
 
     public IncomeImportDTO() {}
 
@@ -25,9 +25,9 @@ public class IncomeImportDTO {
     public double getAmount() { return amount; }
     public void setAmount(double amount) { this.amount = amount; }
 
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
 
-    public Integer getWalletId() { return walletId; }
-    public void setWalletId(Integer walletId) { this.walletId = walletId; }
+    public Long getWalletId() { return walletId; }
+    public void setWalletId(Long walletId) { this.walletId = walletId; }
 }
