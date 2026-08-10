@@ -85,6 +85,9 @@ The platform allows users to:
 | **Milestone 4:** | Stripe integration, testing, accessibility | ✅ |
 | **Milestone 5:** | Automate Expense Entries with Siri Shortcut | ✅ |
 | **Milestone 6:** | Generate monthly and category wise summaries | ✅ |
+| **Milestone 7:** | Integrate Self Training SMILE Naive Bayes Algorithm to Autogenerate Expense Categories | ✅ |
+| **Milestone 8:** | Create Admin Page to control the Algorithm Training and User Roles  | ✅ |
+| **Milestone 9:** | Translate the Backend from JDBC to Hibernate JPA |   |
 
 
 
