@@ -3,7 +3,6 @@ package ca.mohawkCollege.wiselySplitServer.services.user;
 import ca.mohawkCollege.wiselySplitServer.daos.ExpensesDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.GroupsDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
-import ca.mohawkCollege.wiselySplitServer.services.user.ImageUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -153,7 +153,7 @@ public class InviteServiceJpa {
                     int receiverId = receiverObj.intValue();
                     int senderID = senderObj.intValue();
 
-                    int expenseId = expensesDAO.insertSharedExpense("Fugazi Expense", java.time.LocalDate.now().toString(), "Fugazi", 0, senderID, null, false, null, null);
+                    long expenseId = expensesDAO.insertSharedExpense("Fugazi Expense", java.time.LocalDate.now().toString(), "Fugazi", 0, senderID, null, false, null, null);
 
                     // Insert participants (both sides)
                     expensesDAO.insertExpenseParticipation(expenseId, senderID, 0.0, 1.0);

@@ -1,6 +1,5 @@
 package ca.mohawkCollege.wiselySplitServer.services.user;
 
-import ca.mohawkCollege.wiselySplitServer.services.user.UserService;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.PasswordUtil;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.ValidationUtil;
 import ca.mohawkCollege.wiselySplitServer.daos.InviteDAO;

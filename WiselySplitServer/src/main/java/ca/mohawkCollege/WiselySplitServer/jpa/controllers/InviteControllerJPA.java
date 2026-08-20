@@ -25,11 +25,11 @@ public class InviteControllerJPA {
             //return ResponseEntity.ok(Map.of("message", message));
             return ResponseEntity.ok(ResponseDTO.builder()
                     .data(Map.of("message", message))
-                    .StatusCode("0000").build());
+                    .statusCode("0000").build());
         } catch (Exception e) {
             //return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
             return ResponseEntity.ok(ResponseDTO.builder()
-                    .StatusCode("0001")
+                    .statusCode("0001")
                     .statusDescription(e.getMessage()).build());
         }
     }
