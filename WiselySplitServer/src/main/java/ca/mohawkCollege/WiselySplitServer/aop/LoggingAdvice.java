@@ -30,7 +30,7 @@ public class LoggingAdvice{
         ObjectMapper objMapper = new ObjectMapper();
         String stringArgs = objMapper.writeValueAsString(args);
 
-        logger.info( "{} ,Class: {}, Method: {} started execution with Parameter: {}",Instant.now(), className, methodName, stringArgs );
+        logger.info( "{} ,Class: {}, Method: {} started execution with parameters: {}",Instant.now(), className, methodName, stringArgs );
 
         // proceed with the method execution and get the return data.
         Object returnData = pjp.proceed();
