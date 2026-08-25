@@ -1,6 +1,5 @@
 package ca.mohawkCollege.wiselySplitServer.utilities.auth;
 
-import ca.mohawkCollege.wiselySplitServer.utilities.DaoUserDetailsService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.security.authentication.*;

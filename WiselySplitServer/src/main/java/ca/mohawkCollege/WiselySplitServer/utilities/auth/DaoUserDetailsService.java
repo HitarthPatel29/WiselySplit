@@ -1,4 +1,4 @@
-package ca.mohawkCollege.wiselySplitServer.utilities;
+package ca.mohawkCollege.wiselySplitServer.utilities.auth;
 
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.models.Role;

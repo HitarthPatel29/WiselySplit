@@ -32,40 +32,6 @@ public class SecurityConfig {
         return cfg.getAuthenticationManager();
     }
 
-//    @Bean
-//    SecurityFilterChain apiFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
-//        http
-//                .csrf(csrf -> csrf.disable())
-//                .cors(cors -> {})
-//                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/auth/me").authenticated() // caller's own profile + role (must precede /api/auth/**)
-//                        .requestMatchers("/api/auth/reset/**").permitAll()
-//                        .requestMatchers("/api/auth/**").permitAll()   // login/reset open
-//                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll() // signup
-//                        .requestMatchers(HttpMethod.GET, "/api/users/check-username").permitAll() // username availability check
-//                        .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll() // email availability check
-//                        .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll() // Stripe webhook
-//                        .requestMatchers(HttpMethod.POST, "/api/expenses/personal/automation").permitAll() // Expenses Entry Automation API
-//                        .requestMatchers(HttpMethod.POST, "/api/jpa/users").permitAll() // signup with JPA
-//                        // --- RBAC: admin-only surfaces ---
-//                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // account management
-//                        // classifier: predict + feedback are part of the normal expense flow
-//                        .requestMatchers(HttpMethod.GET, "/api/classify/predict").authenticated()
-//                        .requestMatchers(HttpMethod.POST, "/api/classify/feedback").authenticated()
-//                        // everything else under /api/classify is admin-only (retrain, models, stats, etc.)
-//                        .requestMatchers("/api/classify/**").hasRole("ADMIN")
-//                        .anyRequest().authenticated()                  // everything else needs JWT
-//                )
-//                .exceptionHandling(ex -> ex
-//                        .authenticationEntryPoint(restAuthenticationEntryPoint())
-//                        .accessDeniedHandler(restAccessDeniedHandler())
-//                )
-//                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
-
     @Bean
     SecurityFilterChain apiFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
         http
@@ -104,21 +70,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers(
-//                                "/v3/api-docs/**",
-//                                "/swagger-ui/**",
-//                                "/swagger-ui.html"
-//                        ).permitAll() // Allows public access to Swagger files
-//                        .anyRequest().authenticated()
-//                );
-//        return http.build();
-//    }
-
 
 
     /** 401 JSON for unauthenticated requests to protected endpoints. */

@@ -29,10 +29,6 @@ public interface InviteRepo extends JpaRepository<Invite, Long> {
     @Query("update Invite i set i.status = ?1 where i.inviteId = ?2")
     void updateStatusByInviteIdIs(InviteStatus status, Long inviteId);
 
-
-
-
-
     @Modifying
     @Query("""
         UPDATE Invite i

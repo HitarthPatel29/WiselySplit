@@ -1,8 +1,11 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.entities;
 
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.EntryType;
+import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
+import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategoryConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+@Builder
 @Table(name = "Expenses")
 public class Expense {
 
@@ -32,8 +36,10 @@ public class Expense {
     @Column(name = "ExpenseDate", columnDefinition = "DATE")
     private LocalDate expenseDate;
 
+    /** Stored as display name (e.g. "Food & Dining") via {@link ExpenseCategoryConverter}. */
+    @Convert(converter = ExpenseCategoryConverter.class)
     @Column(name = "ExpenseType", columnDefinition = "VARCHAR")
-    private String expenseType;
+    private ExpenseCategory expenseCategory;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PayerID", nullable = false)
@@ -59,12 +65,12 @@ public class Expense {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "WalletID", nullable = true)
-    private Wallet Wallet;
+    private Wallet wallet;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ToWalletID", nullable = true)
     private Wallet ToWallet;
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ExpenseParticipation> participations = new ArrayList<>();
+    private List<ExpenseParticipation> participants = new ArrayList<>();
 }

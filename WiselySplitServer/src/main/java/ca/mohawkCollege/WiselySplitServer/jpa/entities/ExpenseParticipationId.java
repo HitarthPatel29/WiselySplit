@@ -14,7 +14,7 @@ import java.util.Objects;
 @Data
 public class ExpenseParticipationId implements Serializable {
 
-    private Integer expenseId;
+    private Long expenseId;
     private Long userId;
 
     @Override

@@ -4,6 +4,9 @@ import ca.mohawkCollege.wiselySplitServer.daos.InviteDAO;
 import ca.mohawkCollege.wiselySplitServer.exceptions.DuplicateUserException;
 import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.*;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserResponseDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserResponseForListDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserUpdateRequestDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
 import ca.mohawkCollege.wiselySplitServer.jpa.repositories.UserRepo;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.PasswordUtil;
@@ -25,7 +28,7 @@ public class UserService {
     @Value("${cloudinary.default_photo_link}")
     private String DEFAULT_AVATAR_URL;
     @Autowired
-    private InviteServiceJpa inviteService;
+    private InviteServiceJPA inviteService;
     public UserResponseDTO getUserByEmail(String email){
         User userByEmail = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User with email " + email + " not found"));
         return userToUserResponseDTO(userByEmail);

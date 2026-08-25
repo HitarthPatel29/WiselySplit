@@ -2,12 +2,14 @@ package ca.mohawkCollege.wiselySplitServer.jpa.services;
 
 import ca.mohawkCollege.wiselySplitServer.daos.ExpensesDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.GroupsDAO;
+import ca.mohawkCollege.wiselySplitServer.exceptions.BusinessException;
 import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.InviteStatus;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.InviteType;
+import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.GroupResponseForListDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.InviteResponseDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserResponseForListDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.ExpenseGroup;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Invite;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
@@ -28,7 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class InviteServiceJpa {
+public class InviteServiceJPA {
 
     @Autowired private UserRepo userRepo;
     @Autowired private EmailServiceMailTrapAPI emailServiceMailTrapAPI;
@@ -42,6 +44,12 @@ public class InviteServiceJpa {
     @Autowired
     InviteRepo inviteRepo;
 
+    /**
+     * @return the confirmation message for a successful send
+     * @throws BusinessException if the request is rejected; callers do not need to inspect it,
+     *                           {@link ca.mohawkCollege.wiselySplitServer.exceptions.GlobalExceptionHandler}
+     *                           turns it into the response
+     */
     public String sendInvite(Long senderId, String input, Long groupId)  {
         User sender = userRepo.findById(senderId).
                 orElseThrow(()-> new UserNotFoundException("User with UserId: "+senderId+" not found"));
@@ -52,14 +60,16 @@ public class InviteServiceJpa {
         Optional<User> receiver = isEmail ? userRepo.findByEmail(input.trim()) : userRepo.findByUserName(input.trim());
 
         //Get receiverEmail from DB if input is username.
-        String receiverEmail = null;
+        String receiverEmail;
         if (receiver.isPresent()) receiverEmail = receiver.get().getEmail();
         else if (isEmail) receiverEmail = input.trim();
-        else throw new UserNotFoundException("User with username: " + input + " not found");
+        else throw new BusinessException(StatusCode.INVITE_RECIPIENT_NOT_FOUND,
+                    "No account matches username '" + input + "'");
 
         //  Prevent duplicate pending invites
         if (inviteRepo.existsBySenderIsAndReceiver_EmailEqualsAndGroup_GroupIdEquals(sender, receiverEmail, groupId)) {
-            return "Invite already exists.";
+            throw new BusinessException(StatusCode.INVITE_ALREADY_EXISTS,
+                    "Sender " + senderId + " already invited " + receiverEmail + " to group " + groupId);
         }
 
         //  Build the Invite record
@@ -70,7 +80,9 @@ public class InviteServiceJpa {
         invite.setStatus(InviteStatus.PENDING);
         invite.setExpiresAt(Instant.now().plus(7, ChronoUnit.DAYS));
         if (null != groupId){
-            ExpenseGroup group = groupRepo.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group with groupId: "+ groupId +" not found!"));
+            ExpenseGroup group = groupRepo.findById(groupId)
+                    .orElseThrow(() -> new BusinessException(StatusCode.GROUP_NOT_FOUND,
+                            "Group " + groupId + " referenced by an invite does not exist"));
             invite.setGroup(group);
         }
         receiver.ifPresent(invite::setReceiver);
@@ -107,7 +119,8 @@ public class InviteServiceJpa {
             );
             return "In-app invite and email notification sent to " + receiver.getName() + ".";
         } catch (Exception e) {
-            throw new RuntimeException("Error sending email: " + e.getMessage());
+            throw new BusinessException(StatusCode.EMAIL_SEND_FAILED,
+                    "Could not email invite to existing user " + receiver.getUserId(), e);
         }
     }
 
@@ -122,7 +135,8 @@ public class InviteServiceJpa {
             );
             return "User Account not found. Email invitation has been sent to " + receiverEmail;
         } catch (Exception e) {
-            throw new RuntimeException("Error sending email: " + e.getMessage());
+            throw new BusinessException(StatusCode.EMAIL_SEND_FAILED,
+                    "Could not email signup invite to " + receiverEmail, e);
         }
     }
 
@@ -133,7 +147,8 @@ public class InviteServiceJpa {
         // If invite accepted and type = GROUP, add user to group
         if (InviteStatus.ACCEPTED.equals(status)) {
             Invite invite = inviteRepo.findById(inviteId)
-                    .orElseThrow(() -> new UserNotFoundException("Invite with inviteId: " + inviteId + " not found"));
+                    .orElseThrow(() -> new BusinessException(StatusCode.INVITE_NOT_FOUND,
+                            "Invite " + inviteId + " not found while applying status " + status));
 
             if (invite != null && InviteType.GROUP.equals(invite.getType())) {
                 Number receiverObj = invite.getReceiver().getUserId();

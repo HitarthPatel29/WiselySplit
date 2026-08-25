@@ -1,7 +1,10 @@
 package ca.mohawkCollege.wiselySplitServer.exceptions;
 
-public class DuplicateUserException extends RuntimeException {
+import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
+
+/** Specialisation of {@link BusinessException} pinned to {@link StatusCode#USER_ALREADY_EXISTS}. */
+public class DuplicateUserException extends BusinessException {
     public DuplicateUserException(String message) {
-        super(message);
+        super(StatusCode.USER_ALREADY_EXISTS, message);
     }
 }

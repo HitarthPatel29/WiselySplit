@@ -1,7 +1,7 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.controllers;
 
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserResponseDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.UserUpdateRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserResponseDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserUpdateRequestDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.services.UserService;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
 import ca.mohawkCollege.wiselySplitServer.services.user.ImageUploadService;

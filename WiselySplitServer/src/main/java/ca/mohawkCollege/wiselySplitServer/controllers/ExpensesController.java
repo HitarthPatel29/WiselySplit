@@ -1,5 +1,6 @@
 package ca.mohawkCollege.wiselySplitServer.controllers;
 
+import ca.mohawkCollege.wiselySplitServer.jpa.constants.AppConstants;
 import ca.mohawkCollege.wiselySplitServer.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawkCollege.wiselySplitServer.services.entry.ExpensesService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +18,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpensesController {
-
-    /** Max rows accepted in a single CSV batch import. */
-    private static final int MAX_BATCH_ROWS = 150;
 
     @Autowired
     private ExpensesService expensesService;
@@ -60,9 +58,9 @@ public class ExpensesController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "No rows provided"));
             }
-            if (rows.size() > MAX_BATCH_ROWS) {
+            if (rows.size() > AppConstants.MAX_ROWS_IN_CSV_BATCH) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Too many rows. Please import " + MAX_BATCH_ROWS + " rows or fewer."));
+                        .body(Map.of("error", "Too many rows. Please import " + AppConstants.MAX_ROWS_IN_CSV_BATCH + " rows or fewer."));
             }
             Map<String, Object> result = expensesService.createPersonalExpensesBatch(rows);
             return ResponseEntity.ok(result);
