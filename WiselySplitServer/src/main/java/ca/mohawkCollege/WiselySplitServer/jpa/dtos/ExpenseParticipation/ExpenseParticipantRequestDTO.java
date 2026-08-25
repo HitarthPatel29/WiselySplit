@@ -1,4 +1,4 @@
-package ca.mohawkCollege.wiselySplitServer.jpa.dtos;
+package ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipation;
 
 import java.math.BigDecimal;
 

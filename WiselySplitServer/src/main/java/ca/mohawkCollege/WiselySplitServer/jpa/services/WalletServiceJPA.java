@@ -1,6 +1,6 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.services;
 
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.WalletDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.wallet.WalletDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Wallet;
 import ca.mohawkCollege.wiselySplitServer.jpa.repositories.WalletRepo;
 import jakarta.transaction.Transactional;

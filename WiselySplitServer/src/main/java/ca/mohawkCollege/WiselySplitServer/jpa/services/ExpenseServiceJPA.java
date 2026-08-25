@@ -9,15 +9,14 @@ import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.EntryType;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipantRequestDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.PersonalExpenseAutomationRequestDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.PersonalExpenseRequestDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.SharedExpenseRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipation.ExpenseParticipantRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.*;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Expense;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.ExpenseParticipation;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Wallet;
 import ca.mohawkCollege.wiselySplitServer.jpa.repositories.*;
+import ca.mohawkCollege.wiselySplitServer.jpa.rowmappers.ExpenseUpdateResponseRowMapper;
 import ca.mohawkCollege.wiselySplitServer.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawkCollege.wiselySplitServer.services.classification.ClassificationService;
 import ca.mohawkCollege.wiselySplitServer.services.classification.FeedbackService;
@@ -105,8 +104,17 @@ public class ExpenseServiceJPA {
             walletDAO.updateWalletBalance(payerId, walletId, expenseRequestDTO.amount().doubleValue(), WalletDAO.WalletBalanceUpdateMode.EXPENSE);
         }
 
+        List<ExpenseParticipantRequestDTO> verifiedExpenseRequestDTO = verifyExpenseParticipantRequestDTO(expenseRequestDTO.participants(), newExpense);
         newExpense.setParticipants(
-                verifyAndMapDtoToExpenseParticipation(expenseRequestDTO.participants(), newExpense));
+                verifiedExpenseRequestDTO.stream()
+                        .map(participant -> ExpenseParticipation.builder()
+                                .expense(newExpense)
+                                .user(userRepo.getReferenceById(participant.userId()))
+                                .contribution(participant.amount())
+                                .contributionPortion(participant.portion())
+                                .build())
+                        .toList()
+                );
 
         Long expenseId = expenseRepo.save(newExpense).getExpenseId();
 
@@ -124,12 +132,13 @@ public class ExpenseServiceJPA {
      * Checks if any Participant with valid contribution present.
      * Checks if the sum of participant contribution matched the total expense amount.
      * Maps the requestDTO to the Entity.
+     *
      * @param participantDTOs -> ExpenseParticipantRequestDTO
-     * @param newExpense    -> Expense
+     * @param newExpense      -> Expense
      * @return List<ExpenseParticipation> -> list of entity type mapped from the requestDTO
      * @throws BusinessException
      */
-    private List<ExpenseParticipation> verifyAndMapDtoToExpenseParticipation(List<ExpenseParticipantRequestDTO> participantDTOs, Expense newExpense) throws BusinessException{
+    private List<ExpenseParticipantRequestDTO> verifyExpenseParticipantRequestDTO(List<ExpenseParticipantRequestDTO> participantDTOs, Expense newExpense) throws BusinessException{
 
 //      Filter out participants with 0 or less than 0 contribution. If no valid participant found throw error.
         List<ExpenseParticipantRequestDTO> participantsWithValidContribution = participantDTOs.stream().
@@ -147,15 +156,8 @@ public class ExpenseServiceJPA {
         if (sumOfParticipantContribution.compareTo(newExpense.getAmount()) != 0)
             throw new BusinessException(StatusCode.SPLIT_AMOUNT_MISMATCH);
 
-//      Participants Verified! Map the participantDTO to the ExpenseParticipation Entity and return the new list
-        return participantsWithValidContribution.stream()
-                .map(participant -> ExpenseParticipation.builder()
-                        .expense(newExpense)
-                        .user(userRepo.getReferenceById(participant.userId()))
-                        .contribution(participant.amount())
-                        .contributionPortion(participant.portion())
-                        .build())
-                .toList();
+//      Participants Verified!
+        return participantsWithValidContribution;
     }
 
     @Transactional
@@ -390,47 +392,59 @@ public class ExpenseServiceJPA {
     }
 
     @Transactional
-    public Map<String, Object> updateExpense(long expenseId, Map<String, Object> payload) {
-        try {
-            String title = (String) payload.get("title");
-            String date = (String) payload.get("date");
-            String category = (String) payload.get("category");
-            double amount = ((Number) payload.get("amount")).doubleValue();
-            long payerId = ((Number) payload.get("payerId")).longValue();
-            String shareWithType = (String) payload.get("shareWithType");
+    public ExpenseUpdateResponseDTO updateExpense(ExpenseUpdateRequestDTO expenseUpdateDTO) {
+        Expense expenseToBeUpdated = expenseRepo.findById(expenseUpdateDTO.expenseId())
+                .orElseThrow(()-> new BusinessException(
+                        StatusCode.EXPENSE_UPDATE_FAILED, "Expense with expenseId : "+expenseUpdateDTO.expenseId()+ " not found"));
 
-            Long groupId = null;
-            if ("group".equalsIgnoreCase(shareWithType) && payload.get("shareWithId") != null) {
-                groupId = ((Number) payload.get("shareWithId")).longValue();
-            }
+        expenseToBeUpdated.setExpenseTitle(expenseUpdateDTO.title());
+        expenseToBeUpdated.setAmount(expenseUpdateDTO.amount());
+        expenseToBeUpdated.setExpenseDate(expenseUpdateDTO.date());
+        expenseToBeUpdated.setExpenseCategory(expenseUpdateDTO.category());
+        expenseToBeUpdated.setEntryType(EntryType.expense);
+        expenseToBeUpdated.setIsSettleUp(Boolean.TRUE.equals(expenseUpdateDTO.isSettleUp()));
+        expenseToBeUpdated.setIsPersonal(Boolean.TRUE.equals(expenseUpdateDTO.isPersonal()));
 
-            Boolean isPersonal = ((Boolean) payload.get("isPersonal")).booleanValue();
-            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
+        Long payerId = expenseUpdateDTO.payerId();
+        if (null == payerId)
+            throw new BusinessException(StatusCode.PAYER_NOT_FOUND);
+        expenseToBeUpdated.setPayer(userRepo.getReferenceById(payerId));
 
-            //Update wallet Balance
-            if (null != walletId) walletDAO.updateWalletBalanceForEntryUpdate(payerId, walletId, expenseId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
+        if(null != expenseUpdateDTO.groupId())
+            expenseToBeUpdated.setExpenseGroup(groupRepo.getReferenceById(expenseUpdateDTO.groupId()));
 
-            expensesDAO.updateExpense(expenseId, title, date, category, amount, payerId, groupId, isPersonal, walletId, "expense", null);
+        if(null != expenseUpdateDTO.paymentId())
+            expenseToBeUpdated.setPayment(paymentRepo.getReferenceById(expenseUpdateDTO.paymentId()));
 
-            //Only for Shared Expenses
-            if (!isPersonal) {
-                // Delete old participation and insert new ones
-                expensesDAO.deleteExpenseParticipation(expenseId);
-                List<Map<String, Object>> participants = (List<Map<String, Object>>) payload.get("splitDetails");
-                for (Map<String, Object> m : participants) {
-                    long userId = ((Number) m.get("userId")).longValue();
-                    double contribution = ((Number) m.get("amount")).doubleValue();
-                    double contributionPortion = ((Number) m.get("portion")).doubleValue();
-                    if (contribution > 0) {
-                        expensesDAO.insertExpenseParticipation(expenseId, userId, contribution, contributionPortion);
-                    }
-                }
-            }
-//            sendClassifierFeedback(payload, title, category, payerId);
-            return Map.of("success", true, "expenseId", expenseId, "message", "Expense updated successfully");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error updating expense: " + e.getMessage());
+        //If walletId is not null, get Wallet Reference for Expense and Update wallet Balance
+        Long walletId = expenseUpdateDTO.walletId();
+        if (null != walletId) {
+            expenseToBeUpdated.setWallet(walletRepo.getReferenceById(walletId));
+            walletDAO.updateWalletBalanceForEntryUpdate(
+                    payerId, walletId,
+                    expenseUpdateDTO.expenseId(),
+                    expenseUpdateDTO.amount().doubleValue(),
+                    WalletDAO.WalletBalanceUpdateMode.EXPENSE);
         }
+
+        if (!Boolean.TRUE.equals(expenseUpdateDTO.isPersonal()) && !expenseUpdateDTO.participants().isEmpty()) {
+            List<ExpenseParticipantRequestDTO> verifiedExpenseParticipatDTO = verifyExpenseParticipantRequestDTO(expenseUpdateDTO.participants(), expenseToBeUpdated);
+            // map the ExpenseParticipantRequestDTO to current List<ExpenseParticipation> from the expenseToBeUpdated.
+            // do not create new ExpenseParticipation while mapping.
+            // Every new ExpenseParticipation will try to create a new id by combining expenseId + UserID.
+            // So make sure to find if current ExpenseParticipation exists and then update the object.
+        }
+
+
+        Expense updatedExpense = expenseRepo.save(expenseToBeUpdated);
+
+        sendClassifierFeedback(
+                expenseUpdateDTO.title(),
+                expenseUpdateDTO.category(),
+                expenseUpdateDTO.predictedCategory(),
+                expenseUpdateDTO.payerId(),
+                EntryType.expense);
+
+        return ExpenseUpdateResponseRowMapper.toDto(updatedExpense);
     }
 }

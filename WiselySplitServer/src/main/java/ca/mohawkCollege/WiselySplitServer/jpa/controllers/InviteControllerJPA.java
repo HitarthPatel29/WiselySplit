@@ -2,7 +2,7 @@ package ca.mohawkCollege.wiselySplitServer.jpa.controllers;
 
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.InviteStatus;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.InviteRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.invite.InviteRequestDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ResponseDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.services.InviteServiceJPA;
 import org.springframework.beans.factory.annotation.Autowired;

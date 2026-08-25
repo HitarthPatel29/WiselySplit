@@ -1,4 +1,4 @@
-package ca.mohawkCollege.wiselySplitServer.jpa.dtos;
+package ca.mohawkCollege.wiselySplitServer.jpa.dtos.wallet;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

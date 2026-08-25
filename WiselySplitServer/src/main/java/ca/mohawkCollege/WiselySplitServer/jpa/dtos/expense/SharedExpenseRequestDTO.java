@@ -1,7 +1,7 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense;
 
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipantRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipation.ExpenseParticipantRequestDTO;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -29,7 +29,6 @@ import java.util.List;
 //        "predictedCategory": "Food & Dining"
 public record SharedExpenseRequestDTO (
     String title,
-
     @NotNull(message = "amount cannot be null")
     @PositiveOrZero(message = "amount cannot be negative")
     BigDecimal amount,

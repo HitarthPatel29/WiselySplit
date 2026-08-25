@@ -4,9 +4,7 @@ import ca.mohawkCollege.wiselySplitServer.exceptions.BusinessException;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.AppConstants;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ResponseDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.PersonalExpenseAutomationRequestDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.PersonalExpenseRequestDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.SharedExpenseRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.*;
 import ca.mohawkCollege.wiselySplitServer.jpa.services.ExpenseServiceJPA;
 import ca.mohawkCollege.wiselySplitServer.models.dtos.PersonalExpenseImportDTO;
 import jakarta.validation.Valid;
@@ -111,9 +109,9 @@ public class ExpenseControllerJPA {
     }
 
     /* UPDATE Expense */
-    @PutMapping("/{expenseId}")
-    public ResponseEntity<ResponseDTO> updateExpense(@PathVariable long expenseId, @RequestBody Map<String, Object> payload) {
-        Map<String, Object> result = expenseService.updateExpense(expenseId, payload);
-        return ResponseDTO.respond(StatusCode.UPDATED, result);
+    @PutMapping()
+    public ResponseEntity<ResponseDTO> updateExpense(@Valid @RequestBody ExpenseUpdateRequestDTO expenseUpdateDTO) {
+        ExpenseUpdateResponseDTO updateResponseDTO = expenseService.updateExpense(expenseUpdateDTO);
+        return ResponseDTO.respond(StatusCode.UPDATED, updateResponseDTO);
     }
 }

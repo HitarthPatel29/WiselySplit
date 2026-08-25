@@ -8,7 +8,7 @@ import ca.mohawkCollege.wiselySplitServer.jpa.constants.InviteStatus;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.InviteType;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.GroupResponseForListDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.InviteResponseDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.invite.InviteResponseDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.ExpenseGroup;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Invite;

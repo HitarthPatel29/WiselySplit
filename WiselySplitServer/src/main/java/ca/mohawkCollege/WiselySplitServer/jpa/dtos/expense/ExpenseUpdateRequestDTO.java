@@ -1,5 +1,16 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense;
 
+import ca.mohawkCollege.wiselySplitServer.jpa.constants.EntryType;
+import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipation.ExpenseParticipantRequestDTO;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
 //{
 //        "title": "Updated Test Expense",
 //        "amount": 150.00,
@@ -20,6 +31,49 @@ package ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense;
 //        ],
 //        "isSettleUp": false
 //}
-public record ExpenseUpdateRequestDTO(
+//      new Schema:
+//{
+//        "expenseId": 123
+//        "title": "Updated Test Expense",
+//        "amount": 150.00,
+//        "date": "{{settlement_date}}",
+//        "category": "other",
+//        "payerId": {{user_id}},
+//        "groupId": {{group_id}},
+//        "isSettleUp": false,
+//        "walletId": 11,
+//        "toWalletId": null,
+//        "paymentId": null,
+//        "predictedCategory": "other"
+//        "participants": [
+//            {
+//            "userId": {{receiver_id}},
+//            "amount": 75.00,
+//            "portion": 1,
+//            }
+//        ]
+//}
 
+
+public record ExpenseUpdateRequestDTO(
+        Long expenseId,
+        String title,
+        @NotNull(message = "amount cannot be null")
+        @PositiveOrZero(message = "amount cannot be negative")
+        BigDecimal amount,
+        @NotNull(message = "date cannot be null")
+        LocalDate date,
+        ExpenseCategory category,
+        @NotNull(message = "Personal expense submitted without a payer")
+        Long payerId,
+        Long groupId,
+        Boolean isSettleUp,
+        Boolean isPersonal,
+        Long walletId,
+        Long toWalletId,
+        EntryType entryType,
+        Long paymentId,
+        @NotEmpty(message = "Shared expense invalid with no participants")
+        List<ExpenseParticipantRequestDTO> participants,
+        ExpenseCategory predictedCategory
 ) {}

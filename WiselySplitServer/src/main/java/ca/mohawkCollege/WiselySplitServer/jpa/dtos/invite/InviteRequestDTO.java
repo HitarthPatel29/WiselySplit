@@ -1,3 +1,3 @@
-package ca.mohawkCollege.wiselySplitServer.jpa.dtos;
+package ca.mohawkCollege.wiselySplitServer.jpa.dtos.invite;
 
 public record InviteRequestDTO (Long senderId, String target, Long groupId){}
