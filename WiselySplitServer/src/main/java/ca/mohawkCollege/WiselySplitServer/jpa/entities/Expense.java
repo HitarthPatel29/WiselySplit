@@ -4,6 +4,7 @@ import ca.mohawkCollege.wiselySplitServer.jpa.constants.EntryType;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategoryConverter;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class Expense {
     private Long expenseId;
 
     @Column(name = "Amount", precision = 10, scale = 2)
+    @PositiveOrZero(message = "Quantity cannot be negative")
     private BigDecimal amount;
 
     @Column(name = "ExpenseTitle", columnDefinition = "VARCHAR")

@@ -7,4 +7,7 @@ public class UserNotFoundException extends BusinessException {
     public UserNotFoundException(String message) {
         super(StatusCode.USER_NOT_FOUND, message);
     }
+    public UserNotFoundException(){
+        super(StatusCode.USER_NOT_FOUND);
+    }
 }

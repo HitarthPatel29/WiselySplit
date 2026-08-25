@@ -1,6 +1,10 @@
-package ca.mohawkCollege.wiselySplitServer.jpa.dtos;
+package ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense;
 
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipantRequestDTO;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,14 +29,20 @@ import java.util.List;
 //        "predictedCategory": "Food & Dining"
 public record SharedExpenseRequestDTO (
     String title,
+
+    @NotNull(message = "amount cannot be null")
+    @PositiveOrZero(message = "amount cannot be negative")
     BigDecimal amount,
+    @NotNull(message = "date cannot be null")
     LocalDate date,
     ExpenseCategory category,
+    @NotNull(message = "Personal expense submitted without a payer")
     Long payerId,
     Long groupId,
     Boolean isSettleUp,
     Long walletId,
     Long paymentId,
+    @NotEmpty(message = "Shared expense invalid with no participants")
     List<ExpenseParticipantRequestDTO> participants,
     ExpenseCategory predictedCategory
 ){}

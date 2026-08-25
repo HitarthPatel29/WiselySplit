@@ -5,23 +5,25 @@ import ca.mohawkCollege.wiselySplitServer.daos.PaymentDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.daos.WalletDAO;
 import ca.mohawkCollege.wiselySplitServer.exceptions.BusinessException;
+import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.EntryType;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipantRequestDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.SharedExpenseRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.PersonalExpenseAutomationRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.PersonalExpenseRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.SharedExpenseRequestDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Expense;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.ExpenseParticipation;
+import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
+import ca.mohawkCollege.wiselySplitServer.jpa.entities.Wallet;
 import ca.mohawkCollege.wiselySplitServer.jpa.repositories.*;
-import ca.mohawkCollege.wiselySplitServer.models.User;
 import ca.mohawkCollege.wiselySplitServer.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawkCollege.wiselySplitServer.services.classification.ClassificationService;
 import ca.mohawkCollege.wiselySplitServer.services.classification.FeedbackService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import smile.ica.Exp;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -71,7 +73,7 @@ public class ExpenseServiceJPA {
      * genuine fault with its original stack trace intact.
      */
     @Transactional
-    public Long createSharedExpense1(SharedExpenseRequestDTO expenseRequestDTO) {
+    public Long createSharedExpense(SharedExpenseRequestDTO expenseRequestDTO) {
         Long payerId = expenseRequestDTO.payerId();
         if (null == payerId)
             throw new BusinessException(StatusCode.PAYER_NOT_FOUND,
@@ -98,7 +100,10 @@ public class ExpenseServiceJPA {
             newExpense.setPayment(paymentRepo.getReferenceById(expenseRequestDTO.paymentId()));
 
         Long walletId = expenseRequestDTO.walletId();
-        if (null != walletId) newExpense.setWallet(walletRepo.getReferenceById(walletId));
+        if (null != walletId) {
+            newExpense.setWallet(walletRepo.getReferenceById(walletId));
+            walletDAO.updateWalletBalance(payerId, walletId, expenseRequestDTO.amount().doubleValue(), WalletDAO.WalletBalanceUpdateMode.EXPENSE);
+        }
 
         newExpense.setParticipants(
                 verifyAndMapDtoToExpenseParticipation(expenseRequestDTO.participants(), newExpense));
@@ -154,51 +159,42 @@ public class ExpenseServiceJPA {
     }
 
     @Transactional
-    public Map<String, Object> createPersonalExpense1(Map<String, Object> payload) {
-        try {
-            String title = (String) payload.get("title");
-            String date = (String) payload.get("date");
-            String category = (String) payload.get("category");
-            double amount = ((Number) payload.get("amount")).doubleValue();
-            long userId = ((Number) payload.get("payerId")).longValue();
-            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
+    public Long createPersonalExpense(PersonalExpenseRequestDTO expenseRequestDTO) {
+        Long payerId = expenseRequestDTO.payerId();
+        if (null == payerId)
+            throw new BusinessException(StatusCode.PAYER_NOT_FOUND,
+                    "Personal expense '" + expenseRequestDTO.title() + "' submitted without a payer");
 
-            long expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
+        Expense newExpense = new Expense();
+        newExpense.setExpenseTitle(expenseRequestDTO.title());
+        newExpense.setAmount(expenseRequestDTO.amount());
+        newExpense.setExpenseDate(expenseRequestDTO.date());
+        newExpense.setExpenseCategory(expenseRequestDTO.category());
+        newExpense.setEntryType(EntryType.expense);
+        newExpense.setPayer(userRepo.getReferenceById(payerId));
+        newExpense.setIsSettleUp(Boolean.FALSE);
+        newExpense.setIsPersonal(Boolean.TRUE);
 
-            //Update wallet Balance
-            if (null != walletId) walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
-
-            //sendClassifierFeedback(payload, title, category, userId);
-
-            return Map.of("success", true, "expenseId", expenseId, "message", "Personal entry created successfully");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error creating personal expense: " + e.getMessage());
-        }
-    }
-    @Transactional
-    public Map<String, Object> createPersonalExpense(Map<String, Object> payload) {
-        try {
-            String title = (String) payload.get("title");
-            String date = (String) payload.get("date");
-            String category = (String) payload.get("category");
-            double amount = ((Number) payload.get("amount")).doubleValue();
-            long userId = ((Number) payload.get("payerId")).longValue();
-            Long walletId = payload.get("walletId") != null ? ((Number) payload.get("walletId")).longValue() : null;
-
-            long expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
+        Long walletId = expenseRequestDTO.walletId();
+        if (null != walletId){
+            newExpense.setWallet(walletRepo.getReferenceById(walletId));
 
             //Update wallet Balance
-            if (null != walletId) walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
-
-            //sendClassifierFeedback(payload, title, category, userId);
-
-            return Map.of("success", true, "expenseId", expenseId, "message", "Personal entry created successfully");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error creating personal expense: " + e.getMessage());
+            walletDAO.updateWalletBalance(payerId, walletId, expenseRequestDTO.amount().doubleValue(), WalletDAO.WalletBalanceUpdateMode.EXPENSE);
         }
+
+        Long expenseId = expenseRepo.save(newExpense).getExpenseId();
+
+        sendClassifierFeedback(
+                expenseRequestDTO.title(),
+                expenseRequestDTO.category(),
+                expenseRequestDTO.predictedCategory(),
+                expenseRequestDTO.payerId(),
+                EntryType.expense);
+
+        return expenseId;
     }
+
     /**
      * Batch-create personal expenses from a CSV import.
      * The classifier assigns each row's category. Inserts use INSERT IGNORE so
@@ -263,53 +259,53 @@ public class ExpenseServiceJPA {
     }
 
     @Transactional
-    public Map<String, Object> createPersonalExpenseWithAutomation(Map<String, Object> payload, String userEmail) {
-        try {
-            String title = (String) payload.get("transactionTitle");
-            String date = (String) payload.get("transactionDate");
-            String walletName = (String) payload.get("cardName");
+    public Long createPersonalExpenseWithAutomation(PersonalExpenseAutomationRequestDTO expenseAutomationRequestDTO) {
+        Expense newExpense = new Expense();
+        newExpense.setExpenseTitle(expenseAutomationRequestDTO.transactionTitle());
+        newExpense.setExpenseDate(expenseAutomationRequestDTO.transactionDate());
+        newExpense.setEntryType(EntryType.expense);
+        newExpense.setIsSettleUp(Boolean.FALSE);
+        newExpense.setIsPersonal(Boolean.TRUE);
 
-            //Asks for prediction, if nothing gets return category is empty string
-            ClassificationService.Prediction prediction= classificationService.predict(title);
-            String category = (null != prediction) ? prediction.category() : "";
+        // Find user by email. If user not found, throw an error
+        User user = userRepo.findByEmail(expenseAutomationRequestDTO.userEmail())
+                .orElseThrow(() -> new UserNotFoundException("User with email: " + expenseAutomationRequestDTO.userEmail() + " not found"));
+        newExpense.setPayer(user);
 
-            double amount = this.sanitizeAmount(payload.get("amount"));
-            // If amount is 0, throw an error
-            if (amount == 0) throw new IllegalArgumentException("Invalid Amount: " + amount);
+        //Asks for prediction, if nothing gets return category is empty string
+        ClassificationService.Prediction prediction = classificationService.predict(expenseAutomationRequestDTO.transactionTitle());
+        String category = (null != prediction) ? prediction.category() : "";
+        System.out.println("prediction: "+prediction);
+        System.out.println("category: " + category);
+        newExpense.setExpenseCategory(ExpenseCategory.fromDisplayName(category));
 
-            // Find user by email. If user not found, throw an error
-            Optional<User> user = userDAO.findByEmail(userEmail);
-            long userId = (user.orElseThrow(()-> new RuntimeException("User not found")).getUserId());
+        // Sanitize Amount string to BigDecimal and If amount is 0, throw an error
+        BigDecimal sanitizedAmount = this.sanitizeAmount(expenseAutomationRequestDTO.amount());
+        if (sanitizedAmount.compareTo(BigDecimal.ZERO) == 0)
+            throw new BusinessException(StatusCode.INVALID_AMOUNT, "Invalid Amount: " + sanitizedAmount);
+        newExpense.setAmount(sanitizedAmount);
 
-            // Find wallet by name. If wallet not found, throw an error
-            long walletId;
-            try {
-                Map<String, Object> walletMap = walletDAO.getWalletId(walletName, userId);
-                walletId = ((Number) walletMap.get("walletId")).longValue();
-            }catch (EmptyResultDataAccessException erdae){
-                throw new NullPointerException("Error finding wallet name: " + walletName);
-            }
+        // Find wallet by name. If wallet not found, throw an error
+        String cardName = expenseAutomationRequestDTO.cardName();
+        Wallet wallet = walletRepo.findByCardNameAndUserID(cardName, user.getUserId())
+                .orElseThrow(() -> new BusinessException(StatusCode.WALLET_NOT_FOUND, "Wallet with cardName: " + cardName + " not found!"));
+        newExpense.setWallet(wallet);
 
-            // Insert personal expense
-            long expenseId = expensesDAO.insertPersonalExpense(title, date, category, amount, userId, walletId, "expense", null);
+        // Insert personal expense
+        Long expenseId = expenseRepo.save(newExpense).getExpenseId();
 
-            //Update wallet Balance
-            walletDAO.updateWalletBalance(userId, walletId, amount, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
+        //Update wallet Balance
+        walletDAO.updateWalletBalance(user.getUserId(), wallet.getWalletId(), sanitizedAmount.doubleValue(), WalletDAO.WalletBalanceUpdateMode.EXPENSE);
 
-
-            return Map.of("success", true, "expenseId", expenseId, "message", "Personal Expense created successfully");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error creating personal expense: " + e.getMessage());
-        }
+        return expenseId;
     }
 
     /** Sanitize amount remove all characters except digits, decimals and '-' at front.*/
-    private double sanitizeAmount(Object amountObj) {
+    private BigDecimal sanitizeAmount(Object amountObj) {
         if (amountObj instanceof Number) {
-            return ((Number) amountObj).doubleValue();
+            return BigDecimal.valueOf(((Long) amountObj).doubleValue());
         } else if (amountObj instanceof String) {
-            return Double.parseDouble(((String) amountObj).replaceAll("[^\\d.\\-]", ""));
+            return BigDecimal.valueOf(Double.parseDouble(((String) amountObj).replaceAll("[^\\d.\\-]", "")));
         } else {
             throw new IllegalArgumentException("Amount must be a number or string: " + amountObj);
         }
