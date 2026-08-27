@@ -94,10 +94,10 @@ public class ExpensesDAO {
         return keyHolder.getKey().longValue();
     }
 
-    /**  Insert ExpenseParticipation records */
+    /**  Insert expenseparticipation records */
     public void insertExpenseParticipation(long expenseId, long userId, double contribution, double contributionPortion) {
         jdbcTemplate.update(
-                "INSERT INTO ExpenseParticipation (ExpenseID, UserID, Contribution, ContributionPortion) VALUES (?, ?, ?, ?)",
+                "INSERT INTO expenseparticipation (ExpenseID, UserID, Contribution, ContributionPortion) VALUES (?, ?, ?, ?)",
                 expenseId, userId, contribution, contributionPortion
         );
     }
@@ -135,7 +135,7 @@ public class ExpensesDAO {
                 u.Name AS name,
                 ep.Contribution AS amount,
                 ep.ContributionPortion AS portions
-            FROM ExpenseParticipation ep
+            FROM expenseparticipation ep
             JOIN User u ON ep.UserID = u.UserID
             WHERE ep.ExpenseID = ?
         """;
@@ -167,14 +167,14 @@ public class ExpensesDAO {
             CASE 
                 WHEN e.PayerID = ? THEN -COALESCE((
                     SELECT SUM(ep2.Contribution)
-                    FROM ExpenseParticipation ep2
+                    FROM expenseparticipation ep2
                     WHERE ep2.ExpenseID = e.ExpenseID
                       AND ep2.UserID != e.PayerID
                 ), 0)
                 ELSE COALESCE(ep.Contribution, 0)
             END AS netAmount
         FROM Expenses e
-        LEFT JOIN ExpenseParticipation ep 
+        LEFT JOIN expenseparticipation ep 
             ON ep.ExpenseID = e.ExpenseID 
             AND ep.UserID = ?
         JOIN User u ON u.UserID = e.PayerID
@@ -191,7 +191,7 @@ public class ExpensesDAO {
 
     /**  Delete Expense + participation records */
     public void deleteExpense(long expenseId) {
-        jdbcTemplate.update("DELETE FROM ExpenseParticipation WHERE ExpenseID = ?", expenseId);
+        jdbcTemplate.update("DELETE FROM expenseparticipation WHERE ExpenseID = ?", expenseId);
         jdbcTemplate.update("DELETE FROM Expenses WHERE ExpenseID = ?", expenseId);
     }
 
@@ -202,7 +202,7 @@ public class ExpensesDAO {
     }
 
     public void deleteExpenseParticipation(long expenseId) {
-        jdbcTemplate.update("DELETE FROM ExpenseParticipation WHERE ExpenseID = ?", expenseId);
+        jdbcTemplate.update("DELETE FROM expenseparticipation WHERE ExpenseID = ?", expenseId);
     }
 
     public List<Map<String, Object>> getExpenseForWallet(long userId, long walletId) {

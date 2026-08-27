@@ -28,7 +28,6 @@ public record PersonalExpenseRequestDTO(
         ExpenseCategory category,
         @NotNull(message = "Personal expense submitted without a payer")
         Long payerId,
-        EntryType entryType,
         Long walletId,
         ExpenseCategory predictedCategory
 )

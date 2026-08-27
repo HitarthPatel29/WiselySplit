@@ -1,7 +1,7 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense;
 
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipation.ExpenseParticipantRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;

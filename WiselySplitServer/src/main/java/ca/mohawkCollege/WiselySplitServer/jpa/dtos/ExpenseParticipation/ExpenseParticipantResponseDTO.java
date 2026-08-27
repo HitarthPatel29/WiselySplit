@@ -1,4 +1,4 @@
-package ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipation;
+package ca.mohawkCollege.wiselySplitServer.jpa.dtos.expenseparticipation;
 
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserResponseForListDTO;
 

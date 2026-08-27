@@ -9,7 +9,7 @@ import ca.mohawkCollege.wiselySplitServer.exceptions.UserNotFoundException;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.EntryType;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipation.ExpenseParticipantRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.*;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Expense;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.ExpenseParticipation;
@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ExpenseServiceJPA {
@@ -135,10 +136,13 @@ public class ExpenseServiceJPA {
      *
      * @param participantDTOs -> ExpenseParticipantRequestDTO
      * @param newExpense      -> Expense
-     * @return List<ExpenseParticipation> -> list of entity type mapped from the requestDTO
+     * @return List<expenseparticipation> -> list of entity type mapped from the requestDTO
      * @throws BusinessException
      */
     private List<ExpenseParticipantRequestDTO> verifyExpenseParticipantRequestDTO(List<ExpenseParticipantRequestDTO> participantDTOs, Expense newExpense) throws BusinessException{
+
+        if (participantDTOs.isEmpty())
+            throw new BusinessException(StatusCode.PARTICIPANTS_REQUIRED);
 
 //      Filter out participants with 0 or less than 0 contribution. If no valid participant found throw error.
         List<ExpenseParticipantRequestDTO> participantsWithValidContribution = participantDTOs.stream().
@@ -377,7 +381,14 @@ public class ExpenseServiceJPA {
     }
 
     /** Fetch Shared + Personal Expenses (Grouped by Wallet) */
-    public List<Map<String, Object>> getExpensesGroupedByWallet(long userId){
+    public List<Map<String, Object>> getExpensesGroupedByWallet1(long userId){
+        User user = userRepo.findById(userId)
+                .orElseThrow(()-> new BusinessException(StatusCode.USER_NOT_FOUND, "Fetching Wallet Expenses for User failed, User not found!"));
+        List<Wallet> wallets = user.getWallets();
+
+
+
+
         List<Map<String, Object>> wallets = walletDAO.getWallets(userId);
         for (Map<String, Object> wallet : wallets){
             wallet.put("expenses", expensesDAO.getExpenseForWallet(userId, ((Number) wallet.get("walletId")).longValue() ));
@@ -385,10 +396,26 @@ public class ExpenseServiceJPA {
         return wallets;
     }
 
+    /** Fetch Shared + Personal Expenses (Grouped by Wallet) */
+    public List<Map<String, Object>> getExpensesGroupedByWallet(long userId){
+        List<Map<String, Object>> wallets = walletDAO.getWallets(userId);
+
+        //TODO:
+        //Map the wallet to walletListWithExpenseResponseDTO with ExpenseForListResponseDTO
+        
+        for (Map<String, Object> wallet : wallets){
+            wallet.put("expenses", expensesDAO.getExpenseForWallet(userId, ((Number) wallet.get("walletId")).longValue() ));
+        }
+        return wallets;
+    }
+
+
     /**  Delete expense */
     public void deleteExpense(long expenseId) {
-        walletDAO.updateWalletBalanceForEntryDelete(expenseId, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
-        expensesDAO.deleteExpense(expenseId);
+        if (expenseRepo.existsById(expenseId)) {
+            expenseRepo.deleteById(expenseId);
+            walletDAO.updateWalletBalanceForEntryDelete(expenseId, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
+        } else throw new BusinessException(StatusCode.EXPENSE_DELETE_FAILED, "Expense with ExpenseID: " + expenseId + " not found!");
     }
 
     @Transactional
@@ -427,12 +454,44 @@ public class ExpenseServiceJPA {
                     WalletDAO.WalletBalanceUpdateMode.EXPENSE);
         }
 
-        if (!Boolean.TRUE.equals(expenseUpdateDTO.isPersonal()) && !expenseUpdateDTO.participants().isEmpty()) {
-            List<ExpenseParticipantRequestDTO> verifiedExpenseParticipatDTO = verifyExpenseParticipantRequestDTO(expenseUpdateDTO.participants(), expenseToBeUpdated);
-            // map the ExpenseParticipantRequestDTO to current List<ExpenseParticipation> from the expenseToBeUpdated.
-            // do not create new ExpenseParticipation while mapping.
-            // Every new ExpenseParticipation will try to create a new id by combining expenseId + UserID.
-            // So make sure to find if current ExpenseParticipation exists and then update the object.
+        if (!Boolean.TRUE.equals(expenseUpdateDTO.isPersonal()) && null != expenseUpdateDTO.participants()) {
+
+            /*
+            Every new expenseparticipation will create a new embeddedId by combining expenseId + UserID.
+            And If the expenseparticipation with the exact CombinedId exists, creating a new expenseparticipation will throw
+             -> NonUniqueObjectException: A different object with the same identifier value was already associated with the session: [expenseparticipation#ExpenseParticipationId(expenseId=204, userId=19)]
+            So make sure to find if expenseparticipation with the exact embeddedId exists and then update the other Properties.
+
+            Here is what we are doing iterate on verifiedExpenseParticipantDTO
+            find the same expenseparticipation in the expenseToBeUpdated
+                if -> update the values in expenseToBeUpdated.getParticipants() and add it in the updatedListOfParticipants.
+                orElse -> create a new expenseparticipation and map the DTO to the new object and add it in the updatedListOfParticipants.
+            */
+            List<ExpenseParticipantRequestDTO> verifiedExpenseParticipantDTO = verifyExpenseParticipantRequestDTO(expenseUpdateDTO.participants(), expenseToBeUpdated);
+            ArrayList<ExpenseParticipation> updatedListOfParticipants = verifiedExpenseParticipantDTO.stream()
+                    .map(participantRequestDTO ->
+                            expenseToBeUpdated.getParticipants().stream()
+                                    .filter(existingParticipant -> participantRequestDTO.userId().equals(existingParticipant.getUser().getUserId()))
+                                    .findFirst()
+                                    .map((participant) -> {
+                                        participant.setContribution(participantRequestDTO.amount());
+                                        participant.setContributionPortion(participantRequestDTO.portion());
+                                        return participant;
+                                    }).orElseGet(()-> ExpenseParticipation.builder()
+                                            .expense(expenseToBeUpdated)
+                                            .user(userRepo.getReferenceById(participantRequestDTO.userId()))
+                                            .contribution(participantRequestDTO.amount())
+                                            .contributionPortion(participantRequestDTO.portion())
+                                            .build()
+                                    )
+                    ).collect(Collectors.toCollection(ArrayList::new));
+            /*
+            Why not toList(), why collect(Collectors.toCollection(ArrayList::new)) ???
+            List is immutable collection. Any time a .stream() result is handed to a Hibernate-managed collection setter (Expense.setParticipants())
+            Hibernate requires a mutable collection
+             */
+            expenseToBeUpdated.getParticipants().clear();
+            expenseToBeUpdated.getParticipants().addAll(updatedListOfParticipants);
         }
 
 

@@ -2,7 +2,9 @@ package ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense;
 
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.EntryType;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.ExpenseParticipation.ExpenseParticipantRequestDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -56,6 +58,7 @@ import java.util.List;
 
 
 public record ExpenseUpdateRequestDTO(
+        @NotNull(message = "Expense cannot be updated without ExpenseID")
         Long expenseId,
         String title,
         @NotNull(message = "amount cannot be null")
@@ -73,7 +76,6 @@ public record ExpenseUpdateRequestDTO(
         Long toWalletId,
         EntryType entryType,
         Long paymentId,
-        @NotEmpty(message = "Shared expense invalid with no participants")
         List<ExpenseParticipantRequestDTO> participants,
         ExpenseCategory predictedCategory
 ) {}
