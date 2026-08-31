@@ -2,7 +2,6 @@ package ca.mohawk_college.wiselysplit_server.jpa.services;
 
 import ca.mohawk_college.wiselysplit_server.daos.ExpensesDAO;
 import ca.mohawk_college.wiselysplit_server.daos.PaymentDAO;
-import ca.mohawk_college.wiselysplit_server.daos.UserDAO;
 import ca.mohawk_college.wiselysplit_server.daos.WalletDAO;
 import ca.mohawk_college.wiselysplit_server.exceptions.BusinessException;
 import ca.mohawk_college.wiselysplit_server.exceptions.UserNotFoundException;
@@ -13,11 +12,13 @@ import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.*;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletWithExpensesResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.Expense;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.ExpenseParticipation;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.User;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.Wallet;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.*;
+import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.EntryRepo;
+import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.ExpenseRepo;
 import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.ExpenseResponseRowMapper;
 import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.WalletWithExpensesResponseRowMapper;
 import ca.mohawk_college.wiselysplit_server.models.dtos.PersonalExpenseImportDTO;
@@ -33,20 +34,20 @@ import java.util.stream.Collectors;
 
 @Service
 public class ExpenseServiceJPA {
-    @Autowired private UserService userService;
     @Autowired private UserRepo userRepo;
     @Autowired private ExpenseGroupRepo groupRepo;
     @Autowired private PaymentRepo paymentRepo;
     @Autowired private WalletRepo walletRepo;
     @Autowired private ExpensesDAO expensesDAO;
     @Autowired private WalletDAO walletDAO;
-    @Autowired private UserDAO userDAO;
     @Autowired private PaymentDAO paymentDAO;
     @Autowired private ClassificationService classificationService;
     @Autowired private FeedbackService feedbackService;
-    @Autowired
-    private ExpenseRepo expenseRepo;
+    
+    @Autowired private ExpenseRepo expenseRepo;
+    @Autowired private EntryRepo entryRepo;
 
+//    TODO: Update the WalletBalanceUpdate methods used for all Expense CRUD operations
 
     /**
      * Best-effort: send a feedback row to the classifier, so it can learn from
@@ -57,7 +58,7 @@ public class ExpenseServiceJPA {
             if (title == null || finalCategory == null) return;
 
             // ignore non-expense entries (income / transfer) — they aren't categorized by the model
-            if (entryType != null && !EntryType.expense.equals(entryType)) return;
+            if (entryType != null && !EntryType.EXPENSE.equals(entryType)) return;
 
             feedbackService.recordFeedback( title, predictedCategory.getDisplayName(), finalCategory.getDisplayName(), payerId );
         } catch (Exception ignored) {
@@ -87,11 +88,10 @@ public class ExpenseServiceJPA {
                     "Shared expense from payer " + payerId + " submitted with no participants");
 
         Expense newExpense = new Expense();
-        newExpense.setExpenseTitle(expenseRequestDTO.title());
+        newExpense.setTitle(expenseRequestDTO.title());
         newExpense.setAmount(expenseRequestDTO.amount());
-        newExpense.setExpenseDate(expenseRequestDTO.date());
+        newExpense.setDate(expenseRequestDTO.date());
         newExpense.setExpenseCategory(expenseRequestDTO.category());
-        newExpense.setEntryType(EntryType.expense);
         newExpense.setPayer(userRepo.getReferenceById(payerId));
         newExpense.setIsSettleUp(Boolean.TRUE.equals(expenseRequestDTO.isSettleUp()));
         newExpense.setIsPersonal(Boolean.FALSE);
@@ -120,14 +120,14 @@ public class ExpenseServiceJPA {
                         .toList()
                 );
 
-        Long expenseId = expenseRepo.save(newExpense).getExpenseId();
+        Long expenseId = expenseRepo.save(newExpense).getEntryId();
 
         sendClassifierFeedback(
                 expenseRequestDTO.title(),
                 expenseRequestDTO.category(),
                 expenseRequestDTO.predictedCategory(),
                 expenseRequestDTO.payerId(),
-                EntryType.expense);
+                EntryType.EXPENSE);
 
         return expenseId;
     }
@@ -147,7 +147,7 @@ public class ExpenseServiceJPA {
         if (participantDTOs.isEmpty())
             throw new BusinessException(StatusCode.PARTICIPANTS_REQUIRED);
 
-//      Filter out participants with 0 or less than 0 contribution. If no valid participant found throw error.
+        //Filter out participants with 0 or less than 0 contribution. If no valid participant found throw error.
         List<ExpenseParticipantRequestDTO> participantsWithValidContribution = participantDTOs.stream().
                 filter(participant -> participant.amount().compareTo(BigDecimal.ZERO) > 0)
                 .toList();
@@ -155,7 +155,7 @@ public class ExpenseServiceJPA {
         if (participantsWithValidContribution.isEmpty())
             throw new BusinessException(StatusCode.PARTICIPANTS_REQUIRED);
 
-//      Get sum of Participant contributions and compare with the Total Expense Amount. If not equal throw error.
+        //Get sum of Participant contributions and compare with the Total Expense Amount. If not equal throw error.
         BigDecimal sumOfParticipantContribution = participantDTOs.stream()
                 .map(ExpenseParticipantRequestDTO::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -163,7 +163,7 @@ public class ExpenseServiceJPA {
         if (sumOfParticipantContribution.compareTo(newExpense.getAmount()) != 0)
             throw new BusinessException(StatusCode.SPLIT_AMOUNT_MISMATCH);
 
-//      Participants Verified!
+        //Participants Verified!
         return participantsWithValidContribution;
     }
 
@@ -175,11 +175,10 @@ public class ExpenseServiceJPA {
                     "Personal expense '" + expenseRequestDTO.title() + "' submitted without a payer");
 
         Expense newExpense = new Expense();
-        newExpense.setExpenseTitle(expenseRequestDTO.title());
+        newExpense.setTitle(expenseRequestDTO.title());
         newExpense.setAmount(expenseRequestDTO.amount());
-        newExpense.setExpenseDate(expenseRequestDTO.date());
+        newExpense.setDate(expenseRequestDTO.date());
         newExpense.setExpenseCategory(expenseRequestDTO.category());
-        newExpense.setEntryType(EntryType.expense);
         newExpense.setPayer(userRepo.getReferenceById(payerId));
         newExpense.setIsSettleUp(Boolean.FALSE);
         newExpense.setIsPersonal(Boolean.TRUE);
@@ -192,14 +191,14 @@ public class ExpenseServiceJPA {
             walletDAO.updateWalletBalance(payerId, walletId, expenseRequestDTO.amount().doubleValue(), WalletDAO.WalletBalanceUpdateMode.EXPENSE);
         }
 
-        Long expenseId = expenseRepo.save(newExpense).getExpenseId();
+        Long expenseId = expenseRepo.save(newExpense).getEntryId();
 
         sendClassifierFeedback(
                 expenseRequestDTO.title(),
                 expenseRequestDTO.category(),
                 expenseRequestDTO.predictedCategory(),
                 expenseRequestDTO.payerId(),
-                EntryType.expense);
+                EntryType.EXPENSE);
 
         return expenseId;
     }
@@ -270,9 +269,8 @@ public class ExpenseServiceJPA {
     @Transactional
     public Long createPersonalExpenseWithAutomation(PersonalExpenseAutomationRequestDTO expenseAutomationRequestDTO) {
         Expense newExpense = new Expense();
-        newExpense.setExpenseTitle(expenseAutomationRequestDTO.transactionTitle());
-        newExpense.setExpenseDate(expenseAutomationRequestDTO.transactionDate());
-        newExpense.setEntryType(EntryType.expense);
+        newExpense.setTitle(expenseAutomationRequestDTO.transactionTitle());
+        newExpense.setDate(expenseAutomationRequestDTO.transactionDate());
         newExpense.setIsSettleUp(Boolean.FALSE);
         newExpense.setIsPersonal(Boolean.TRUE);
 
@@ -301,7 +299,7 @@ public class ExpenseServiceJPA {
         newExpense.setWallet(wallet);
 
         // Insert personal expense
-        Long expenseId = expenseRepo.save(newExpense).getExpenseId();
+        Long expenseId = expenseRepo.save(newExpense).getEntryId();
 
         //Update wallet Balance
         walletDAO.updateWalletBalance(user.getUserId(), wallet.getWalletId(), sanitizedAmount.doubleValue(), WalletDAO.WalletBalanceUpdateMode.EXPENSE);
@@ -350,6 +348,13 @@ public class ExpenseServiceJPA {
         }
     }
 
+    /**
+     * TODO: Return Lists of ExpenseResponseForListDTO and IncomeResponseForListDTO + Summary : TotalIncomeAmount, TotalExpenseAmount, TotalAmountLent, TotalAmountOwed and NetStanding
+     * @param userId
+     * @param startDate
+     * @param endDate
+     * @return
+     */
     public Map<String, Object> getPersonalSummary(long userId, String startDate, String endDate) {
 
         List<Map<String, Object>> rows =
@@ -395,14 +400,14 @@ public class ExpenseServiceJPA {
 
         return wallets.stream()
                 .map(wallet -> {
-                    List<Expense> expenseListOfWallet = expenseRepo.findByWallet_WalletIdIsOrToWallet_WalletIdIs(wallet.getWalletId(),wallet.getWalletId() );
+                    List<Expense> expenseListOfWallet = entryRepo.findByWallet_WalletIdIsOrToWallet_WalletIdIs(wallet.getWalletId(),wallet.getWalletId() );
                     return WalletWithExpensesResponseRowMapper.toDto(wallet, expenseListOfWallet);
                 })
                 .toList();
     }
 
 
-    /**  Delete expense */
+    /**  Delete EXPENSE */
     public void deleteExpense(long expenseId) {
         if (expenseRepo.existsById(expenseId)) {
             expenseRepo.deleteById(expenseId);
@@ -416,17 +421,15 @@ public class ExpenseServiceJPA {
                 .orElseThrow(()-> new BusinessException(
                         StatusCode.EXPENSE_UPDATE_FAILED, "Expense with expenseId : "+expenseUpdateDTO.expenseId()+ " not found"));
 
-        expenseToBeUpdated.setExpenseTitle(expenseUpdateDTO.title());
+        expenseToBeUpdated.setTitle(expenseUpdateDTO.title());
         expenseToBeUpdated.setAmount(expenseUpdateDTO.amount());
-        expenseToBeUpdated.setExpenseDate(expenseUpdateDTO.date());
+        expenseToBeUpdated.setDate(expenseUpdateDTO.date());
         expenseToBeUpdated.setExpenseCategory(expenseUpdateDTO.category());
-        expenseToBeUpdated.setEntryType(EntryType.expense);
         expenseToBeUpdated.setIsSettleUp(Boolean.TRUE.equals(expenseUpdateDTO.isSettleUp()));
         expenseToBeUpdated.setIsPersonal(Boolean.TRUE.equals(expenseUpdateDTO.isPersonal()));
 
         Long payerId = expenseUpdateDTO.payerId();
-        if (null == payerId)
-            throw new BusinessException(StatusCode.PAYER_NOT_FOUND);
+        if (null == payerId) throw new BusinessException(StatusCode.PAYER_NOT_FOUND);
         expenseToBeUpdated.setPayer(userRepo.getReferenceById(payerId));
 
         if(null != expenseUpdateDTO.groupId())
@@ -448,7 +451,7 @@ public class ExpenseServiceJPA {
 
         if (!Boolean.TRUE.equals(expenseUpdateDTO.isPersonal()) && null != expenseUpdateDTO.participants()) {
 
-            /*
+            /* NonUniqueObjectException ->
             Every new expenseparticipation will create a new embeddedId by combining expenseId + UserID.
             And If the expenseparticipation with the exact CombinedId exists, creating a new expenseparticipation will throw
              -> NonUniqueObjectException: A different object with the same identifier value was already associated with the session: [expenseparticipation#ExpenseParticipationId(expenseId=204, userId=19)]
@@ -477,8 +480,7 @@ public class ExpenseServiceJPA {
                                             .build()
                                     )
                     ).collect(Collectors.toCollection(ArrayList::new));
-            /*
-            Why not toList(), why collect(Collectors.toCollection(ArrayList::new)) ???
+            /* Why not toList(), why collect(Collectors.toCollection(ArrayList::new)) ???
             List is immutable collection. Any time a .stream() result is handed to a Hibernate-managed collection setter (Expense.setParticipants())
             Hibernate requires a mutable collection
              */
@@ -494,7 +496,7 @@ public class ExpenseServiceJPA {
                 expenseUpdateDTO.category(),
                 expenseUpdateDTO.predictedCategory(),
                 expenseUpdateDTO.payerId(),
-                EntryType.expense);
+                EntryType.EXPENSE);
 
         return ExpenseResponseRowMapper.toDto(updatedExpense);
     }

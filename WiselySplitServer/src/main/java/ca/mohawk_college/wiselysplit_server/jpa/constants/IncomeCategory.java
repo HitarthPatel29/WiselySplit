@@ -1,15 +1,9 @@
 package ca.mohawk_college.wiselysplit_server.jpa.constants;
 
-import ca.mohawk_college.wiselysplit_server.jpa.utilities.ExpenseCategoryConverter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/**
- * Fixed set of expense categories.
- * DB/API keep the display name (e.g. {@code "Food & Dining"});
- * use {@link ExpenseCategoryConverter} instead of {@code @Enumerated}.
- */
-public enum ExpenseCategory {
+public enum IncomeCategory {
     EDUCATION("Education"),
     ENTERTAINMENT("Entertainment"),
     FINANCE("Finance"),
@@ -27,16 +21,16 @@ public enum ExpenseCategory {
     TRAVEL("Travel"),
     UTILITIES("Utilities");
 
-    public static final ExpenseCategory DEFAULT = OTHER;
+    public static final IncomeCategory DEFAULT = OTHER;
 
     private final String displayName;
 
-    ExpenseCategory(String displayName) {
+    IncomeCategory(String displayName) {
         this.displayName = displayName;
     }
 
     @JsonCreator
-    public static ExpenseCategory fromJson(String value) {
+    public static IncomeCategory fromJson(String value) {
         return fromDisplayName(value);
     }
     @JsonValue
@@ -45,12 +39,12 @@ public enum ExpenseCategory {
     }
 
     /** Resolve from API/CSV/classifier text; falls back to {@link #OTHER}. */
-    public static ExpenseCategory fromDisplayName(String value) {
+    public static IncomeCategory fromDisplayName(String value) {
         if (value == null || value.isBlank()) {
             return DEFAULT;
         }
         String normalized = value.trim();
-        for (ExpenseCategory category : values()) {
+        for (IncomeCategory category : values()) {
             if (category.displayName.equalsIgnoreCase(normalized)
                     || category.name().equalsIgnoreCase(normalized.replace(' ', '_').replace("&", "AND"))) {
                 return category;

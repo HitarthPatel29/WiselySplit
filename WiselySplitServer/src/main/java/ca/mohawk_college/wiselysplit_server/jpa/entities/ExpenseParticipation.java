@@ -1,5 +1,6 @@
 package ca.mohawk_college.wiselysplit_server.jpa.entities;
 
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

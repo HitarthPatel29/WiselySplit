@@ -1,9 +1,6 @@
 package ca.mohawk_college.wiselysplit_server.jpa.dtos.user;
 
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -5,7 +5,7 @@ import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.ExpenseResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expenseparticipation.ExpenseParticipantResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletResponseForListDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.Expense;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,10 +16,10 @@ public class ExpenseResponseRowMapper {
         if (expense == null) return null;
 
         ExpenseResponseDTO responseDTO = new ExpenseResponseDTO();
-        responseDTO.setExpenseId(expense.getExpenseId());
+        responseDTO.setExpenseId(expense.getEntryId());
         responseDTO.setAmount(expense.getAmount());
-        responseDTO.setTitle(expense.getExpenseTitle());
-        responseDTO.setDate(expense.getExpenseDate());
+        responseDTO.setTitle(expense.getTitle());
+        responseDTO.setDate(expense.getDate());
         responseDTO.setCategory(expense.getExpenseCategory());
         responseDTO.setIsSettleUp(expense.getIsSettleUp());
         responseDTO.setIsPersonal(expense.getIsPersonal());
@@ -54,16 +54,6 @@ public class ExpenseResponseRowMapper {
                                 expense.getWallet().getColor())
                         : null
         );
-
-        responseDTO.setToWallet(
-                (null != expense.getToWallet())
-                        ? new WalletResponseForListDTO(
-                                expense.getToWallet().getWalletId(),
-                                expense.getToWallet().getName(),
-                                expense.getToWallet().getColor())
-                        : null
-        );
-
 
         responseDTO.setPaymentId(
                 null != expense.getPayment() ? expense.getPayment().getPaymentId() : null

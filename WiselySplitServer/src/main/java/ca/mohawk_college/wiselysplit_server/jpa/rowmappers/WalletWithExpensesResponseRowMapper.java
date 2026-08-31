@@ -1,7 +1,7 @@
 package ca.mohawk_college.wiselysplit_server.jpa.rowmappers;
 
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletWithExpensesResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.Expense;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.Wallet;
 
 import java.util.List;

@@ -11,5 +11,5 @@ public record WalletWithExpensesResponseDTO (
     BigDecimal balance,
     String cardName,
     String color,
-    List<ExpenseResponseForListDTO> expenses
+    List<ExpenseResponseForListDTO> entries
 ){}

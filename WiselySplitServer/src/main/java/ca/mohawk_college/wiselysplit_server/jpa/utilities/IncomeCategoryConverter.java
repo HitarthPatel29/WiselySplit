@@ -1,5 +1,6 @@
-package ca.mohawk_college.wiselysplit_server.jpa.constants;
+package ca.mohawk_college.wiselysplit_server.jpa.utilities;
 
+import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -8,7 +9,7 @@ import jakarta.persistence.Converter;
  * (e.g. {@code "Food & Dining"}), not the enum constant name.
  */
 @Converter(autoApply = true)
-public class ExpenseCategoryConverter implements AttributeConverter<ExpenseCategory, String> {
+public class IncomeCategoryConverter implements AttributeConverter<ExpenseCategory, String> {
 
     // Converts the Enum to its DisplayName
     @Override

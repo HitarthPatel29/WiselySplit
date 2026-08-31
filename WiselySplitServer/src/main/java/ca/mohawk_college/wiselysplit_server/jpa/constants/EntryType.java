@@ -1,9 +1,9 @@
 package ca.mohawk_college.wiselysplit_server.jpa.constants;
 
 public enum EntryType {
-    expense,
-    income,
-    transfer;
+    EXPENSE,
+    INCOME,
+    TRANSFER,;
 
-    public static final String DEFAULT = expense.name();
+    public static final String DEFAULT = EXPENSE.name();
 }

@@ -4,7 +4,7 @@ import ca.mohawk_college.wiselysplit_server.jpa.dtos.GroupResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.ExpenseResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletResponseForListDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.Expense;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.ExpenseParticipation;
 
 import java.math.BigDecimal;
@@ -43,27 +43,20 @@ public class ExpenseResponseForListRowMapper {
                             expense.getWallet().getName(),
                             expense.getWallet().getColor())
                 : null;
-        WalletResponseForListDTO toWalletDTO = (expense.getToWallet() != null)
-                ? new WalletResponseForListDTO(
-                            expense.getToWallet().getWalletId(),
-                            expense.getToWallet().getName(),
-                            expense.getToWallet().getColor())
-                : null;
 
         return new ExpenseResponseForListDTO(
-                expense.getExpenseId(),
-                expense.getExpenseTitle(),
+                expense.getEntryId(),
+                expense.getTitle(),
                 expense.getAmount(),
                 amountLentOrOwed,
-                expense.getExpenseDate(),
+                expense.getDate(),
                 expense.getExpenseCategory(),
                 payerDTO,
                 groupDTO,
                 expense.getIsSettleUp(),
                 expense.getIsPersonal(),
                 expense.getEntryType(),
-                walletDTO,
-                toWalletDTO
+                walletDTO
         );
     }
 

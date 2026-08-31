@@ -1,17 +1,15 @@
-package ca.mohawk_college.wiselysplit_server.jpa.entities;
+package ca.mohawk_college.wiselysplit_server.jpa.entities.entry;
 
 import ca.mohawk_college.wiselysplit_server.jpa.constants.EntryType;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;
-import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategoryConverter;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.*;
+import ca.mohawk_college.wiselysplit_server.jpa.utilities.ExpenseCategoryConverter;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,24 +17,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Builder
-@Table(name = "Expenses")
-public class Expense {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ExpenseID", columnDefinition = "BIGINT")
-    private Long expenseId;
-
-    @Column(name = "Amount", precision = 10, scale = 2)
-    @PositiveOrZero(message = "Quantity cannot be negative")
-    private BigDecimal amount;
-
-    @Column(name = "ExpenseTitle", columnDefinition = "VARCHAR")
-    private String expenseTitle;
-
-    @Column(name = "ExpenseDate", columnDefinition = "DATE")
-    private LocalDate expenseDate;
+@SuperBuilder
+@DiscriminatorValue("expense")
+public class Expense extends Entry {
 
     /** Stored as display name (e.g. "Food & Dining") via {@link ExpenseCategoryConverter}. */
     @Convert(converter = ExpenseCategoryConverter.class)
@@ -61,18 +44,13 @@ public class Expense {
     @Column(name = "IsPersonal", columnDefinition = "TINYINT")
     private Boolean isPersonal;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "EntryKind", nullable = false)
-    private EntryType entryType;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "WalletID", nullable = true)
     private Wallet wallet;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ToWalletID", nullable = true)
-    private Wallet toWallet;
-
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExpenseParticipation> participants = new ArrayList<>();
+
+    @Override
+    public EntryType getEntryType() { return EntryType.EXPENSE; }
 }
