@@ -11,12 +11,14 @@ import ca.mohawkCollege.wiselySplitServer.jpa.constants.ExpenseCategory;
 import ca.mohawkCollege.wiselySplitServer.jpa.constants.StatusCode;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.*;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.wallet.WalletWithExpensesResponseDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Expense;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.ExpenseParticipation;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.User;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Wallet;
 import ca.mohawkCollege.wiselySplitServer.jpa.repositories.*;
-import ca.mohawkCollege.wiselySplitServer.jpa.rowmappers.ExpenseUpdateResponseRowMapper;
+import ca.mohawkCollege.wiselySplitServer.jpa.rowmappers.ExpenseResponseRowMapper;
+import ca.mohawkCollege.wiselySplitServer.jpa.rowmappers.WalletWithExpensesResponseRowMapper;
 import ca.mohawkCollege.wiselySplitServer.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawkCollege.wiselySplitServer.services.classification.ClassificationService;
 import ca.mohawkCollege.wiselySplitServer.services.classification.FeedbackService;
@@ -372,41 +374,29 @@ public class ExpenseServiceJPA {
 
     /**  Fetch single expense details */
     public Map<String, Object> getExpenseDetails(long expenseId) {
-        Map<String, Object> expense = expensesDAO.findExpenseById(expenseId);
-        if ( ! ((boolean) expense.get("isPersonal")) ) {
-            List<Map<String, Object>> participants = expensesDAO.findExpenseParticipants(expenseId);
-            expense.put("splitDetails", participants);
-        }
+        Expense expense = expenseRepo.findById(expenseId)
+                .orElseThrow(()-> new BusinessException(StatusCode.EXPENSE_NOT_FOUND));
+
         return expense;
     }
 
-    /** Fetch Shared + Personal Expenses (Grouped by Wallet) */
-    public List<Map<String, Object>> getExpensesGroupedByWallet1(long userId){
-        User user = userRepo.findById(userId)
-                .orElseThrow(()-> new BusinessException(StatusCode.USER_NOT_FOUND, "Fetching Wallet Expenses for User failed, User not found!"));
-        List<Wallet> wallets = user.getWallets();
+    /** Fetch Shared + Personal Expenses (Grouped by Wallet)
+     * TODO: Move this to WalletService and Add getExpensesForWallet(long walletId)
+     * */
+    @Transactional
+    public List<WalletWithExpensesResponseDTO> getExpensesGroupedByWallet1(long userId){
+        List<Wallet> wallets = userRepo.findById(userId)
+                .orElseThrow(() -> new BusinessException(StatusCode.USER_NOT_FOUND, "Fetching Wallet Expenses for User failed, User not found!"))
+                .getWallets();
 
+        if (null == wallets) throw new BusinessException(StatusCode.NO_WALLETS_FOUND);
 
-
-
-        List<Map<String, Object>> wallets = walletDAO.getWallets(userId);
-        for (Map<String, Object> wallet : wallets){
-            wallet.put("expenses", expensesDAO.getExpenseForWallet(userId, ((Number) wallet.get("walletId")).longValue() ));
-        }
-        return wallets;
-    }
-
-    /** Fetch Shared + Personal Expenses (Grouped by Wallet) */
-    public List<Map<String, Object>> getExpensesGroupedByWallet(long userId){
-        List<Map<String, Object>> wallets = walletDAO.getWallets(userId);
-
-        //TODO:
-        //Map the wallet to walletListWithExpenseResponseDTO with ExpenseForListResponseDTO
-        
-        for (Map<String, Object> wallet : wallets){
-            wallet.put("expenses", expensesDAO.getExpenseForWallet(userId, ((Number) wallet.get("walletId")).longValue() ));
-        }
-        return wallets;
+        return wallets.stream()
+                .map(wallet -> {
+                    List<Expense> expenseListOfWallet = expenseRepo.findByWallet_WalletIdIsOrToWallet_WalletIdIs(wallet.getWalletId(),wallet.getWalletId() );
+                    return WalletWithExpensesResponseRowMapper.toDto(wallet, expenseListOfWallet);
+                })
+                .toList();
     }
 
 
@@ -419,7 +409,7 @@ public class ExpenseServiceJPA {
     }
 
     @Transactional
-    public ExpenseUpdateResponseDTO updateExpense(ExpenseUpdateRequestDTO expenseUpdateDTO) {
+    public ExpenseResponseDTO updateExpense(ExpenseUpdateRequestDTO expenseUpdateDTO) {
         Expense expenseToBeUpdated = expenseRepo.findById(expenseUpdateDTO.expenseId())
                 .orElseThrow(()-> new BusinessException(
                         StatusCode.EXPENSE_UPDATE_FAILED, "Expense with expenseId : "+expenseUpdateDTO.expenseId()+ " not found"));
@@ -504,6 +494,6 @@ public class ExpenseServiceJPA {
                 expenseUpdateDTO.payerId(),
                 EntryType.expense);
 
-        return ExpenseUpdateResponseRowMapper.toDto(updatedExpense);
+        return ExpenseResponseRowMapper.toDto(updatedExpense);
     }
 }

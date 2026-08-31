@@ -71,7 +71,7 @@ public class Expense {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ToWalletID", nullable = true)
-    private Wallet ToWallet;
+    private Wallet toWallet;
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExpenseParticipation> participants = new ArrayList<>();

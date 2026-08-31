@@ -87,7 +87,7 @@ public class ExpenseControllerJPA {
 
     @GetMapping("/group-by-wallets/{userId}")
     public ResponseEntity<ResponseDTO> getExpensesGroupedByWallets(@PathVariable long userId) {
-        return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpensesGroupedByWallet(userId));
+        return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpensesGroupedByWallet1(userId));
     }
 
     /** PERSONAL SUMMARY for given date-range (default 1 month) */
@@ -111,7 +111,7 @@ public class ExpenseControllerJPA {
     /* UPDATE Expense */
     @PutMapping()
     public ResponseEntity<ResponseDTO> updateExpense(@Valid @RequestBody ExpenseUpdateRequestDTO expenseUpdateDTO) {
-        ExpenseUpdateResponseDTO updateResponseDTO = expenseService.updateExpense(expenseUpdateDTO);
+        ExpenseResponseDTO updateResponseDTO = expenseService.updateExpense(expenseUpdateDTO);
         return ResponseDTO.respond(StatusCode.UPDATED, updateResponseDTO);
     }
 }

@@ -91,6 +91,7 @@ public enum StatusCode {
     INVALID_ROLE("0310", "The specified role is not recognised.", HttpStatus.BAD_REQUEST),
     CANNOT_MODIFY_OWN_ACCOUNT("0311", "You cannot perform this action on your own account.", HttpStatus.BAD_REQUEST),
     LAST_ADMIN_PROTECTED("0312", "The last administrator account cannot be removed or demoted.", HttpStatus.BAD_REQUEST),
+    NO_WALLETS_FOUND("0313", "No wallets found for User", HttpStatus.NOT_FOUND),
 
     // ---------------------------------------------------------------- 04xx Wallet
     WALLET_NOT_FOUND("0400", "The requested wallet does not exist.", HttpStatus.NOT_FOUND),

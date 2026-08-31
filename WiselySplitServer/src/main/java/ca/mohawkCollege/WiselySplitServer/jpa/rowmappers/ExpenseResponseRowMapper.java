@@ -1,7 +1,7 @@
 package ca.mohawkCollege.wiselySplitServer.jpa.rowmappers;
 
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.GroupResponseForListDTO;
-import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.ExpenseUpdateResponseDTO;
+import ca.mohawkCollege.wiselySplitServer.jpa.dtos.expense.ExpenseResponseDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.dtos.wallet.WalletResponseForListDTO;
 import ca.mohawkCollege.wiselySplitServer.jpa.entities.Expense;
@@ -9,14 +9,14 @@ import ca.mohawkCollege.wiselySplitServer.jpa.entities.Expense;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ExpenseUpdateResponseRowMapper{
+public class ExpenseResponseRowMapper {
 
-    public static ExpenseUpdateResponseDTO toDto(Expense expense) {
+    public static ExpenseResponseDTO toDto(Expense expense) {
         if (expense == null) {
             return null;
         }
 
-        ExpenseUpdateResponseDTO responseDTO = new ExpenseUpdateResponseDTO();
+        ExpenseResponseDTO responseDTO = new ExpenseResponseDTO();
         responseDTO.setExpenseId(expense.getExpenseId());
         responseDTO.setAmount(expense.getAmount());
         responseDTO.setTitle(expense.getExpenseTitle());
@@ -70,13 +70,18 @@ public class ExpenseUpdateResponseRowMapper{
                             expense.getToWallet().getColor()
             ));
         }
+        if (!expense.getIsPersonal()){
+            responseDTO.setParticipants(
+
+            );
+        }
 
         return responseDTO;
     }
 
-    public static List<ExpenseUpdateResponseDTO> toDtoList(List<Expense> expenses) {
+    public static List<ExpenseResponseDTO> toDtoList(List<Expense> expenses) {
         return expenses.stream()
-                .map(ExpenseUpdateResponseRowMapper::toDto)
+                .map(ExpenseResponseRowMapper::toDto)
                 .collect(Collectors.toList());
     }
 }

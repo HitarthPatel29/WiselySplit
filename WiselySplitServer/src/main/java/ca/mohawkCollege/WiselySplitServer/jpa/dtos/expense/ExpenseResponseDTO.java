@@ -19,7 +19,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @Component
-public class ExpenseUpdateResponseDTO {
+public class ExpenseResponseDTO {
         Long expenseId;
         String title;
         @NotNull(message = "amount cannot be null")
