@@ -1,0 +1,97 @@
+package ca.mohawk_college.wiselysplit_server.controllers;
+
+import ca.mohawk_college.wiselysplit_server.models.dtos.IncomeImportDTO;
+import ca.mohawk_college.wiselysplit_server.services.entry.IncomeService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/income")
+public class IncomeController {
+
+    /** Max rows accepted in a single CSV batch import. */
+    private static final int MAX_BATCH_ROWS = 150;
+
+    @Autowired
+    private IncomeService incomeService;
+    @Autowired
+    private AuthenticationManager authManager;
+
+    /**  CREATE Income */
+    @PostMapping
+    public ResponseEntity<?> createIncome(@RequestBody Map<String, Object> payload) {
+        try {
+            Map<String, Object> result = incomeService.createIncome(payload);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    /**  BATCH CREATE Incomes (CSV import) */
+    @PostMapping("/batch")
+    public ResponseEntity<?> createIncomesBatch(@RequestBody List<IncomeImportDTO> rows) {
+        try {
+            if (rows == null || rows.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "No rows provided"));
+            }
+            if (rows.size() > MAX_BATCH_ROWS) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Too many rows. Please import " + MAX_BATCH_ROWS + " rows or fewer."));
+            }
+            Map<String, Object> result = incomeService.createIncomesBatch(rows);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** GET Income details */
+    @GetMapping("/{incomeId}")
+    public ResponseEntity<?> getIncome(@PathVariable long incomeId) {
+        try {
+            return ResponseEntity.ok(incomeService.getIncomeDetails(incomeId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**  DELETE Income */
+    @DeleteMapping("/{incomeId}")
+    public ResponseEntity<?> deleteIncome(@PathVariable long incomeId) {
+        try {
+            incomeService.deleteIncome(incomeId);
+            return ResponseEntity.ok(Map.of("message", "Income deleted successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /* UPDATE Income */
+    @PutMapping("/{incomeId}")
+    public ResponseEntity<?> updateIncome(@PathVariable long incomeId, @RequestBody Map<String, Object> payload) {
+        try {
+            Map<String, Object> result = incomeService.updateIncome(incomeId, payload);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+}
