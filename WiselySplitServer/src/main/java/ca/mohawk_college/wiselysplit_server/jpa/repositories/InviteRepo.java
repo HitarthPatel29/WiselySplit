@@ -38,4 +38,13 @@ public interface InviteRepo extends JpaRepository<Invite, Long> {
         """)
     void updateStatusForExpiredInvites();
 
+    @Query("""
+            SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END
+            FROM Invite i
+            WHERE i.inviteId = ?1
+              AND (i.sender.userId = ?2 OR i.receiver.userId = ?2)
+            """)
+    boolean existsReadableByUser(Long inviteId, Long userId);
+
+    boolean existsByInviteIdAndReceiver_UserId(Long inviteId, Long userId);
 }

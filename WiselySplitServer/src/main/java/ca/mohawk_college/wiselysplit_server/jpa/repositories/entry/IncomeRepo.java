@@ -14,5 +14,7 @@ public interface IncomeRepo extends JpaRepository<Income, Long> {
     @Query("select i from Income i where i.user.userId = ?1 and i.date between ?2 and ?3")
     List<Income> findAllByUserIdAndDateRange(Long userId, LocalDate dateStart, LocalDate dateEnd);
 
+    boolean existsByEntryIdAndUser_UserId(Long entryId, Long userId);
+
 
 }

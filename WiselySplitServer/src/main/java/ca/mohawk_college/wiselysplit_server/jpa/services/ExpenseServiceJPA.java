@@ -1,36 +1,20 @@
 package ca.mohawk_college.wiselysplit_server.jpa.services;
 
-import ca.mohawk_college.wiselysplit_server.daos.ExpensesDAO;
-import ca.mohawk_college.wiselysplit_server.daos.PaymentDAO;
-import ca.mohawk_college.wiselysplit_server.daos.WalletDAO;
-import ca.mohawk_college.wiselysplit_server.exceptions.BusinessException;
-import ca.mohawk_college.wiselysplit_server.exceptions.UserNotFoundException;
-import ca.mohawk_college.wiselysplit_server.exceptions.GlobalExceptionHandler;
-import ca.mohawk_college.wiselysplit_server.jpa.constants.EntryType;
-import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;
-import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
+import ca.mohawk_college.wiselysplit_server.daos.*;
+import ca.mohawk_college.wiselysplit_server.exceptions.*;
+import ca.mohawk_college.wiselysplit_server.jpa.constants.*;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.PersonalSummaryResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.*;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.income.IncomeResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletWithExpensesResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Entry;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.ExpenseParticipation;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.User;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.Wallet;
-import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Income;
-import ca.mohawk_college.wiselysplit_server.jpa.repositories.*;
-import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.EntryRepo;
-import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.ExpenseRepo;
-import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.IncomeRepo;
-import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.ExpenseResponseForListRowMapper;
-import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.ExpenseResponseRowMapper;
-import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.IncomeResponseForListRowMapper;
-import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.WalletWithExpensesResponseRowMapper;
 import ca.mohawk_college.wiselysplit_server.models.dtos.PersonalExpenseImportDTO;
-import ca.mohawk_college.wiselysplit_server.services.classification.ClassificationService;
-import ca.mohawk_college.wiselysplit_server.services.classification.FeedbackService;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.*;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.*;
+import ca.mohawk_college.wiselysplit_server.jpa.repositories.*;
+import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.*;
+import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.*;
+import ca.mohawk_college.wiselysplit_server.services.classification.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,8 +38,7 @@ public class ExpenseServiceJPA {
     
     @Autowired private ExpenseRepo expenseRepo;
     @Autowired private EntryRepo entryRepo;
-    @Autowired
-    private IncomeRepo incomeRepo;
+    @Autowired private IncomeRepo incomeRepo;
 
 //    TODO: Update the WalletBalanceUpdate methods used for all Expense CRUD operations
 

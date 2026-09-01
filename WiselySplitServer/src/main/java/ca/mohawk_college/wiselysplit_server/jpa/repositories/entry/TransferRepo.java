@@ -4,4 +4,6 @@ import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Transfer;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TransferRepo extends JpaRepository<Transfer, Long> {
+
+    boolean existsByEntryIdAndUser_UserId(Long entryId, Long userId);
 }

@@ -8,11 +8,15 @@ import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.PersonalSummaryRespon
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.*;
 import ca.mohawk_college.wiselysplit_server.jpa.services.ExpenseServiceJPA;
 import ca.mohawk_college.wiselysplit_server.models.dtos.PersonalExpenseImportDTO;
+import ca.mohawk_college.wiselysplit_server.utilities.auth.AuthenticatedUser;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -81,7 +85,8 @@ public class ExpenseControllerJPA {
         return ResponseDTO.respond(StatusCode.CREATED, result);
     }
 
-    /** GET Expense details */
+    /** GET Expense details — resource-scoped: id says *what*, JWT says *who*. */
+    @PreAuthorize("@authz.canReadExpense(#expenseId)")
     @GetMapping("/{expenseId}")
     public ResponseEntity<ResponseDTO> getExpense(@PathVariable long expenseId) {
         return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpenseDetails(expenseId));
@@ -92,14 +97,21 @@ public class ExpenseControllerJPA {
         return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpensesGroupedByWallet(userId));
     }
 
-    /** PERSONAL SUMMARY for given date-range (default 1 month) */
-    @GetMapping("/{userId}/personal-summary")
+    /**
+     * PERSONAL SUMMARY — self-scoped: caller identity comes from the JWT principal,
+     * so there is no userId in the request to spoof.
+     * GET /api/jpa/expenses/me/summary?startDate=&endDate=
+     */
+    @GetMapping("/me/summary")
     public ResponseEntity<ResponseDTO> getPersonalSummary(
-            @PathVariable long userId,
+            @AuthenticationPrincipal AuthenticatedUser me,
             @RequestParam("startDate") LocalDate startDate,
             @RequestParam("endDate") LocalDate endDate) {
 
-        PersonalSummaryResponseDTO data = expenseService.getPersonalSummary(userId, startDate, endDate);
+        if (me == null) {
+            throw new AccessDeniedException("Not authenticated");
+        }
+        PersonalSummaryResponseDTO data = expenseService.getPersonalSummary(me.getUserId(), startDate, endDate);
         return ResponseDTO.respond(StatusCode.SUCCESS, data);
     }
 
