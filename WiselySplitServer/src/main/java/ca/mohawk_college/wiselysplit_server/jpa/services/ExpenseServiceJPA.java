@@ -9,17 +9,24 @@ import ca.mohawk_college.wiselysplit_server.exceptions.GlobalExceptionHandler;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.EntryType;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.PersonalSummaryResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.*;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.income.IncomeResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletWithExpensesResponseDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Entry;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.ExpenseParticipation;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.User;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.Wallet;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Income;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.*;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.EntryRepo;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.ExpenseRepo;
+import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.IncomeRepo;
+import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.ExpenseResponseForListRowMapper;
 import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.ExpenseResponseRowMapper;
+import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.IncomeResponseForListRowMapper;
 import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.WalletWithExpensesResponseRowMapper;
 import ca.mohawk_college.wiselysplit_server.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawk_college.wiselysplit_server.services.classification.ClassificationService;
@@ -29,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,6 +54,8 @@ public class ExpenseServiceJPA {
     
     @Autowired private ExpenseRepo expenseRepo;
     @Autowired private EntryRepo entryRepo;
+    @Autowired
+    private IncomeRepo incomeRepo;
 
 //    TODO: Update the WalletBalanceUpdate methods used for all Expense CRUD operations
 
@@ -349,33 +359,63 @@ public class ExpenseServiceJPA {
     }
 
     /**
-     * TODO: Return Lists of ExpenseResponseForListDTO and IncomeResponseForListDTO + Summary : TotalIncomeAmount, TotalExpenseAmount, TotalAmountLent, TotalAmountOwed and NetStanding
+     * Get Lists of Expenses and Incomes
+     * Compute : TotalIncomeAmount, TotalExpenseAmount, TotalAmountLent, TotalAmountOwed and NetStanding
      * @param userId
      * @param startDate
      * @param endDate
-     * @return
+     * @return PersonalSummaryResponseDTO
      */
-    public Map<String, Object> getPersonalSummary(long userId, String startDate, String endDate) {
+    @Transactional
+    public PersonalSummaryResponseDTO getPersonalSummary(long userId, LocalDate startDate, LocalDate endDate) {
+        if (startDate.isAfter(endDate)) throw new BusinessException(StatusCode.INVALID_DATE_RANGE);
+        if (!userRepo.existsById(userId)) throw new BusinessException(StatusCode.USER_NOT_FOUND);
 
-        List<Map<String, Object>> rows =
-                expensesDAO.fetchPersonalSummary(userId, startDate, endDate);
+        List<Expense> expenseListForUser = expenseRepo.findAllByPayerOrParticipantAndDateRange(userId, startDate, endDate);
+        List<ExpenseResponseForListDTO> expenseDTOList = ExpenseResponseForListRowMapper.toDtoList(expenseListForUser, userId);
 
-        double totalLent = 0;
-        double totalOwed = 0;
+        List<Income> incomeListForUser = incomeRepo.findAllByUserIdAndDateRange(userId, startDate, endDate);
+        List<IncomeResponseForListDTO> incomeDTOList = IncomeResponseForListRowMapper.toDtoList(incomeListForUser);
 
-        for (Map<String, Object> r : rows) {
-            double net = ((Number) r.get("netAmount")).doubleValue();
-            if (net < 0) totalLent += Math.abs(net);
-            else if (net > 0) totalOwed += net;
+        BigDecimal totalIncome = incomeDTOList.stream()
+                .map(IncomeResponseForListDTO::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        //This is combination of My Personal Expense + amount I spent with people (I was payer + I was just contributor, or I was both)
+        BigDecimal totalSpent = expenseDTOList.stream()
+                .filter(expense -> expense.payer().userId().equals(userId))     // where user is payer
+                .map(ExpenseResponseForListDTO::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalAmountLent = BigDecimal.ZERO;
+        BigDecimal totalAmountOwed = BigDecimal.ZERO;
+        //Streams won't work for this case: cannot modify outside Objects(BigDecimals) from inside stream.
+        for (ExpenseResponseForListDTO expenseDTO : expenseDTOList) {
+            if (!expenseDTO.isPersonal() && !expenseDTO.isSettleUp()) {     //For every shared-expense only
+                BigDecimal amount = expenseDTO.amountLentOrOwed();
+                if (amount.signum() == 1 ) {    // is positive value
+                    totalAmountLent = totalAmountLent.add(amount);
+                } else {    //is negative or zero
+                    totalAmountOwed = totalAmountOwed.add(amount);
+                }
+            }
         }
 
-        return Map.of(
-                "summary", Map.of(
-                        "totalLent", totalLent,
-                        "totalOwed", totalOwed
-                ),
-                "expenses", rows
-        );
+        BigDecimal myPortionInMyExpenses = totalSpent.subtract(totalAmountLent);    // Amount I Spent/I paid - Amount I Spent for others (Not my expenses, but I Paid)
+        BigDecimal myNetExpense = myPortionInMyExpenses.add(totalAmountOwed);       // My Portion where I paid + My Portion where Others Paid
+        BigDecimal netStanding = totalIncome.subtract(myNetExpense);                // My Income - My Net Expenses
+        PersonalSummaryResponseDTO responseDTO = PersonalSummaryResponseDTO.builder()
+                .expenses(expenseDTOList)
+                .incomes(incomeDTOList)
+                .totalIncome(totalIncome)
+                .totalExpense(totalSpent)
+                .totalAmountLent(totalAmountLent)
+                .totalAmountOwed(totalAmountOwed)
+                .netStanding(netStanding)
+                .build();
+        responseDTO.setExpenses(expenseDTOList);
+
+        return responseDTO;
     }
 
     /**  Fetch single expense details */
@@ -400,8 +440,8 @@ public class ExpenseServiceJPA {
 
         return wallets.stream()
                 .map(wallet -> {
-                    List<Expense> expenseListOfWallet = entryRepo.findByWallet_WalletIdIsOrToWallet_WalletIdIs(wallet.getWalletId(),wallet.getWalletId() );
-                    return WalletWithExpensesResponseRowMapper.toDto(wallet, expenseListOfWallet);
+                    List<Entry> entryListOfWallet = entryRepo.findAllByWallet(wallet.getWalletId());
+                    return WalletWithExpensesResponseRowMapper.toDto(wallet, entryListOfWallet);
                 })
                 .toList();
     }

@@ -4,22 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum IncomeCategory {
-    EDUCATION("Education"),
-    ENTERTAINMENT("Entertainment"),
-    FINANCE("Finance"),
-    FOOD_AND_DINING("Food & Dining"),
-    GIFTS_AND_DONATIONS("Gifts & Donations"),
-    HEALTH_AND_MEDICAL("Health & Medical"),
-    HOUSING("Housing"),
-    KIDS_AND_FAMILY("Kids & Family"),
-    OTHER("Other"),
-    PERSONAL_CARE("Personal Care"),
-    PETS("Pets"),
-    SAVINGS_AND_INVESTMENTS("Savings & Investments"),
-    SHOPPING("Shopping"),
-    TRANSPORT("Transport"),
-    TRAVEL("Travel"),
-    UTILITIES("Utilities");
+    FREELANCE("Freelance"),
+    INVESTMENT("Investment"),
+    SALARY("Salary"),
+    GIFT("Gift"),
+    REFUND("Refund"),
+    SAVINGS("Savings"),
+    OTHER("Other");
 
     public static final IncomeCategory DEFAULT = OTHER;
 
@@ -52,7 +43,4 @@ public enum IncomeCategory {
         }
         return DEFAULT;
     }
-
-
-
 }

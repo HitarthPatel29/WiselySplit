@@ -4,6 +4,7 @@ import ca.mohawk_college.wiselysplit_server.exceptions.BusinessException;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.AppConstants;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.ResponseDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.PersonalSummaryResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.*;
 import ca.mohawk_college.wiselysplit_server.jpa.services.ExpenseServiceJPA;
 import ca.mohawk_college.wiselysplit_server.models.dtos.PersonalExpenseImportDTO;
@@ -14,6 +15,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -94,10 +96,10 @@ public class ExpenseControllerJPA {
     @GetMapping("/{userId}/personal-summary")
     public ResponseEntity<ResponseDTO> getPersonalSummary(
             @PathVariable long userId,
-            @RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate) {
+            @RequestParam("startDate") LocalDate startDate,
+            @RequestParam("endDate") LocalDate endDate) {
 
-        Map<String, Object> data = expenseService.getPersonalSummary(userId, startDate, endDate);
+        PersonalSummaryResponseDTO data = expenseService.getPersonalSummary(userId, startDate, endDate);
         return ResponseDTO.respond(StatusCode.SUCCESS, data);
     }
 

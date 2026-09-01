@@ -1,13 +1,15 @@
 package ca.mohawk_college.wiselysplit_server.jpa.rowmappers;
 
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletWithExpensesResponseDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Entry;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.Wallet;
 
 import java.util.List;
 
 public class WalletWithExpensesResponseRowMapper {
-    public static WalletWithExpensesResponseDTO toDto(Wallet wallet, List<Expense> expenseList) {
+    public static WalletWithExpensesResponseDTO toDto(Wallet wallet, List<Entry> entryList) {
+
         if (wallet == null) {
             return null;
         }
@@ -19,7 +21,7 @@ public class WalletWithExpensesResponseRowMapper {
                 wallet.getBalance(),
                 wallet.getCardName(),
                 wallet.getColor(),
-                ExpenseResponseForListRowMapper.toDtoList(expenseList, wallet.getUser().getUserId())
+                EntryResponseMapper.toDtoList(entryList, wallet.getUser().getUserId())
         );
     }
 }
