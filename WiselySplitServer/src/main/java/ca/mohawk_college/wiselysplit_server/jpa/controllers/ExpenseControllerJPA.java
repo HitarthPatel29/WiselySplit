@@ -38,6 +38,7 @@ public class ExpenseControllerJPA {
     }
 
     /**  CREATE Personal Expense */
+
     @PostMapping("/personal")
     public ResponseEntity<ResponseDTO> createPersonalExpense(@Valid @RequestBody PersonalExpenseRequestDTO expenseRequestDTO) {
         Long expenseId = expenseService.createPersonalExpense(expenseRequestDTO);
@@ -86,15 +87,15 @@ public class ExpenseControllerJPA {
     }
 
     /** GET Expense details — resource-scoped: id says *what*, JWT says *who*. */
-    @PreAuthorize("@authz.canReadExpense(#expenseId)")
+    @PreAuthorize("@authz.canAccessExpense(#expenseId)")
     @GetMapping("/{expenseId}")
     public ResponseEntity<ResponseDTO> getExpense(@PathVariable long expenseId) {
         return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpenseDetails(expenseId));
     }
 
-    @GetMapping("/group-by-wallets/{userId}")
-    public ResponseEntity<ResponseDTO> getExpensesGroupedByWallets(@PathVariable long userId) {
-        return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpensesGroupedByWallet(userId));
+    @GetMapping("me/group-by-wallets/")
+    public ResponseEntity<ResponseDTO> getExpensesGroupedByWallets(@AuthenticationPrincipal AuthenticatedUser me) {
+        return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpensesGroupedByWallet(me.getUserId()));
     }
 
     /**
@@ -116,6 +117,7 @@ public class ExpenseControllerJPA {
     }
 
     /**  DELETE Expense */
+    @PreAuthorize("@authz.canAccessExpense(#expenseId)")
     @DeleteMapping("/{expenseId}")
     public ResponseEntity<ResponseDTO> deleteExpense(@PathVariable long expenseId) {
         expenseService.deleteExpense(expenseId);
@@ -123,6 +125,7 @@ public class ExpenseControllerJPA {
     }
 
     /* UPDATE Expense */
+    @PreAuthorize("@authz.canAccessExpense(#expenseUpdateDTO.expenseId())")
     @PutMapping()
     public ResponseEntity<ResponseDTO> updateExpense(@Valid @RequestBody ExpenseUpdateRequestDTO expenseUpdateDTO) {
         ExpenseResponseDTO updateResponseDTO = expenseService.updateExpense(expenseUpdateDTO);

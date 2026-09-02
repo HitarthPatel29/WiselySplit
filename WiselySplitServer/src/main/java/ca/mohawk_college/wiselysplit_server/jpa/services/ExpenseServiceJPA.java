@@ -15,7 +15,9 @@ import ca.mohawk_college.wiselysplit_server.jpa.repositories.*;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.*;
 import ca.mohawk_college.wiselysplit_server.jpa.rowmappers.*;
 import ca.mohawk_college.wiselysplit_server.services.classification.*;
+import ca.mohawk_college.wiselysplit_server.utilities.auth.AuthorizationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,8 @@ public class ExpenseServiceJPA {
     @Autowired private ExpenseRepo expenseRepo;
     @Autowired private EntryRepo entryRepo;
     @Autowired private IncomeRepo incomeRepo;
+    @Autowired @Qualifier("authz")
+    private AuthorizationService authzService;
 
 //    TODO: Update the WalletBalanceUpdate methods used for all Expense CRUD operations
 
@@ -351,6 +355,8 @@ public class ExpenseServiceJPA {
      */
     @Transactional
     public PersonalSummaryResponseDTO getPersonalSummary(long userId, LocalDate startDate, LocalDate endDate) {
+        authzService.requireSelf(userId);
+
         if (startDate.isAfter(endDate)) throw new BusinessException(StatusCode.INVALID_DATE_RANGE);
         if (!userRepo.existsById(userId)) throw new BusinessException(StatusCode.USER_NOT_FOUND);
 
@@ -404,6 +410,8 @@ public class ExpenseServiceJPA {
     /**  Fetch single expense details */
     @Transactional
     public ExpenseResponseDTO getExpenseDetails(long expenseId) {
+        authzService.requireCanAccessExpense(expenseId);
+
         Expense expense = expenseRepo.findById(expenseId)
                 .orElseThrow(()-> new BusinessException(StatusCode.EXPENSE_NOT_FOUND));
 
@@ -415,6 +423,7 @@ public class ExpenseServiceJPA {
      * */
     @Transactional
     public List<WalletWithExpensesResponseDTO> getExpensesGroupedByWallet(long userId){
+        authzService.requireSelf(userId);
         List<Wallet> wallets = userRepo.findById(userId)
                 .orElseThrow(() -> new BusinessException(StatusCode.USER_NOT_FOUND, "Fetching Wallet Expenses for User failed, User not found!"))
                 .getWallets();
@@ -432,6 +441,7 @@ public class ExpenseServiceJPA {
 
     /**  Delete EXPENSE */
     public void deleteExpense(long expenseId) {
+        authzService.requireCanAccessExpense(expenseId);
         if (expenseRepo.existsById(expenseId)) {
             expenseRepo.deleteById(expenseId);
             walletDAO.updateWalletBalanceForEntryDelete(expenseId, WalletDAO.WalletBalanceUpdateMode.EXPENSE);
@@ -440,6 +450,8 @@ public class ExpenseServiceJPA {
 
     @Transactional
     public ExpenseResponseDTO updateExpense(ExpenseUpdateRequestDTO expenseUpdateDTO) {
+        authzService.requireCanAccessExpense(expenseUpdateDTO.expenseId());
+
         Expense expenseToBeUpdated = expenseRepo.findById(expenseUpdateDTO.expenseId())
                 .orElseThrow(()-> new BusinessException(
                         StatusCode.EXPENSE_UPDATE_FAILED, "Expense with expenseId : "+expenseUpdateDTO.expenseId()+ " not found"));

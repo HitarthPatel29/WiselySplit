@@ -16,25 +16,22 @@ public interface ExpenseRepo extends JpaRepository<Expense, Long> {
             where (e.payer.userId = ?1 or participants.user.userId = ?1) and e.date between ?2 and ?3""")
     List<Expense> findAllByPayerOrParticipantAndDateRange(Long userId, LocalDate dateStart, LocalDate dateEnd);
 
+    /**
+     * Checks if user is Payer or in ExpenseParticipation or in GroupParticipation. Useful for checking if user can access the expense
+     * @param expenseId
+     * @param userId
+     * @return
+     */
     @Query("""
             SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END
             FROM Expense e
             LEFT JOIN e.participants p
             LEFT JOIN e.expenseGroup g
             LEFT JOIN g.participants gp
-            WHERE e.entryId = :expenseId
-              AND (e.payer.userId = :userId
-                   OR p.user.userId = :userId
-                   OR gp.userId = :userId)
-            """)
-    boolean existsReadableByUser(Long expenseId, Long userId);
-
-    @Query("""
-            SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END
-            FROM Expense e
-            LEFT JOIN e.participants p
             WHERE e.entryId = ?1
-              AND (e.payer.userId = ?2 OR p.user.userId = ?2)
+              AND (e.payer.userId = ?2
+                   OR p.user.userId = ?2
+                   OR gp.userId = ?2)
             """)
-    boolean existsWritableByUser(Long expenseId, Long userId);
+    boolean existsIfUserIsPayerParticipantOrGroupMember(Long expenseId, Long userId);
 }

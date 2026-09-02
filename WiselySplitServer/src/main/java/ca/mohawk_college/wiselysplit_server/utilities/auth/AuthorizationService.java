@@ -1,4 +1,4 @@
-package ca.mohawk_college.wiselysplit_server.security;
+package ca.mohawk_college.wiselysplit_server.utilities.auth;
 
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.ExpenseGroupRepo;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.InviteRepo;
@@ -7,7 +7,6 @@ import ca.mohawk_college.wiselysplit_server.jpa.repositories.WalletRepo;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.ExpenseRepo;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.IncomeRepo;
 import ca.mohawk_college.wiselysplit_server.jpa.repositories.entry.TransferRepo;
-import ca.mohawk_college.wiselysplit_server.utilities.auth.SecurityUtils;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
@@ -54,18 +53,11 @@ public class AuthorizationService {
         return SecurityUtils.currentUserIdOrThrow() == userId;
     }
 
-    public boolean canReadExpense(long expenseId) {
+    public boolean canAccessExpense(long expenseId) {
         if (SecurityUtils.isAdmin()) {
             return true;
         }
-        return expenseRepo.existsReadableByUser(expenseId, SecurityUtils.currentUserIdOrThrow());
-    }
-
-    public boolean canWriteExpense(long expenseId) {
-        if (SecurityUtils.isAdmin()) {
-            return true;
-        }
-        return expenseRepo.existsWritableByUser(expenseId, SecurityUtils.currentUserIdOrThrow());
+        return expenseRepo.existsIfUserIsPayerParticipantOrGroupMember(expenseId, SecurityUtils.currentUserIdOrThrow());
     }
 
     public boolean ownsWallet(long walletId) {
@@ -121,12 +113,8 @@ public class AuthorizationService {
         denyUnless(isSelf(userId));
     }
 
-    public void requireCanReadExpense(long expenseId) {
-        denyUnless(canReadExpense(expenseId));
-    }
-
-    public void requireCanWriteExpense(long expenseId) {
-        denyUnless(canWriteExpense(expenseId));
+    public void requireCanAccessExpense(long expenseId) {
+        denyUnless(canAccessExpense(expenseId));
     }
 
     public void requireOwnsWallet(long walletId) {
