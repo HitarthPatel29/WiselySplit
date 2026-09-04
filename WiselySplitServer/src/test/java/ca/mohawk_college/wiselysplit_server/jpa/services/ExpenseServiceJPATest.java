@@ -8,10 +8,10 @@ import ca.mohawk_college.wiselysplit_server.exceptions.UserNotFoundException;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.PersonalSummaryResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.ExpenseUpdateRequestDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.PersonalExpenseAutomationRequestDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.PersonalExpenseRequestDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.SharedExpenseRequestDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.ExpenseUpdateRequestDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.PersonalExpenseAutomationRequestDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.PersonalExpenseRequestDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.SharedExpenseRequestDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.User;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.Wallet;
@@ -43,7 +43,6 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,7 +56,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -479,42 +477,7 @@ class ExpenseServiceJPATest {
         }
     }
 
-    @Nested
-    class GetExpensesGroupedByWallet {
 
-        @Test
-        void shouldRejectUnknownUser() {
-            when(userRepo.findById(1L)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> service.getExpensesGroupedByWallet(1L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting(ex -> ((BusinessException) ex).getStatus())
-                    .isEqualTo(StatusCode.USER_NOT_FOUND);
-            verify(authzService).requireSelf(1L);
-        }
-
-        @Test
-        void shouldRejectNullWallets() {
-            alice.setWallets(null);
-            when(userRepo.findById(1L)).thenReturn(Optional.of(alice));
-
-            assertThatThrownBy(() -> service.getExpensesGroupedByWallet(1L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting(ex -> ((BusinessException) ex).getStatus())
-                    .isEqualTo(StatusCode.NO_WALLETS_FOUND);
-        }
-
-        @Test
-        void shouldGroupEntriesByWallet() {
-            Wallet wallet = TestData.wallet(11L, alice);
-            alice.setWallets(List.of(wallet));
-            when(userRepo.findById(1L)).thenReturn(Optional.of(alice));
-            when(entryRepo.findAllByWallet(11L)).thenReturn(List.of());
-
-            assertThat(service.getExpensesGroupedByWallet(1L)).hasSize(1);
-            verify(entryRepo).findAllByWallet(11L);
-        }
-    }
 
     @Nested
     class DeleteExpense {

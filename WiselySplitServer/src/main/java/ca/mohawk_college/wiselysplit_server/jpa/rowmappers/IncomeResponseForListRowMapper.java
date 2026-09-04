@@ -1,7 +1,6 @@
 package ca.mohawk_college.wiselysplit_server.jpa.rowmappers;
 
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.GroupResponseForListDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.income.IncomeResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.IncomeResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Income;
@@ -16,15 +15,6 @@ public class IncomeResponseForListRowMapper {
             return null;
         }
 
-        UserResponseForListDTO userDTO = (income.getUser() != null)
-                ? new UserResponseForListDTO(
-                        income.getUser().getUserId(),
-                        income.getUser().getName(),
-                        income.getUser().getUserName(),
-                        income.getUser().getProfilePicture())
-                : null;
-
-
         WalletResponseForListDTO walletDTO = (income.getWallet() != null)
                 ? new WalletResponseForListDTO(
                             income.getWallet().getWalletId(),
@@ -34,12 +24,11 @@ public class IncomeResponseForListRowMapper {
 
         return new IncomeResponseForListDTO(
                 income.getEntryId(),
-                income.getTitle(),
                 income.getAmount(),
+                income.getTitle(),
                 income.getDate(),
-                income.getIncomeCategory(),
-                userDTO,
                 income.getEntryType(),
+                income.getIncomeCategory(),
                 walletDTO
         );
     }

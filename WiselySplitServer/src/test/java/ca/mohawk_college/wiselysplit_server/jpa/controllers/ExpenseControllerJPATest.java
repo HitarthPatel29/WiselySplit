@@ -5,9 +5,9 @@ import ca.mohawk_college.wiselysplit_server.exceptions.GlobalExceptionHandler;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.AppConstants;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.PersonalSummaryResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.ExpenseResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.ExpenseUpdateRequestDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.PersonalExpenseAutomationRequestDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.ExpenseResponseDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.ExpenseUpdateRequestDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.PersonalExpenseAutomationRequestDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.services.ExpenseServiceJPA;
 import ca.mohawk_college.wiselysplit_server.jpa.support.SecurityTestSupport;
 import ca.mohawk_college.wiselysplit_server.jpa.support.TestData;
@@ -304,17 +304,6 @@ class ExpenseControllerJPATest {
                     .andExpect(jsonPath("$.statusCode").value(StatusCode.SUCCESS.getCode()))
                     .andExpect(jsonPath("$.data.netStanding").value(0));
             verify(expenseService).getPersonalSummary(7L, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31));
-        }
-
-        @Test
-        void shouldGroupByWalletsUsingPrincipal() throws Exception {
-            SecurityTestSupport.asUser(7L);
-            when(expenseService.getExpensesGroupedByWallet(7L)).thenReturn(List.of());
-
-            mvc.perform(get("/api/jpa/expenses/me/group-by-wallets/"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.statusCode").value(StatusCode.SUCCESS.getCode()));
-            verify(expenseService).getExpensesGroupedByWallet(7L);
         }
 
         @Test

@@ -1,7 +1,5 @@
 package ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet;
 
-import jakarta.validation.constraints.NotBlank;
+import ca.mohawk_college.wiselysplit_server.jpa.constants.WalletColor;
 
-import java.math.BigDecimal;
-
-public record WalletResponseForListDTO (Long walletId, String name, String color){}
+public record WalletResponseForListDTO (Long walletId, String name, WalletColor color){}

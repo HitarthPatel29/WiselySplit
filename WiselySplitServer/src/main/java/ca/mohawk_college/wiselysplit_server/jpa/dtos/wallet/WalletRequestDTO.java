@@ -1,5 +1,6 @@
 package ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet;
 
+import ca.mohawk_college.wiselysplit_server.jpa.constants.WalletColor;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,11 +13,7 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class WalletDTO {
-
-    private Long walletId;
-
-    private Long userId;
+public class WalletRequestDTO {
 
     @NotBlank(message = "walletName cannot be empty")
     private String name;
@@ -25,5 +22,5 @@ public class WalletDTO {
 
     private String cardName;
 
-    private String color;
+    private WalletColor color;
 }

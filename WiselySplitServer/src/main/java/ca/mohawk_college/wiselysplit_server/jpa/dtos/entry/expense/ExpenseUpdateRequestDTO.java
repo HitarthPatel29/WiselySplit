@@ -1,4 +1,4 @@
-package ca.mohawk_college.wiselysplit_server.jpa.dtos.expense;
+package ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense;
 
 import ca.mohawk_college.wiselysplit_server.jpa.constants.EntryType;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;

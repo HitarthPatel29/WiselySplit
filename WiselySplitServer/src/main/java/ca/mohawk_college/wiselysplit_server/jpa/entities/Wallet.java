@@ -1,5 +1,7 @@
 package ca.mohawk_college.wiselysplit_server.jpa.entities;
 
+import ca.mohawk_college.wiselysplit_server.jpa.constants.WalletColor;
+import ca.mohawk_college.wiselysplit_server.jpa.utilities.WalletColorConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -37,6 +39,8 @@ public class Wallet {
     @Column(name = "CardName", columnDefinition = "VARCHAR")
     private String cardName;
 
+    /** Stored as color id (e.g. "emerald") via {@link WalletColorConverter}. */
+    @Convert(converter = WalletColorConverter.class)
     @Column(name = "Color", columnDefinition = "VARCHAR")
-    private String color;
+    private WalletColor color;
 }

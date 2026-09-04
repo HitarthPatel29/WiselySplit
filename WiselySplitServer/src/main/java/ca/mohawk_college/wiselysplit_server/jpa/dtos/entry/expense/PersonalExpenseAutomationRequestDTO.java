@@ -1,4 +1,4 @@
-package ca.mohawk_college.wiselysplit_server.jpa.dtos.expense;
+package ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

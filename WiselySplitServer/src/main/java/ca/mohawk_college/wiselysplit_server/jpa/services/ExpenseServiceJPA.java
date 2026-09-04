@@ -4,10 +4,10 @@ import ca.mohawk_college.wiselysplit_server.daos.*;
 import ca.mohawk_college.wiselysplit_server.exceptions.*;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.*;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.PersonalSummaryResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.*;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.*;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.ExpenseResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.expenseparticipation.ExpenseParticipantRequestDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.income.IncomeResponseForListDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletWithExpensesResponseDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.IncomeResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.*;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.*;
@@ -416,26 +416,6 @@ public class ExpenseServiceJPA {
                 .orElseThrow(()-> new BusinessException(StatusCode.EXPENSE_NOT_FOUND));
 
         return ExpenseResponseRowMapper.toDto(expense);
-    }
-
-    /** Fetch Shared + Personal Expenses (Grouped by Wallet)
-     * TODO: Move this to WalletService and Add getExpensesForWallet(long walletId)
-     * */
-    @Transactional
-    public List<WalletWithExpensesResponseDTO> getExpensesGroupedByWallet(long userId){
-        authzService.requireSelf(userId);
-        List<Wallet> wallets = userRepo.findById(userId)
-                .orElseThrow(() -> new BusinessException(StatusCode.USER_NOT_FOUND, "Fetching Wallet Expenses for User failed, User not found!"))
-                .getWallets();
-
-        if (null == wallets) throw new BusinessException(StatusCode.NO_WALLETS_FOUND);
-
-        return wallets.stream()
-                .map(wallet -> {
-                    List<Entry> entryListOfWallet = entryRepo.findAllByWallet(wallet.getWalletId());
-                    return WalletWithExpensesResponseRowMapper.toDto(wallet, entryListOfWallet);
-                })
-                .toList();
     }
 
 

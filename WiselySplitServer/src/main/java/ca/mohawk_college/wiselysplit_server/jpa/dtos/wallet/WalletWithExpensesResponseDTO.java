@@ -1,6 +1,8 @@
 package ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet;
 
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.ExpenseResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.constants.WalletColor;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.EntryResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.ExpenseResponseForListDTO;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -10,6 +12,6 @@ public record WalletWithExpensesResponseDTO (
     BigDecimal initialBalance,
     BigDecimal balance,
     String cardName,
-    String color,
-    List<ExpenseResponseForListDTO> entries
+    WalletColor color,
+    List<EntryResponseForListDTO> entries
 ){}

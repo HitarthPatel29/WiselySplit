@@ -5,7 +5,7 @@ import ca.mohawk_college.wiselysplit_server.jpa.constants.AppConstants;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.ResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.PersonalSummaryResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.*;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.*;
 import ca.mohawk_college.wiselysplit_server.jpa.services.ExpenseServiceJPA;
 import ca.mohawk_college.wiselysplit_server.models.dtos.PersonalExpenseImportDTO;
 import ca.mohawk_college.wiselysplit_server.utilities.auth.AuthenticatedUser;
@@ -93,10 +93,10 @@ public class ExpenseControllerJPA {
         return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpenseDetails(expenseId));
     }
 
-    @GetMapping("me/group-by-wallets/")
-    public ResponseEntity<ResponseDTO> getExpensesGroupedByWallets(@AuthenticationPrincipal AuthenticatedUser me) {
-        return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpensesGroupedByWallet(me.getUserId()));
-    }
+//    @GetMapping("me/group-by-wallets/")
+//    public ResponseEntity<ResponseDTO> getExpensesGroupedByWallets(@AuthenticationPrincipal AuthenticatedUser me) {
+//        return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpensesGroupedByWallet(me.getUserId()));
+//    }
 
     /**
      * PERSONAL SUMMARY — self-scoped: caller identity comes from the JWT principal,

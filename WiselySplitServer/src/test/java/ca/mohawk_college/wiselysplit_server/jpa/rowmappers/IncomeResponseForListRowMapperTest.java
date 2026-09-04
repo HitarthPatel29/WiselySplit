@@ -1,7 +1,7 @@
 package ca.mohawk_college.wiselysplit_server.jpa.rowmappers;
 
 import ca.mohawk_college.wiselysplit_server.jpa.constants.IncomeCategory;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.income.IncomeResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.IncomeResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.User;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Income;
 import ca.mohawk_college.wiselysplit_server.jpa.support.TestData;
@@ -27,10 +27,9 @@ class IncomeResponseForListRowMapperTest {
 
         IncomeResponseForListDTO dto = IncomeResponseForListRowMapper.toDto(income);
 
-        assertThat(dto.entryId()).isEqualTo(20L);
+        assertThat(dto.id()).isEqualTo(20L);
         assertThat(dto.amount()).isEqualByComparingTo("2000.00");
         assertThat(dto.category()).isEqualTo(IncomeCategory.SALARY);
-        assertThat(dto.user().userId()).isEqualTo(4L);
         assertThat(dto.wallet().walletId()).isEqualTo(8L);
     }
 
@@ -46,7 +45,6 @@ class IncomeResponseForListRowMapperTest {
 
         IncomeResponseForListDTO dto = IncomeResponseForListRowMapper.toDto(income);
 
-        assertThat(dto.user()).isNull();
         assertThat(dto.wallet()).isNull();
     }
 
@@ -57,6 +55,6 @@ class IncomeResponseForListRowMapperTest {
                 IncomeResponseForListRowMapper.toDtoList(List.of(TestData.income(1L, owner, "10.00")));
 
         assertThat(dtos).hasSize(1);
-        assertThat(dtos.get(0).entryId()).isEqualTo(1L);
+        assertThat(dtos.get(0).id()).isEqualTo(1L);
     }
 }

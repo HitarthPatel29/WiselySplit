@@ -1,7 +1,7 @@
 package ca.mohawk_college.wiselysplit_server.jpa.dtos.entry;
 
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.ExpenseResponseForListDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.income.IncomeResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.ExpenseResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.IncomeResponseForListDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

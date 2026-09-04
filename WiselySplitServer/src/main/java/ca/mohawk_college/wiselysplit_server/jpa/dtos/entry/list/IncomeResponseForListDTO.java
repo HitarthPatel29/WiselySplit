@@ -1,4 +1,4 @@
-package ca.mohawk_college.wiselysplit_server.jpa.dtos.income;
+package ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list;
 
 import ca.mohawk_college.wiselysplit_server.jpa.constants.EntryType;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.IncomeCategory;
@@ -9,13 +9,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record IncomeResponseForListDTO(
-        Long entryId,
-        String title,
+        Long id,
         BigDecimal amount,
+        String title,
         LocalDate date,
-        IncomeCategory category,
-        UserResponseForListDTO user,
         EntryType entryType,
+        IncomeCategory category,
         WalletResponseForListDTO wallet
-) {
+) implements EntryResponseForListDTO {
 }

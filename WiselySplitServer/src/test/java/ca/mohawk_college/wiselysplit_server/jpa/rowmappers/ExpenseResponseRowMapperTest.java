@@ -1,13 +1,12 @@
 package ca.mohawk_college.wiselysplit_server.jpa.rowmappers;
 
 import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.expense.ExpenseResponseDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.ExpenseResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.User;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
 import ca.mohawk_college.wiselysplit_server.jpa.support.TestData;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;

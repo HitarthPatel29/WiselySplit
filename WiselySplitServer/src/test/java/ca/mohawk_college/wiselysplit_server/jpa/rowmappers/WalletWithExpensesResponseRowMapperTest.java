@@ -1,5 +1,6 @@
 package ca.mohawk_college.wiselysplit_server.jpa.rowmappers;
 
+import ca.mohawk_college.wiselysplit_server.jpa.constants.WalletColor;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletWithExpensesResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.User;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.Wallet;
@@ -29,7 +30,7 @@ class WalletWithExpensesResponseRowMapperTest {
         assertThat(dto.initialBalance()).isEqualByComparingTo("100.00");
         assertThat(dto.balance()).isEqualByComparingTo("250.00");
         assertThat(dto.cardName()).isEqualTo("tdChequing");
-        assertThat(dto.color()).isEqualTo("#111111");
+        assertThat(dto.color()).isEqualTo(WalletColor.BLACK);
         assertThat(dto.entries()).isNull();
     }
 }
