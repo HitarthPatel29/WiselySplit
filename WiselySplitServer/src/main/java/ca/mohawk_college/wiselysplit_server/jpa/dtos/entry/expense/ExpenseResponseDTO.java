@@ -22,13 +22,9 @@ import java.util.List;
 public class ExpenseResponseDTO {
         Long expenseId;
         String title;
-        @NotNull(message = "amount cannot be null")
-        @PositiveOrZero(message = "amount cannot be negative")
         BigDecimal amount;
-        @NotNull(message = "date cannot be null")
         LocalDate date;
         ExpenseCategory category;
-        @NotNull(message = "Expense extracted without a payer")
         UserResponseForListDTO payer;
         GroupResponseForListDTO expenseGroup;
         Boolean isSettleUp;

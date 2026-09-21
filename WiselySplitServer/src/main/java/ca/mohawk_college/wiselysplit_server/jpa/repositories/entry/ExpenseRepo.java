@@ -34,4 +34,17 @@ public interface ExpenseRepo extends JpaRepository<Expense, Long> {
                    OR gp.userId = ?2)
             """)
     boolean existsIfUserIsPayerParticipantOrGroupMember(Long expenseId, Long userId);
+
+    @Query("""
+            select e from Expense e left join e.participants participants
+            where e.isPersonal = false
+                    and e.expenseCategory <> 'Fugazi'
+                    and (
+                        (e.payer.userId = ?1 and participants.user.userId = ?2)
+                        or (e.payer.userId = ?2 and participants.user.userId = ?1)
+                    )
+        """)
+    List<Expense> findSharedExpensesBetween(Long userId, Long friendId);
+
+
 }

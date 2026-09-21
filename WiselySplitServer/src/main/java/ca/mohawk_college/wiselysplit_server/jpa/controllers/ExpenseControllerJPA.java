@@ -1,5 +1,6 @@
 package ca.mohawk_college.wiselysplit_server.jpa.controllers;
 
+import ca.mohawk_college.wiselysplit_server.controllers.WalletController;
 import ca.mohawk_college.wiselysplit_server.exceptions.BusinessException;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.AppConstants;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
@@ -93,6 +94,7 @@ public class ExpenseControllerJPA {
         return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpenseDetails(expenseId));
     }
 
+//    The following moved to WalletController
 //    @GetMapping("me/group-by-wallets/")
 //    public ResponseEntity<ResponseDTO> getExpensesGroupedByWallets(@AuthenticationPrincipal AuthenticatedUser me) {
 //        return ResponseDTO.respond(StatusCode.SUCCESS, expenseService.getExpensesGroupedByWallet(me.getUserId()));
