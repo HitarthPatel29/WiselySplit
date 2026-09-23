@@ -21,9 +21,20 @@ export default function CreateGroup() {
   // handle field change
   const handleChange = (e) => {
     const { name, type, value, files } = e.target
+    if (type === 'file') {
+      const file = files?.[0]
+      if (!file) return
+      if (!file.type.startsWith('image/')) {
+        e.target.value = ''
+        showError('Please upload an image file.', { asSnackbar: true })
+        return
+      }
+      setForm((prev) => ({ ...prev, photo: file }))
+      return
+    }
     setForm((prev) => ({
       ...prev,
-      [name]: type === 'file' ? files[0] : value
+      [name]: value
     }))
   }
 
@@ -33,6 +44,8 @@ export default function CreateGroup() {
     if (!form.name.trim()) return 'Group name is required.'
     if (!isAlphanumeric(form.name)) return 'Group name must be alphanumeric.'
     if (!form.type) return 'Please select a group type.'
+    if (form.photo && !form.photo.type.startsWith('image/'))
+      return 'Please upload an image file.'
     return null
   }
 
