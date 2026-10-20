@@ -80,8 +80,14 @@ export default function EditGroup() {
   }
 
   const handlePhotoChange = (e) => {
-    const file = e.target.files[0]
-    if (file) setPhotoFile(file)
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      e.target.value = ''
+      showError('Please upload an image file.', { asSnackbar: true })
+      return
+    }
+    setPhotoFile(file)
   }
 
   /* Save: PUT /api/groups/{id} */
@@ -89,6 +95,10 @@ export default function EditGroup() {
     e.preventDefault()
     if (!group.name.trim()) {
       showError('Group name is required.', { asSnackbar: true })
+      return
+    }
+    if (photoFile && !photoFile.type.startsWith('image/')) {
+      showError('Please upload an image file.', { asSnackbar: true })
       return
     }
 

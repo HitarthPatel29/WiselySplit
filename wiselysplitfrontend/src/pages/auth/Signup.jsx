@@ -38,9 +38,20 @@ export default function Signup() {
     setErrors((prev) => ({ ...prev, [name]: null }))
 
     if (type === 'file') {
+      const file = files?.[0]
+      if (!file) return
+      if (!file.type.startsWith('image/')) {
+        e.target.value = ''
+        setErrors((prev) => ({
+          ...prev,
+          profilePicture: 'Please upload an image file.',
+        }))
+        showError('Please upload an image file.', { asSnackbar: true })
+        return
+      }
       setForm(f => ({
         ...f,
-        [name]: files[0] || null
+        [name]: file
       }))
       return
     }
@@ -174,6 +185,10 @@ export default function Signup() {
   // Step 2 → submit with/without picture
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (form.profilePicture && !form.profilePicture.type.startsWith('image/')) {
+      showError('Please upload an image file.', { asSnackbar: true })
+      return
+    }
     setLoading(true);
     try {
       const formData = new FormData();
