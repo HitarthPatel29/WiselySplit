@@ -126,6 +126,7 @@ export default function ExpenseForm({
         amount: prev?.amount ?? 0,
         date: prev?.date ?? new Date().toLocaleDateString('en-CA'),
         category: prev?.category ?? '',
+        walletId: prev?.walletId ?? null,
       }
       if (newMode === 'personal') {
         return {
@@ -163,6 +164,7 @@ export default function ExpenseForm({
       base.date = prev?.date ?? ''
       base.category = prev?.category ?? ''
       base.payerId = prev?.payerId ?? currentUserId
+      base.walletId = prev?.walletId ?? null
       return base.shareWithType === 'group' ? equalDivide(base) : base
     })
     setEqualSplit(true)

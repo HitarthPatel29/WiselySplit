@@ -259,7 +259,7 @@ export const normalizeExpenseForFields = (data, currentUserId, friendsAndGroups)
     title: data.title || data.expenseTitle || '',
     date: data.date || data.expenseDate || '',
     category: data.category || data.expenseType || '',
-    amount: parseFloat(data.amount) || 0,
+    amount: parseFloat(data.amount ?? data.totalAmount) || 0,
     payer: data.payer || '',
     payerId: data.payerId || null,
     shareWithType: data.groupId ? 'group' : 'friend',

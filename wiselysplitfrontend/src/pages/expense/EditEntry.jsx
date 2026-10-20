@@ -16,7 +16,11 @@ export default function EditEntry() {
   const { id, expenseId } = useParams()
   const { userId, friendsAndGroups, wallets = [] } = useAuth()
   const { showSuccess, showError } = useNotification()
-  const [expense, setExpense] = useState(location.state || null)
+  const [expense, setExpense] = useState(() =>
+    location.state
+      ? normalizeExpenseForFields(location.state, userId, friendsAndGroups)
+      : null
+  )
   const [loading, setLoading] = useState(!location.state)
   const [saving, setSaving] = useState(false)
 
