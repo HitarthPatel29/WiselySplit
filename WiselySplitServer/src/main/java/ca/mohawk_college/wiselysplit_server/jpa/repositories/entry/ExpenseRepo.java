@@ -1,6 +1,7 @@
 package ca.mohawk_college.wiselysplit_server.jpa.repositories.entry;
 
 import ca.mohawk_college.wiselysplit_server.jpa.entities.entry.Expense;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -35,6 +36,7 @@ public interface ExpenseRepo extends JpaRepository<Expense, Long> {
             """)
     boolean existsIfUserIsPayerParticipantOrGroupMember(Long expenseId, Long userId);
 
+    @EntityGraph(attributePaths = "participants")
     @Query("""
             select e from Expense e left join e.participants participants
             where e.isPersonal = false
@@ -45,6 +47,10 @@ public interface ExpenseRepo extends JpaRepository<Expense, Long> {
                     )
         """)
     List<Expense> findSharedExpensesBetween(Long userId, Long friendId);
+
+    @EntityGraph(attributePaths = {"participants", "participants.user", "payer", "wallet"})
+    @Query("select e from Expense e where e.expenseGroup.groupId = ?1")
+    List<Expense> findAllbyGroupID(Long groupId);
 
 
 }

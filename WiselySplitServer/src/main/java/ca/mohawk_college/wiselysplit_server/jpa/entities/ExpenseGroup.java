@@ -1,5 +1,6 @@
 package ca.mohawk_college.wiselysplit_server.jpa.entities;
 
+import ca.mohawk_college.wiselysplit_server.jpa.constants.GroupType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,8 +24,9 @@ public class ExpenseGroup {
     @Column(name = "GroupName", columnDefinition = "VARCHAR")
     private String groupName;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "GroupType", columnDefinition = "VARCHAR")
-    private String groupType;
+    private GroupType groupType;
 
     @Column(name = "ProfilePicture", columnDefinition = "VARCHAR")
     private String profilePicture;

@@ -2,7 +2,7 @@ package ca.mohawk_college.wiselysplit_server.jpa.dtos.invite;
 
 import ca.mohawk_college.wiselysplit_server.jpa.constants.InviteStatus;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.InviteType;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.GroupResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.group.GroupResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseForListDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;

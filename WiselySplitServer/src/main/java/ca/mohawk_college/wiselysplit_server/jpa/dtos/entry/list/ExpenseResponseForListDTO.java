@@ -2,7 +2,7 @@ package ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list;
 
 import ca.mohawk_college.wiselysplit_server.jpa.constants.EntryType;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.GroupResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.group.GroupResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletResponseForListDTO;
 

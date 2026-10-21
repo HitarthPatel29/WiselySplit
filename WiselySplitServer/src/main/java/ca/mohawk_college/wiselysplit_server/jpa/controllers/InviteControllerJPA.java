@@ -7,8 +7,10 @@ import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.invite.InviteRequestDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.ResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.services.InviteServiceJPA;
+import ca.mohawk_college.wiselysplit_server.utilities.auth.AuthenticatedUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -34,9 +36,11 @@ public class InviteControllerJPA {
     private InviteServiceJPA inviteService;
 
     @PostMapping("/send")
-    public ResponseEntity<ResponseDTO> sendInvite(@RequestBody InviteRequestDTO inviteRequest) {
+    public ResponseEntity<ResponseDTO> sendInvite(
+            @RequestBody InviteRequestDTO inviteRequest,
+            @AuthenticationPrincipal AuthenticatedUser me) {
         String message = inviteService.sendInvite(
-                inviteRequest.senderId(), inviteRequest.target(), inviteRequest.groupId());
+             me.getUserId(), inviteRequest.target(), inviteRequest.groupId());
 
         return ResponseDTO.respond(StatusCode.SUCCESS, Map.of("message", message));
     }
@@ -44,7 +48,6 @@ public class InviteControllerJPA {
     @PutMapping("/{id}/status")
     public ResponseEntity<ResponseDTO> updateInviteStatus(@PathVariable Long id, @RequestParam InviteStatus status) {
         inviteService.updateInviteStatus(id, status);
-
         return ResponseDTO.respond(StatusCode.UPDATED, Map.of("inviteId", id, "status", status));
     }
 

@@ -8,7 +8,7 @@ import ca.mohawk_college.wiselysplit_server.exceptions.GlobalExceptionHandler;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.InviteStatus;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.InviteType;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.GroupResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.group.GroupResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.invite.InviteResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.entities.ExpenseGroup;

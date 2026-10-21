@@ -2,7 +2,7 @@ package ca.mohawk_college.wiselysplit_server.jpa.rowmappers;
 
 import ca.mohawk_college.wiselysplit_server.exceptions.BusinessException;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.GroupResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.group.GroupResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.ExpenseResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.wallet.WalletResponseForListDTO;
@@ -40,17 +40,14 @@ public class ExpenseResponseForListRowMapper {
                 ? new UserResponseForListDTO(
                 expense.getPayer().getUserId(),
                 expense.getPayer().getName(),
-                expense.getPayer().getUserName(),
-                expense.getPayer().getProfilePicture())
+                null, null)
                 : null;
 
         GroupResponseForListDTO groupDTO = (expense.getExpenseGroup() != null)
                 ? new GroupResponseForListDTO(
                 expense.getExpenseGroup().getGroupId(),
                 expense.getExpenseGroup().getGroupName(),
-                expense.getExpenseGroup().getGroupType(),
-                expense.getExpenseGroup().getProfilePicture(),
-                null)
+                null, null, null)
                 : null;
 
         WalletResponseForListDTO walletDTO = (expense.getWallet() != null)

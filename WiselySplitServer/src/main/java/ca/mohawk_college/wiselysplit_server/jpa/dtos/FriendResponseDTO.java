@@ -1,7 +1,5 @@
 package ca.mohawk_college.wiselysplit_server.jpa.dtos;
 
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.ExpenseResponseDTO;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.expense.SharedExpenseRequestDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.entry.list.ExpenseResponseForListDTO;
 
 import java.math.BigDecimal;
@@ -12,6 +10,6 @@ public record FriendResponseDTO (
         String name,
         String userName,
         String profilePicture,
-        BigDecimal amountOwedOrLentToUser,
+        BigDecimal amountLentOrOwed,
         List<ExpenseResponseForListDTO> expenses){
 }

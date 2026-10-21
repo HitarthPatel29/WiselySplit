@@ -3,7 +3,7 @@ package ca.mohawk_college.wiselysplit_server.jpa.services;
 import ca.mohawk_college.wiselysplit_server.daos.InviteDAO;
 import ca.mohawk_college.wiselysplit_server.exceptions.DuplicateUserException;
 import ca.mohawk_college.wiselysplit_server.exceptions.UserNotFoundException;
-import ca.mohawk_college.wiselysplit_server.jpa.dtos.GroupResponseForListDTO;
+import ca.mohawk_college.wiselysplit_server.jpa.dtos.group.GroupResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserResponseForListDTO;
 import ca.mohawk_college.wiselysplit_server.jpa.dtos.user.UserUpdateRequestDTO;
@@ -25,6 +25,7 @@ public class UserService {
     private UserRepo userRepo;
     @Autowired
     private InviteDAO inviteDAO;
+
     @Value("${cloudinary.default_photo_link}")
     private String DEFAULT_AVATAR_URL;
     @Autowired

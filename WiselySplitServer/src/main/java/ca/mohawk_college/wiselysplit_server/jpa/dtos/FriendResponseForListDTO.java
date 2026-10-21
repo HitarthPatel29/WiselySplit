@@ -7,6 +7,6 @@ public record FriendResponseForListDTO (
         String name,
         String userName,
         String profilePicture,
-        BigDecimal amountOwedOrLentToUser
+        BigDecimal amountLentOrOwed
 ){
 }
