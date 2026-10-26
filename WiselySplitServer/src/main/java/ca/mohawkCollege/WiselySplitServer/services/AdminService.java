@@ -29,11 +29,14 @@ public class AdminService {
     private final UserDAO userDAO;
     private final UserService userService;
     private final AdminAuditDAO auditDAO;
+    private final RefreshTokenService refreshTokenService;
 
-    public AdminService(UserDAO userDAO, UserService userService, AdminAuditDAO auditDAO) {
+    public AdminService(UserDAO userDAO, UserService userService, AdminAuditDAO auditDAO,
+                        RefreshTokenService refreshTokenService) {
         this.userDAO = userDAO;
         this.userService = userService;
         this.auditDAO = auditDAO;
+        this.refreshTokenService = refreshTokenService;
     }
 
     // ---------------------------------------------------------------- read
@@ -174,6 +177,7 @@ public class AdminService {
                 throw new IllegalArgumentException("Weak password – must include upper, lower, digit, special and be 8+ chars");
             }
             userDAO.updatePassword(id, PasswordUtil.hashPassword(newPassword));
+            refreshTokenService.revokeAllForUser(id);
         }
 
         auditDAO.record(actorId, actorEmail, "UPDATE_ACCOUNT", id, "Updated account fields: " + payload.keySet());
@@ -200,6 +204,7 @@ public class AdminService {
             throw new IllegalArgumentException("Weak password – must include upper, lower, digit, special and be 8+ chars");
         }
         userDAO.updatePassword(id, PasswordUtil.hashPassword(newPassword));
+        refreshTokenService.revokeAllForUser(id);
         auditDAO.record(actorId, actorEmail, "RESET_PASSWORD", id, "Admin reset password");
     }
 

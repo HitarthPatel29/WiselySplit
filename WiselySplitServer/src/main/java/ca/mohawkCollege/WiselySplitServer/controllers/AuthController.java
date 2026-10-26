@@ -1,18 +1,25 @@
 package ca.mohawkCollege.wiselySplitServer.controllers;
 
+import ca.mohawkCollege.wiselySplitServer.configs.SecurityConfig;
+import ca.mohawkCollege.wiselySplitServer.exceptions.InvalidRefreshTokenException;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.JwtUtil;
 import ca.mohawkCollege.wiselySplitServer.utilities.auth.PasswordUtil;
+import ca.mohawkCollege.wiselySplitServer.utilities.auth.RefreshCookieUtil;
 import ca.mohawkCollege.wiselySplitServer.daos.UserDAO;
 import ca.mohawkCollege.wiselySplitServer.models.Role;
 import ca.mohawkCollege.wiselySplitServer.models.User;
 import ca.mohawkCollege.wiselySplitServer.models.dtos.AdminUserView;
 import ca.mohawkCollege.wiselySplitServer.services.EmailServiceMailTrapAPI;
 import ca.mohawkCollege.wiselySplitServer.services.OtpService;
+import ca.mohawkCollege.wiselySplitServer.services.RefreshTokenService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,6 +30,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -35,16 +43,22 @@ public class AuthController {
     private final UserDAO userDAO;
     private final EmailServiceMailTrapAPI emailServiceMailTrapAPI;
     private final OtpService otpService;
+    private final RefreshTokenService refreshTokenService;
+    private final RefreshCookieUtil refreshCookieUtil;
 
     @Value("${google.client.id}")
     private String googleClientId;
 
-    public AuthController(AuthenticationManager authManager, JwtUtil jwtUtil, UserDAO userDAO, EmailServiceMailTrapAPI emailServiceMailTrapAPI, OtpService otpService) {
+    public AuthController(AuthenticationManager authManager, JwtUtil jwtUtil, UserDAO userDAO,
+                          EmailServiceMailTrapAPI emailServiceMailTrapAPI, OtpService otpService,
+                          RefreshTokenService refreshTokenService, RefreshCookieUtil refreshCookieUtil) {
         this.authManager = authManager;
         this.jwtUtil = jwtUtil;
         this.userDAO = userDAO;
         this.emailServiceMailTrapAPI = emailServiceMailTrapAPI;
         this.otpService = otpService;
+        this.refreshTokenService = refreshTokenService;
+        this.refreshCookieUtil = refreshCookieUtil;
     }
 
     /**
@@ -81,9 +95,10 @@ public class AuthController {
      * Step 2: Verify OTP, then issue JWT
      */
     @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String otp = body.get("otp");
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        String email = asString(body.get("email"));
+        String otp = asString(body.get("otp"));
+        boolean remember = asBoolean(body.get("remember"));
 
         if (email == null || otp == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email and OTP are required"));
@@ -98,23 +113,64 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "User not found"));
             }
-            User user = userOpt.get();
-
-            String jwt = jwtUtil.generateToken(user.getUserId(), user.getEmail());
-            return ResponseEntity.ok(Map.of(
-                    "token", jwt,
-                    "tokenType", "Bearer",
-                    "expiresInMs", 3600000
-            ));
+            return issueSession(userOpt.get(), remember, request, Map.of());
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid or expired OTP"));
         }
     }
 
+    /**
+     * Exchanges the HttpOnly refresh cookie for a new access token and rotates the cookie.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(HttpServletRequest request) {
+        if (!isAllowedOrigin(request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Origin not allowed"));
+        }
+        try {
+            RefreshTokenService.RotationResult result =
+                    refreshTokenService.rotate(refreshCookieUtil.read(request), request);
+            return tokenResponse(result.user(), result.refreshToken(), Map.of());
+        } catch (InvalidRefreshTokenException e) {
+            if (!e.isSessionEnded()) {
+                // Lost a rotation race; clearing the cookie here would wipe the winner's new token.
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "Session refresh already in progress, retry"));
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .header(HttpHeaders.SET_COOKIE, refreshCookieUtil.clear().toString())
+                    .body(Map.of("error", "Session expired, please log in again"));
+        }
+    }
+
+    /**
+     * Ends the current session: revokes its refresh-token family and clears the cookie.
+     * Public because the access token may already be expired.
+     */
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        return ResponseEntity.ok(Map.of("message","Logged out (discard token on client)"));
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        if (!isAllowedOrigin(request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Origin not allowed"));
+        }
+        refreshTokenService.revokeByRawToken(refreshCookieUtil.read(request));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookieUtil.clear().toString())
+                .body(Map.of("message", "Logged out"));
+    }
+
+    /** Revokes every session of the authenticated caller (all devices). */
+    @PostMapping("/logout-all")
+    public ResponseEntity<?> logoutAll(Authentication auth) {
+        Optional<User> userOpt = userDAO.findByEmail(auth.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found"));
+        }
+        refreshTokenService.revokeAllForUser(userOpt.get().getUserId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookieUtil.clear().toString())
+                .body(Map.of("message", "Logged out of all devices"));
     }
 
     /**
@@ -139,9 +195,10 @@ public class AuthController {
      * Google Sign-In endpoint
      */
     @PostMapping("/google")
-    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         try {
-            String idTokenString = body.get("token");
+            String idTokenString = asString(body.get("token"));
+            boolean remember = asBoolean(body.get("remember"));
             if (idTokenString == null) {
                 return ResponseEntity.badRequest().body(Map.of("error","Missing Google ID token"));
             }
@@ -179,13 +236,7 @@ public class AuthController {
                 return newUser;
             });
 
-            // Issue JWT
-            String jwt = jwtUtil.generateToken(user.getUserId(), user.getEmail());
-
-            return ResponseEntity.ok(Map.of(
-                    "token", jwt,
-                    "tokenType", "Bearer",
-                    "expiresInMs", 3600000,
+            return issueSession(user, remember, request, Map.of(
                     "email", user.getEmail(),
                     "name", user.getName()
             ));
@@ -195,5 +246,46 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error","Google login failed: " + e.getMessage()));
         }
+    }
+
+    // -------------------------------------------------------------- helpers
+
+    /** Starts a new login session: access token in the body, refresh token in an HttpOnly cookie. */
+    private ResponseEntity<?> issueSession(User user, boolean remember, HttpServletRequest request,
+                                           Map<String, Object> extra) {
+        RefreshTokenService.IssuedRefreshToken refreshToken = refreshTokenService.issue(user, remember, request);
+        return tokenResponse(user, refreshToken, extra);
+    }
+
+    private ResponseEntity<?> tokenResponse(User user, RefreshTokenService.IssuedRefreshToken refreshToken,
+                                            Map<String, Object> extra) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("token", jwtUtil.generateToken(user.getUserId(), user.getEmail()));
+        body.put("tokenType", "Bearer");
+        body.put("expiresInMs", jwtUtil.getExpirationMs());
+        body.putAll(extra);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookieUtil.build(refreshToken).toString())
+                .cacheControl(CacheControl.noStore())
+                .body(body);
+    }
+
+    /**
+     * CSRF defence for the cookie-authenticated endpoints. Browsers always send Origin on
+     * cross-origin POSTs, so a missing header can only come from a non-browser client.
+     */
+    private static boolean isAllowedOrigin(HttpServletRequest request) {
+        String origin = request.getHeader(HttpHeaders.ORIGIN);
+        return origin == null || SecurityConfig.ALLOWED_ORIGINS.contains(origin);
+    }
+
+    private static String asString(Object o) {
+        return o == null ? null : String.valueOf(o);
+    }
+
+    private static boolean asBoolean(Object o) {
+        if (o instanceof Boolean b) return b;
+        return o != null && Boolean.parseBoolean(String.valueOf(o));
     }
 }

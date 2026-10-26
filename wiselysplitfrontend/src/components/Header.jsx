@@ -13,9 +13,9 @@ export default function Header({ title = '' }) {
   // Check if we're on the Dashboard page
   const isDashboard = location.pathname === '/dashboard'
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.clear()
-    logout()
+    await logout()
     navigate('/login')
     setOpen(false)
   }

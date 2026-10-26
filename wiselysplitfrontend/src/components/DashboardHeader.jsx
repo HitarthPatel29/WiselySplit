@@ -78,9 +78,9 @@ export default function DashboardHeader({ user, pendingInvites = 0 }) {
     }
   }, [])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.clear()
-    logout()
+    await logout()
     setOpen(false)
     navigate('/login')
   }

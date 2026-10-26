@@ -18,9 +18,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.List;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    /** Browser origins allowed to call the API with credentials (also used for the refresh-cookie Origin check). */
+    public static final List<String> ALLOWED_ORIGINS =
+            List.of("http://localhost:5173", "https://wiselysplit.netlify.app", "https://wiselysplit.xyz");
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -40,6 +46,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/me").authenticated() // caller's own profile + role (must precede /api/auth/**)
+                        .requestMatchers("/api/auth/logout-all").authenticated() // revoke every session of the caller
                         .requestMatchers("/api/auth/reset/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()   // login/reset open
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll() // signup
@@ -91,7 +98,7 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOriginPatterns("http://localhost:5173", "https://wiselysplit.netlify.app", "https://wiselysplit.xyz")
+                        .allowedOriginPatterns(ALLOWED_ORIGINS.toArray(String[]::new))
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

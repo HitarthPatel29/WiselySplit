@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useNotification } from '../../context/NotificationContext'
+import api from '../../api'
 
 
 
@@ -63,20 +64,12 @@ function GoogleButton() {
   const handleCredentialResponse = (response) => {
     // Google gives us the ID token (JWT)
     const idToken = response.credential
-    console.log('Google ID Token:', idToken)
-    const backendURL = import.meta.env.VITE_BACKEND_URL
 
-    // Send token to backend
-    fetch(backendURL + '/api/auth/google', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: idToken })
-    })
-      .then(res => res.json())
-      .then(data => {
-        console.log('Backend JWT:', data)
+    // Send token to backend; the shared api client accepts the refresh cookie it sets
+    api.post('/auth/google', { token: idToken, remember: true })
+      .then(({ data }) => {
         if (data.token) {
-          login(data.token, true) // remember me
+          login(data.token)
           showSuccess('Google login successful!', { asSnackbar: true })
           navigate('/dashboard')
         }

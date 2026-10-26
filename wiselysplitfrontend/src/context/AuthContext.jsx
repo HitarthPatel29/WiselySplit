@@ -1,9 +1,13 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { jwtDecode } from 'jwt-decode'
-import api from '../api'
+import api, { refreshAccessToken, setAuthFailureHandler } from '../api'
+import { setAccessToken, clearAccessToken, subscribeAccessToken } from '../auth/tokenStore'
 
 const AuthContext = createContext(null)
+
+// Keeps login/logout in sync across tabs that share the same refresh cookie.
+const authChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('auth') : null
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null)
@@ -16,31 +20,66 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null)
   const [roleLoading, setRoleLoading] = useState(false)
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token') || sessionStorage.getItem('token')
-    if (storedToken) {
-      try {
-        const decoded = jwtDecode(storedToken)
-        if (decoded.exp && Date.now() >= decoded.exp * 1000) {
-          console.warn('Stored token expired, clearing it.')
-          logout()
-        } else {
-          setToken(storedToken)
-          setUserId(decoded.userId || null) // extract userId from JWT claim
-        }
-      } catch (err) {
-        console.error('Invalid stored token, clearing it:', err)
-        logout()
-      }
+  // Mirror the in-memory access token (set by login or a silent refresh) into React state.
+  useEffect(() => subscribeAccessToken((jwt) => {
+    if (!jwt) {
+      setToken(null)
+      setUserId(null)
+      return
     }
-    setLoading(false)
-  }, [userId])
+    try {
+      const decoded = jwtDecode(jwt)
+      setToken(jwt)
+      setUserId(decoded.userId || null) // extract userId from JWT claim
+    } catch (err) {
+      console.error('Invalid access token, clearing it:', err)
+      clearAccessToken()
+    }
+  }), [])
+
+  // Local-only teardown; the server session is either already dead or revoked by logout().
+  const clearSession = useCallback(() => {
+    clearAccessToken()
+    setRole(null)
+    setCurrentUser(null)
+    setFriendsAndGroups([])
+    setWallets([])
+  }, [])
+
+  useEffect(() => {
+    setAuthFailureHandler(clearSession)
+    return () => setAuthFailureHandler(null)
+  }, [clearSession])
+
+  // Restore the session on page load by exchanging the HttpOnly refresh cookie.
+  useEffect(() => {
+    let cancelled = false
+    refreshAccessToken()
+      .catch(() => { /* no valid refresh cookie: stay logged out */ })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!authChannel) return
+    const onMessage = ({ data }) => {
+      if (data === 'logout') clearSession()
+      if (data === 'login') refreshAccessToken().catch(() => {})
+    }
+    authChannel.addEventListener('message', onMessage)
+    return () => authChannel.removeEventListener('message', onMessage)
+  }, [clearSession])
 
   // Fetch the authenticated user's profile + RBAC role from the backend.
   // The JWT only carries identity, so role is the source of truth from the DB.
+  // Keyed on userId (not token) so silent refreshes don't refetch it every few minutes.
   useEffect(() => {
     let cancelled = false
-    if (!token) {
+    if (!userId) {
       setRole(null)
       setCurrentUser(null)
       setRoleLoading(false)
@@ -65,7 +104,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       cancelled = true
     }
-  }, [token])
+  }, [userId])
 
   // Fetch connections method
   const fetchConnections = useCallback(async () => {
@@ -102,37 +141,30 @@ export const AuthProvider = ({ children }) => {
     fetchWallets()
   }, [fetchWallets])
 
-  // Login (store token + remember me)
-  const login = (jwt, remember = false) => {
+  // Login: keep the access token in memory only. "Remember me" is handled server-side
+  // by making the refresh cookie persistent, so it is sent with the login request instead.
+  const login = (jwt) => {
     try {
       const decoded = jwtDecode(jwt)
       if (decoded.exp && Date.now() >= decoded.exp * 1000) throw new Error('Token expired')
-
-      if (remember) {
-        localStorage.setItem('token', jwt)
-        sessionStorage.removeItem('token')
-      } else {
-        sessionStorage.setItem('token', jwt)
-        localStorage.removeItem('token')
-      }
-
-      setToken(jwt)
-      setUserId(decoded.userId || null) //store userId
+      setAccessToken(jwt)
+      authChannel?.postMessage('login')
     } catch (err) {
       console.error('Login failed due to invalid token:', err)
-      logout()
+      clearSession()
     }
   }
 
-  // Logout
-  const logout = () => {
-    localStorage.removeItem('token')
-    sessionStorage.removeItem('token')
-    setToken(null)
-    setUserId(null)
-    setRole(null)
-    setCurrentUser(null)
-  }
+  // Logout: revoke the refresh token on the server, then clear local state in every tab.
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/auth/logout')
+    } catch (err) {
+      console.error('Server logout failed:', err)
+    }
+    clearSession()
+    authChannel?.postMessage('logout')
+  }, [clearSession])
 
   const isAdmin = role === 'ADMIN'
 
