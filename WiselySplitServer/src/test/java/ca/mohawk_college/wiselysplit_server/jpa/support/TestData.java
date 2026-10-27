@@ -1,6 +1,7 @@
 package ca.mohawk_college.wiselysplit_server.jpa.support;
 
 import ca.mohawk_college.wiselysplit_server.jpa.constants.ExpenseCategory;
+import ca.mohawk_college.wiselysplit_server.jpa.constants.GroupType;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.IncomeCategory;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.InviteStatus;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.InviteType;
@@ -61,7 +62,7 @@ public final class TestData {
         ExpenseGroup group = new ExpenseGroup();
         group.setGroupId(id);
         group.setGroupName("Trip");
-        group.setGroupType("TRIP");
+        group.setGroupType(GroupType.Friends);
         group.setProfilePicture("https://cdn.example.com/group.png");
         return group;
     }
