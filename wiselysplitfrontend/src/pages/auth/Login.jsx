@@ -60,10 +60,11 @@ export default function Login() {
     try {
       const res = await api.post('/auth/verify-otp', {
         email: form.email,
-        otp: otp
+        otp: otp,
+        remember: form.remember
       });
       if (res.data.token) {
-        login(res.data.token, form.remember)
+        login(res.data.token)
         showSuccess('Login successful!', { asSnackbar: true })
         navigate('/dashboard')
       }

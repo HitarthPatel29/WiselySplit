@@ -20,11 +20,14 @@ public class PasswordResetService {
     private final PasswordResetTokenDAO tokenDAO;
     private final EmailServiceMailTrapAPI emailServiceMailTrapAPI; // you already have/will need this
     private final BCryptPasswordEncoder passwordEncoder;
+    private final RefreshTokenService refreshTokenService;
 
-    public PasswordResetService(UserDAO userDAO, PasswordResetTokenDAO tokenDAO, EmailServiceMailTrapAPI emailServiceMailTrapAPI) {
+    public PasswordResetService(UserDAO userDAO, PasswordResetTokenDAO tokenDAO, EmailServiceMailTrapAPI emailServiceMailTrapAPI,
+                                RefreshTokenService refreshTokenService) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.emailServiceMailTrapAPI = emailServiceMailTrapAPI;
+        this.refreshTokenService = refreshTokenService;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
@@ -97,6 +100,7 @@ public class PasswordResetService {
         User user = userOpt.get();
         String hashedPassword = passwordEncoder.encode(newPassword);
         userDAO.updatePassword(user.getUserId(), hashedPassword);
+        refreshTokenService.revokeAllForUser(user.getUserId());
 
         tokenDAO.findByUserId(user.getUserId()).ifPresent(t -> tokenDAO.markConsumed(t.getId()));
 

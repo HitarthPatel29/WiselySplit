@@ -33,14 +33,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             token = header.substring(7);
         }
 
-        if (token != null && jwtUtil.validate(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
+        // Only access tokens authenticate requests; reset-password tokens share the signing key.
+        if (token != null && jwtUtil.isAccessToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             String email = jwtUtil.extractSubject(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            } catch (UsernameNotFoundException e) {
+                // Account deleted after the token was issued: leave unauthenticated so the entry point returns 401.
+            }
         }
 
         chain.doFilter(req, res);

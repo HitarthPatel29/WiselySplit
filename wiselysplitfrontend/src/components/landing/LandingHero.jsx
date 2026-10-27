@@ -4,6 +4,7 @@ import Logo from '../Logo'
 import BrandBackdrop, { useBrandBackdropMotion } from '../background/CursorAnimatedBG'
 import GlowPill from './GlowPill'
 import TrustStrip from './TrustStrip'
+import useReducedMotion from '../../hooks/useReducedMotion'
 
 const container = {
   hidden: {},
@@ -21,6 +22,7 @@ function scrollToFeatures() {
 
 export default function LandingHero() {
   const { mouseX, mouseY, onMouseMove, reducedMotion } = useBrandBackdropMotion()
+  const contentReducedMotion = useReducedMotion()
 
   return (
     <section
@@ -32,8 +34,8 @@ export default function LandingHero() {
 
       <motion.div
         className="relative z-10 flex-1 w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center gap-6 pb-8"
-        variants={reducedMotion ? undefined : container}
-        initial={reducedMotion ? false : 'hidden'}
+        variants={contentReducedMotion ? undefined : container}
+        initial={contentReducedMotion ? false : 'hidden'}
         animate="visible"
       >
         <motion.div variants={item} className="w-full flex justify-center px-1">

@@ -2,6 +2,7 @@ import React, { useCallback } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { DollarSlashMarkSvg } from '../Logo'
 import useReducedMotion from '../../hooks/useReducedMotion'
+import { isSafari } from '../../utils/browser'
 
 const EMERALD = '#10b981'
 const GLOW = 'url(#emeraldGlow)'
@@ -154,7 +155,7 @@ function RotatingRing({ cx, cy, r, dash, duration, reverse, reducedMotion }) {
 }
 
 export function useBrandBackdropMotion() {
-  const reducedMotion = useReducedMotion()
+  const reducedMotion = useReducedMotion() || isSafari()
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
 

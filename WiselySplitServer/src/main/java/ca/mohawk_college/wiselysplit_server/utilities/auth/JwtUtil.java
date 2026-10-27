@@ -12,6 +12,8 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
+    private static final String ACCESS_TOKEN_TYPE = "access";
+
     private final Key key;
     private final long expirationMs;
 
@@ -23,12 +25,17 @@ public class JwtUtil {
         this.expirationMs = expirationMs;
     }
 
+    public long getExpirationMs() {
+        return expirationMs;
+    }
+
     public String generateToken(long userId, String email) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
                 .setSubject(email) // still use email as subject for authentication
                 .claim("userId", userId)
+                .claim("typ", ACCESS_TOKEN_TYPE)
                 .setIssuedAt(now)
                 .setExpiration(exp)
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -48,6 +55,20 @@ public class JwtUtil {
         try {
             extractSubject(token);
             return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /** True only for a validly signed, unexpired token minted by {@link #generateToken}. */
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return ACCESS_TOKEN_TYPE.equals(claims.get("typ"));
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
