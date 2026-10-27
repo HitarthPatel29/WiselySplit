@@ -1,6 +1,6 @@
 package ca.mohawk_college.wiselysplit_server.services.user;
 
-import ca.mohawkCollege.wiselySplitServer.exceptions.BusinessException;
+import ca.mohawk_college.wiselysplit_server.exceptions.BusinessException;
 import ca.mohawk_college.wiselysplit_server.jpa.constants.StatusCode;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
